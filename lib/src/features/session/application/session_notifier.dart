@@ -6,18 +6,12 @@ import '../../../core/storage/token_storage.dart';
 enum AppRole { customer, doctor }
 
 class SessionState {
-  const SessionState({
-    this.role,
-    this.isAuthenticated = false,
-  });
+  const SessionState({this.role, this.isAuthenticated = false});
 
   final AppRole? role;
   final bool isAuthenticated;
 
-  SessionState copyWith({
-    AppRole? role,
-    bool? isAuthenticated,
-  }) {
+  SessionState copyWith({AppRole? role, bool? isAuthenticated}) {
     return SessionState(
       role: role ?? this.role,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
@@ -37,17 +31,12 @@ class SessionNotifier extends Notifier<SessionState> {
     state = state.copyWith(role: role, isAuthenticated: false);
   }
 
-  /// Placeholder sign-in: stores a dummy token so [Dio] auth interceptor has data.
-  Future<void> completePlaceholderSignIn() async {
-    await ref.read(tokenStorageProvider).writeAccessToken('placeholder_token');
-    state = state.copyWith(isAuthenticated: true);
-  }
-
   Future<void> signOut() async {
     await ref.read(tokenStorageProvider).clear();
     state = const SessionState();
   }
 }
 
-final sessionNotifierProvider =
-    NotifierProvider<SessionNotifier, SessionState>(SessionNotifier.new);
+final sessionNotifierProvider = NotifierProvider<SessionNotifier, SessionState>(
+  SessionNotifier.new,
+);

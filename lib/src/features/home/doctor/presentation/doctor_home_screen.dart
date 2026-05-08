@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_client.dart';
-import '../../../role_selection/presentation/role_selection_screen.dart';
+import '../../../auth/login_entry_screen.dart';
 import '../../../session/application/session_notifier.dart';
 
 class DoctorHomeScreen extends ConsumerWidget {
@@ -24,7 +24,7 @@ class DoctorHomeScreen extends ConsumerWidget {
             onPressed: () async {
               await ref.read(sessionNotifierProvider.notifier).signOut();
               if (context.mounted) {
-                context.go(RoleSelectionScreen.routePath);
+                context.go(LoginEntryScreen.routePath);
               }
             },
             child: const Text('সাইন আউট'),
@@ -34,16 +34,13 @@ class DoctorHomeScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text(
-            'স্বাগতম',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('স্বাগতম', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 6),
           Text(
-            'Doctor home (placeholder)',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            'চিকিৎসক হোম (খোলস)',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           Card(
@@ -53,7 +50,7 @@ class DoctorHomeScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'API client',
+                    'API ক্লায়েন্ট',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 6),
