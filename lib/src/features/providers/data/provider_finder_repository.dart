@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_models.dart';
 
@@ -204,6 +205,9 @@ class ProviderFinderRepository {
     if (code == 404) {
       return ProviderApiException('খুঁজে পাওয়া যায়নি', code: 'NOT_FOUND');
     }
-    return ProviderApiException(e.message ?? 'সংযোগ ত্রুটি', code: 'NETWORK');
+    return ProviderApiException(
+      bnUserFacingDioNetworkMessage(e),
+      code: 'NETWORK',
+    );
   }
 }

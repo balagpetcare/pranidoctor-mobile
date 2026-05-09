@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/features/home/application/home_startup_defer.dart';
 import 'package:pranidoctor_mobile/src/features/home/data/mobile_app_config.dart';
 import 'package:pranidoctor_mobile/src/features/home/data/service_category_item.dart';
 
@@ -17,6 +18,7 @@ Map<String, dynamic>? _unwrapDataMap(Object? data) {
 /// Service categories for home shortcuts (empty list on failure — not mock data).
 final homeServiceCategoriesProvider =
     FutureProvider.autoDispose<List<ServiceCategoryItem>>((ref) async {
+      await ref.watch(homeNetworkDeferProvider.future);
       final client = ref.watch(apiClientProvider);
       try {
         final res = await client
@@ -49,6 +51,7 @@ final homeServiceCategoriesProvider =
 /// Server + dart-define emergency line (null when unset everywhere).
 final mobileHomeAppConfigProvider = FutureProvider.autoDispose<MobileAppConfig>(
   (ref) async {
+    await ref.watch(homeNetworkDeferProvider.future);
     final client = ref.watch(apiClientProvider);
     try {
       final res = await client

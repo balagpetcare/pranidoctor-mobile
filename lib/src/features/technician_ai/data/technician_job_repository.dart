@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_job_models.dart';
 
@@ -239,6 +240,9 @@ class TechnicianJobRepositoryLive implements TechnicianJobRepository {
         code: 'NOT_FOUND',
       );
     }
-    return TechnicianApiException(e.message ?? 'সংযোগ ত্রুটি', code: 'NETWORK');
+    return TechnicianApiException(
+      bnUserFacingDioNetworkMessage(e),
+      code: 'NETWORK',
+    );
   }
 }

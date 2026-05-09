@@ -1,3 +1,4 @@
+import 'package:pranidoctor_mobile/src/core/network/network_messages.dart';
 import 'package:pranidoctor_mobile/src/features/profile/data/profile_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_repository.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_api_exception.dart';
@@ -8,5 +9,5 @@ String userVisibleAsyncErrorBn(Object error) {
   if (error is ServiceRequestApiException) return error.message;
   if (error is TechnicianApiException) return error.message;
   if (error is ProfileApiException) return error.message;
-  return 'ডেটা লোড করা যায়নি। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।';
+  return NetworkMessages.bnServerUnreachable;
 }

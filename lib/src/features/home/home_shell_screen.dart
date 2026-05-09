@@ -20,36 +20,29 @@ class HomeShellScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
-  /// Avoid building every tab on first paint — [IndexedStack] still lays out all
-  /// children; defer unvisited tabs until selected once.
-  final Set<int> _activatedTabs = {0};
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0:
+        return const HomeScreen();
+      case 1:
+        return const DoctorTabScreen();
+      case 2:
+        return const ServiceRequestsTabScreen();
+      case 3:
+        return const NotificationsListScreen();
+      case 4:
+        return const ProfileHomeScreen();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final index = ref.watch(homeShellTabIndexProvider);
-    _activatedTabs.add(index);
     return Scaffold(
-      body: IndexedStack(
-        index: index,
-        children: [
-          _activatedTabs.contains(0)
-              ? const HomeScreen()
-              : const SizedBox.shrink(),
-          _activatedTabs.contains(1)
-              ? const DoctorTabScreen()
-              : const SizedBox.shrink(),
-          _activatedTabs.contains(2)
-              ? const ServiceRequestsTabScreen()
-              : const SizedBox.shrink(),
-          _activatedTabs.contains(3)
-              ? const NotificationsListScreen()
-              : const SizedBox.shrink(),
-          _activatedTabs.contains(4)
-              ? const ProfileHomeScreen()
-              : const SizedBox.shrink(),
-        ],
-      ),
+      body: _buildTab(index),
       bottomNavigationBar: Material(
         elevation: 6,
         shadowColor: Colors.black.withValues(alpha: 0.12),

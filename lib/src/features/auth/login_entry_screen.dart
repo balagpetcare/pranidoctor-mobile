@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -633,10 +632,10 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
                       onTap: () =>
                           context.push(TechnicianLoginScreen.routePath),
                     ),
-                    if (kDebugMode) ...[
+                    if (AppConfig.isDevelopmentEnv) ...[
                       const SizedBox(height: PraniSpacing.xxl),
                       Text(
-                        'API ভিত্তি (ডিবাগ): ${AppConfig.apiBaseUrl}',
+                        'API ভিত্তি (ডিবাগ): ${AppConfig.resolvedApiBaseUrl}',
                         textAlign: TextAlign.center,
                         style: Theme.of(
                           context,

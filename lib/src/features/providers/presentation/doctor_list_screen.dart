@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/network/network_messages.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_async_list_status.dart';
 import 'package:pranidoctor_mobile/src/app/user_visible_async_error.dart';
@@ -139,8 +140,7 @@ class DoctorListScreen extends ConsumerWidget {
                           constraints: BoxConstraints(maxWidth: maxW),
                           child: PraniAsyncErrorCard(
                             title: 'ডাক্তার তালিকা লোড করা যায়নি',
-                            subtitle:
-                                'ইন্টারনেট সংযোগ বা সার্ভার সমস্যা হতে পারে।',
+                            subtitle: NetworkMessages.bnServerUnreachable,
                             detail: _apiErrorDetail(e),
                             actionLabel: 'আবার চেষ্টা করুন',
                             onAction: () => notifier.refresh(),

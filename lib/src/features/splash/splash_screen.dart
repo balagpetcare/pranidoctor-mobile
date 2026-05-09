@@ -30,16 +30,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Paint one cheap frame first, then decode splash / logo assets on the next.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() => _heavyBrandDecorReady = true);
-      });
-    });
-    // Let the first frame paint before starting async navigation/storage work.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      setState(() => _heavyBrandDecorReady = true);
       _goNext();
     });
   }

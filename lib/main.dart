@@ -5,11 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/app/app.dart';
+import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
 
 void main() {
   runZonedGuarded(
     () {
       WidgetsFlutterBinding.ensureInitialized();
+
+      if (AppConfig.isDevelopmentEnv) {
+        debugPrint(
+          '[PraniDoctor] API_BASE_URL=${AppConfig.resolvedApiBaseUrl} APP_ENV=${AppConfig.appEnv}',
+        );
+      }
 
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.presentError(details);

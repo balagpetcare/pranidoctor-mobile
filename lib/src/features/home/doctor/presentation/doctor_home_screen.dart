@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/login_entry_screen.dart';
 import '../../../session/application/session_notifier.dart';
@@ -17,7 +17,8 @@ class DoctorHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final base = kDebugMode ? ref.watch(apiClientProvider).baseUrl : null;
+    final base =
+        AppConfig.isDevelopmentEnv ? ref.watch(apiClientProvider).baseUrl : null;
     return Scaffold(
       appBar: AppBar(
         title: const Text('চিকিৎসক হোম'),
@@ -56,7 +57,7 @@ class DoctorHomeScreen extends ConsumerWidget {
               onTap: () => context.push(KnowledgeHubHomeScreen.routePath),
             ),
           ),
-          if (kDebugMode && base != null) ...[
+          if (base != null) ...[
             const SizedBox(height: 12),
             Card(
               child: Padding(

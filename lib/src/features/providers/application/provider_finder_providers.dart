@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_repository.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
+import 'package:pranidoctor_mobile/src/features/home/application/home_startup_defer.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_models.dart';
 
 final providerFinderRepositoryProvider = Provider<ProviderFinderRepository>((
@@ -61,6 +62,7 @@ class DoctorsListNotifier
   @override
   Future<({List<DoctorSummary> doctors, PaginationInfo pagination})>
   build() async {
+    await ref.watch(homeNetworkDeferProvider.future);
     final q = ref.watch(doctorListQueryProvider);
     final repo = ref.watch(providerFinderRepositoryProvider);
     return repo.listDoctors(q);
@@ -89,6 +91,7 @@ class TechniciansListNotifier
   @override
   Future<({List<TechnicianSummary> technicians, PaginationInfo pagination})>
   build() async {
+    await ref.watch(homeNetworkDeferProvider.future);
     final q = ref.watch(technicianListQueryProvider);
     final repo = ref.watch(providerFinderRepositoryProvider);
     return repo.listTechnicians(q);

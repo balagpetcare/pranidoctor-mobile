@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,9 +68,9 @@ class TechnicianLoginScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (kDebugMode)
+          if (AppConfig.isDevelopmentEnv)
             Text(
-              'API (ডিবাগ): ${AppConfig.apiBaseUrl}',
+              'API (ডিবাগ): ${AppConfig.resolvedApiBaseUrl}',
               style: Theme.of(
                 context,
               ).textTheme.labelSmall?.copyWith(color: scheme.outline),

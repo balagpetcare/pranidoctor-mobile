@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
 
 class ServiceRequestApiException implements Exception {
@@ -160,7 +161,7 @@ class ServiceRequestRepository {
       );
     }
     return ServiceRequestApiException(
-      e.message ?? 'সংযোগ ত্রুটি',
+      bnUserFacingDioNetworkMessage(e),
       code: 'NETWORK',
     );
   }

@@ -5,7 +5,10 @@ import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
 import 'package:pranidoctor_mobile/src/features/home/presentation/home_layout_constants.dart';
 
 /// Teal gradient hero with greeting and illustration on the right.
-class HomeHeroCard extends StatelessWidget {
+///
+/// Hero PNG decode is deferred until after the first layout frame so startup
+/// remains responsive on slow Android emulators (Impeller/OpenGLES).
+class HomeHeroCard extends StatefulWidget {
   const HomeHeroCard({
     super.key,
     required this.greetingLine,
@@ -24,13 +27,29 @@ class HomeHeroCard extends StatelessWidget {
   static const String _heroAsset = PraniAssets.homeHeroFarmVet;
 
   @override
+  State<HomeHeroCard> createState() => _HomeHeroCardState();
+}
+
+class _HomeHeroCardState extends State<HomeHeroCard> {
+  bool _decodeHeroAsset = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() => _decodeHeroAsset = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(HomeLayout.cardRadius),
       child: DecoratedBox(
-        decoration: const BoxDecoration(gradient: _gradient),
+        decoration: const BoxDecoration(gradient: HomeHeroCard._gradient),
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
@@ -57,7 +76,11 @@ class HomeHeroCard extends StatelessWidget {
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final w = constraints.maxWidth;
+                  final mqW = MediaQuery.sizeOf(context).width;
+                  final w =
+                      constraints.maxWidth.isFinite && constraints.maxWidth > 0
+                      ? constraints.maxWidth
+                      : mqW;
                   final narrow = w < 340;
                   final imgW = (w * 0.30).clamp(110.0, 130.0);
                   final imgBoxH = narrow
@@ -74,6 +97,25 @@ class HomeHeroCard extends StatelessWidget {
                   );
 
                   Widget heroImage() {
+                    if (!_decodeHeroAsset) {
+                      return SizedBox(
+                        width: imgW,
+                        height: imgBoxH,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(PraniRadii.md),
+                            color: PraniColors.white.withValues(alpha: 0.14),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.pets_rounded,
+                              size: imgW * 0.38,
+                              color: PraniColors.white.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(PraniRadii.md),
                       child: SizedBox(
@@ -85,7 +127,7 @@ class HomeHeroCard extends StatelessWidget {
                             color: PraniColors.white.withValues(alpha: 0.14),
                           ),
                           child: Image.asset(
-                            _heroAsset,
+                            HomeHeroCard._heroAsset,
                             fit: BoxFit.cover,
                             alignment: Alignment.centerRight,
                             gaplessPlayback: true,
@@ -117,7 +159,7 @@ class HomeHeroCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        greetingLine,
+                        widget.greetingLine,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleLarge?.copyWith(
@@ -128,7 +170,7 @@ class HomeHeroCard extends StatelessWidget {
                       ),
                       const SizedBox(height: PraniSpacing.sm),
                       Text(
-                        subtitle,
+                        widget.subtitle,
                         maxLines: narrow ? 6 : 4,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodyMedium?.copyWith(

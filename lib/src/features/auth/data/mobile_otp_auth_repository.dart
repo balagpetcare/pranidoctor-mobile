@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/network/dio_connectivity.dart';
 import '../../../core/network/dio_provider.dart';
 
 final mobileOtpAuthRepositoryProvider = Provider<MobileOtpAuthRepository>((
@@ -40,9 +41,9 @@ class MobileOtpAuthRepository {
       await _postRequestOtp(phone);
       return OtpSendChannel.smsApi;
     } on DioException catch (e) {
-      if (_isUnreachableNetwork(e)) {
+      if (isDioConnectionUnreachable(e)) {
         debugPrint(
-          '[PraniDoctor][DEV OTP] phone=$phone otp=${AppConfig.devOtpCode}',
+          '[PraniDoctor][DEV OTP] API unreachable; dev OTP fallback (OTP not logged).',
         );
         return OtpSendChannel.devTerminalFallback;
       }
@@ -64,7 +65,7 @@ class MobileOtpAuthRepository {
       try {
         return await _postVerifyOtp(phone, trimmed);
       } on DioException catch (e) {
-        if (_isUnreachableNetwork(e)) {
+        if (isDioConnectionUnreachable(e)) {
           return AppConfig.devCustomerAccessToken;
         }
         throw OtpAuthException(_messageFromDio(e));
@@ -103,28 +104,12 @@ class MobileOtpAuthRepository {
     throw OtpAuthException('অনুরোধ ব্যর্থ হয়েছে।');
   }
 
-  bool _isUnreachableNetwork(DioException e) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.connectionError:
-      case DioExceptionType.badCertificate:
-      case DioExceptionType.cancel:
-        return true;
-      case DioExceptionType.badResponse:
-        return false;
-      case DioExceptionType.unknown:
-        return e.response == null;
-    }
-  }
-
   String _messageFromDio(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['error'] is Map) {
       final msg = (data['error'] as Map)['message'];
       if (msg is String && msg.isNotEmpty) return msg;
     }
-    return 'নেটওয়ার্ক সমস্যা হয়েছে। আবার চেষ্টা করুন।';
+    return bnUserFacingDioNetworkMessage(e);
   }
 }

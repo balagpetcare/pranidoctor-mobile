@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
+import 'package:pranidoctor_mobile/src/core/network/network_messages.dart';
 import 'package:pranidoctor_mobile/src/features/knowledge_hub/data/knowledge_models.dart';
 
 class KnowledgeApiException implements Exception {
@@ -202,14 +204,8 @@ class KnowledgeRepositoryLive implements KnowledgeRepository {
   }
 
   KnowledgeApiException _mapDio(DioException e) {
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout) {
-      return KnowledgeApiException('সংযোগের সময় শেষ — আবার চেষ্টা করুন');
-    }
-    if (e.type == DioExceptionType.connectionError) {
-      return KnowledgeApiException(
-        'ইন্টারনেট সংযোগ নেই বা সার্ভার খুঁজে পাওয়া যায়নি',
-      );
+    if (isDioConnectionUnreachable(e)) {
+      return KnowledgeApiException(NetworkMessages.bnServerUnreachable);
     }
     final status = e.response?.statusCode;
     if (status == 404) {

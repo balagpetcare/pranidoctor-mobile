@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_model.dart';
 
 class AnimalApiException implements Exception {
@@ -148,6 +149,6 @@ class AnimalProfileRepository {
     if (code == 404) {
       return AnimalApiException('খুঁজে পাওয়া যায়নি', code: 'NOT_FOUND');
     }
-    return AnimalApiException(e.message ?? 'সংযোগ ত্রুটি', code: 'NETWORK');
+    return AnimalApiException(bnUserFacingDioNetworkMessage(e), code: 'NETWORK');
   }
 }

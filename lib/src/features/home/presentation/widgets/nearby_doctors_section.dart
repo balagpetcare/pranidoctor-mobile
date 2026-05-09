@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:pranidoctor_mobile/src/core/network/network_messages.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_async_list_status.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_section_header.dart';
@@ -74,8 +75,7 @@ class NearbyDoctorsSection extends ConsumerWidget {
           loading: () => const PraniAsyncLoadingCard(height: 156),
           error: (_, _) => PraniAsyncErrorCard(
             title: 'ডাক্তার তালিকা লোড করা যায়নি',
-            subtitle:
-                'ইন্টারনেট বা সার্ভার সমস্যা হতে পারে। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',
+            subtitle: NetworkMessages.bnServerUnreachable,
             actionLabel: 'আবার চেষ্টা করুন',
             onAction: () => ref.read(doctorsListProvider.notifier).refresh(),
           ),

@@ -36,6 +36,14 @@ Not executed in CI. After pulling changes:
 2. `npm run dev` — point the Flutter app base URL at this host.
 3. OTP login with **`01701022274`** — verify home categories populate without logging in first; after login verify profile, notifications, and service request lists show Bengali demo content.
 
+### Startup performance (2026-05-09)
+
+- **`homeNetworkDeferProvider`** — short pause after first frame before parallel home API calls (`/me`, categories, app-config, nearby doctors, unread count).
+- **Home shell** — only the **active** tab is built (no `IndexedStack` of all five tabs).
+- **Splash** — single post-frame callback before decoding hero PNGs / navigation work.
+- **`HomeHeroCard`** — hero PNG decode deferred until after first layout frame; `LayoutBuilder` falls back to screen width if constraints are unbounded (avoids zero-width layout issues).
+- Emulator / Impeller notes: `docs/MOBILE_ANDROID_EMULATOR_STARTUP.md`.
+
 ### Known follow-ups (optional product/backend)
 
 - **`GET /api/mobile/content/*`** — Knowledge hub still prefers content routes; **404** falls back to `/api/mobile/tutorials/*` in the app (no change required for MVP).

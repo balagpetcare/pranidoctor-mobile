@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
 import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
 import 'package:pranidoctor_mobile/src/features/profile/data/profile_api_exception.dart';
 
@@ -125,7 +126,7 @@ class MobileUserRepositoryLive implements MobileUserRepository {
         code: 'NOT_FOUND',
       );
     }
-    return ProfileApiException(e.message ?? 'সংযোগ ত্রুটি', code: 'NETWORK');
+    return ProfileApiException(bnUserFacingDioNetworkMessage(e), code: 'NETWORK');
   }
 
   /// Customer-facing Bengali; detailed validation stays in debug logs only.
