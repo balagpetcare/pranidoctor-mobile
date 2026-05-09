@@ -29,17 +29,20 @@ class AnimalDetailScreen extends ConsumerWidget {
             data: (animal) => IconButton(
               tooltip: 'সম্পাদনা',
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () async {
-                await Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (_) => AnimalFormScreen.edit(animalId: animal.id),
-                  ),
-                );
-                if (context.mounted) {
-                  ref.invalidate(animalDetailProvider(animalId));
-                  ref.invalidate(animalsListProvider);
-                }
-              },
+              onPressed: animal.id.trim().isEmpty
+                  ? null
+                  : () async {
+                      await Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              AnimalFormScreen.edit(animalId: animal.id),
+                        ),
+                      );
+                      if (context.mounted) {
+                        ref.invalidate(animalDetailProvider(animalId));
+                        ref.invalidate(animalsListProvider);
+                      }
+                    },
             ),
             orElse: () => const SizedBox.shrink(),
           ),
@@ -117,6 +120,7 @@ class _DetailBody extends ConsumerWidget {
         ),
       );
       if (ok != true || !context.mounted) return;
+      if (animalId.trim().isEmpty) return;
 
       try {
         await ref.read(animalRepositoryProvider).deactivate(animalId);

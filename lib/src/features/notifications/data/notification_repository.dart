@@ -69,6 +69,9 @@ class NotificationRepository {
           .toList();
       return (items: items, total: total);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        return (items: <AppNotification>[], total: 0);
+      }
       throw _mapDio(e);
     }
   }

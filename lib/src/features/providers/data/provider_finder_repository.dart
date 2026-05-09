@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
@@ -78,7 +79,22 @@ class ProviderFinderRepository {
               hasMore: false,
             );
       return (doctors: doctors, pagination: pagination);
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      if (e.response?.statusCode == 404) {
+        assert(() {
+          debugPrint('ProviderFinderRepository.listDoctors 404 -> empty\n$st');
+          return true;
+        }());
+        return (
+          doctors: <DoctorSummary>[],
+          pagination: const PaginationInfo(
+            limit: 20,
+            offset: 0,
+            total: 0,
+            hasMore: false,
+          ),
+        );
+      }
       throw _mapDio(e);
     }
   }
@@ -109,7 +125,24 @@ class ProviderFinderRepository {
               hasMore: false,
             );
       return (technicians: technicians, pagination: pagination);
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      if (e.response?.statusCode == 404) {
+        assert(() {
+          debugPrint(
+            'ProviderFinderRepository.listTechnicians 404 -> empty\n$st',
+          );
+          return true;
+        }());
+        return (
+          technicians: <TechnicianSummary>[],
+          pagination: const PaginationInfo(
+            limit: 20,
+            offset: 0,
+            total: 0,
+            hasMore: false,
+          ),
+        );
+      }
       throw _mapDio(e);
     }
   }

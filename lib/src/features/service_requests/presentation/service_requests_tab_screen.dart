@@ -16,72 +16,187 @@ import 'package:pranidoctor_mobile/src/features/service_requests/presentation/bo
 class ServiceRequestsTabScreen extends ConsumerWidget {
   const ServiceRequestsTabScreen({super.key});
 
+  /// Space below the last list card so content clears the extended FAB overlay.
+  static const double _listBottomClearFab = 88;
+
+  static const double _emptyHeroAspectRatio = 2.12;
+
+  static void _safeOpenBooking(BuildContext context) {
+    try {
+      context.pushNamed(BookingWizardScreen.routeName);
+    } catch (e, stack) {
+      assert(() {
+        debugPrint('ServiceRequestsTab: booking route failed: $e\n$stack');
+        return true;
+      }());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('নতুন অনুরোধ খুলতে সমস্যা হয়েছে। আবার চেষ্টা করুন।'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(serviceRequestsListProvider);
     final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final hPad = pdScreenPadding(context).horizontal;
+    final maxW = pdReadableMaxWidth(context);
+    final bottomFabPad =
+        10.0 + MediaQuery.viewPaddingOf(context).bottom.clamp(0.0, 24.0);
 
     return Scaffold(
       appBar: AppBar(title: const Text('অনুরোধ')),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: bottomFabPad),
+        child: FloatingActionButton.extended(
+          elevation: 2,
+          focusElevation: 4,
+          hoverElevation: 4,
+          highlightElevation: 2,
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          onPressed: () => _safeOpenBooking(context),
+          icon: const Icon(Icons.add),
+          label: const Text('নতুন অনুরোধ'),
+        ),
+      ),
       body: RefreshIndicator(
         onRefresh: () =>
             ref.read(serviceRequestsListProvider.notifier).refresh(),
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => ListView(
+          loading: () => CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.all(hPad),
-            children: [
-              const SizedBox(height: 48),
-              Icon(Icons.error_outline, size: 48, color: scheme.error),
-              const SizedBox(height: 16),
-              Text(
-                'লোড করা যায়নি',
-                style: Theme.of(context).textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                userVisibleAsyncErrorBn(e),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: CircularProgressIndicator(color: scheme.primary),
                 ),
               ),
             ],
           ),
+          error: (e, _) {
+            assert(() {
+              debugPrint('serviceRequestsListProvider error: $e');
+              return true;
+            }());
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(hPad, 24, hPad, 24),
+                  sliver: SliverToBoxAdapter(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxW),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.cloud_off_outlined,
+                              size: 44,
+                              color: scheme.error,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'লোড করা যায়নি',
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              userVisibleAsyncErrorBn(e),
+                              textAlign: TextAlign.center,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                height: 1.45,
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            FilledButton.icon(
+                              onPressed: () => ref
+                                  .read(serviceRequestsListProvider.notifier)
+                                  .refresh(),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('আবার চেষ্টা করুন'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
           data: (items) {
             if (items.isEmpty) {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(hPad),
+                padding: EdgeInsets.fromLTRB(
+                  hPad,
+                  8,
+                  hPad,
+                  _listBottomClearFab + bottomFabPad,
+                ),
                 children: [
-                  const SizedBox(height: 24),
-                  PraniBrandHero(
-                    assetPath: PraniAssets.serviceTracking,
-                    height: 156,
-                    fit: BoxFit.cover,
-                    semanticLabel: 'সেবা অনুরোধ ট্র্যাকিং',
-                  ),
-                  const SizedBox(height: 20),
-                  Icon(
-                    Icons.assignment_outlined,
-                    size: 40,
-                    color: scheme.primary,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'কোনো অনুরোধ নেই',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'নতুন চিকিৎসা বা সেবার অনুরোধ জমা দিতে নিচের বোতাম চাপুন।',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxW),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PraniBrandHero(
+                            assetPath: PraniAssets.serviceTracking,
+                            aspectRatio: _emptyHeroAspectRatio,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                            borderRadius: BorderRadius.circular(16),
+                            semanticLabel: 'সেবা অনুরোধ ট্র্যাকিং',
+                          ),
+                          const SizedBox(height: 18),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: scheme.primaryContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Icon(
+                                Icons.assignment_outlined,
+                                size: 32,
+                                color: scheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            'কোনো অনুরোধ নেই',
+                            textAlign: TextAlign.center,
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'খামারে ডাক্তার বা টেকনিশিয়ানের সেবার জন্য নতুন অনুরোধ জমা দিতে নিচের «নতুন অনুরোধ» বোতাম চাপুন।',
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -89,21 +204,22 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
             }
             return ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 100),
+              padding: EdgeInsets.fromLTRB(
+                hPad,
+                12,
+                hPad,
+                _listBottomClearFab + bottomFabPad,
+              ),
               itemCount: items.length,
               separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 final r = items[i];
-                return Card(
-                  child: ListTile(
-                    title: Text(r.serviceType.labelBn),
-                    subtitle: Text(
+                return _ServiceRequestListCard(
+                  serviceLabel: r.serviceType.labelBn,
+                  statusAndDate:
                       '${r.status.labelBn} · ${_formatSubmitted(r.submittedAt)}',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push(
-                      ServiceRequestDetailScreen.routePathFor(r.id),
-                    ),
+                  onTap: () => context.push(
+                    ServiceRequestDetailScreen.routePathFor(r.id),
                   ),
                 );
               },
@@ -111,17 +227,78 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(BookingWizardScreen.routePath),
-        icon: const Icon(Icons.add),
-        label: const Text('নতুন অনুরোধ'),
-      ),
     );
   }
 
   static String _formatSubmitted(DateTime t) {
     final d = t.toLocal();
     return '${d.day}/${d.month}/${d.year}';
+  }
+}
+
+class _ServiceRequestListCard extends StatelessWidget {
+  const _ServiceRequestListCard({
+    required this.serviceLabel,
+    required this.statusAndDate,
+    required this.onTap,
+  });
+
+  final String serviceLabel;
+  final String statusAndDate;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      serviceLabel,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.32,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      statusAndDate,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.outline,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

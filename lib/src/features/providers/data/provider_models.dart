@@ -84,6 +84,7 @@ class DoctorSummary {
     this.rating,
     this.callAction,
     this.bookAction,
+    this.profilePhotoUrl,
   });
 
   final String id;
@@ -100,6 +101,7 @@ class DoctorSummary {
   final num? rating;
   final ProviderCallAction? callAction;
   final ProviderBookAction? bookAction;
+  final String? profilePhotoUrl;
 
   factory DoctorSummary.fromJson(Map<String, dynamic> json) {
     return DoctorSummary(
@@ -117,6 +119,7 @@ class DoctorSummary {
       rating: json['rating'] as num?,
       callAction: ProviderCallAction.fromJson(json['callAction']),
       bookAction: ProviderBookAction.fromJson(json['bookAction']),
+      profilePhotoUrl: json['profilePhotoUrl'] as String?,
     );
   }
 }
@@ -209,8 +212,8 @@ class DoctorDetail extends DoctorSummary {
     super.rating,
     super.callAction,
     super.bookAction,
+    super.profilePhotoUrl,
     this.bio,
-    this.profilePhotoUrl,
     this.experienceYears,
     this.areas = const [],
     this.villages = const [],
@@ -218,7 +221,6 @@ class DoctorDetail extends DoctorSummary {
   });
 
   final String? bio;
-  final String? profilePhotoUrl;
   final int? experienceYears;
   final List<DoctorArea> areas;
   final List<DoctorVillage> villages;
@@ -244,8 +246,8 @@ class DoctorDetail extends DoctorSummary {
       rating: base.rating,
       callAction: base.callAction,
       bookAction: base.bookAction,
+      profilePhotoUrl: base.profilePhotoUrl,
       bio: json['bio'] as String?,
-      profilePhotoUrl: json['profilePhotoUrl'] as String?,
       experienceYears: (json['experienceYears'] as num?)?.toInt(),
       areas: areasRaw is List<dynamic>
           ? areasRaw

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
@@ -9,9 +10,23 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 
 /// Total unread count from list API (`unreadOnly: true`, minimal page size).
 final unreadNotificationsTotalProvider = FutureProvider<int>((ref) async {
-  final repo = ref.watch(notificationRepositoryProvider);
-  final page = await repo.list(limit: 1, offset: 0, unreadOnly: true);
-  return page.total;
+  try {
+    final repo = ref.watch(notificationRepositoryProvider);
+    final page = await repo.list(limit: 1, offset: 0, unreadOnly: true);
+    return page.total;
+  } on NotificationApiException catch (e, st) {
+    assert(() {
+      debugPrint('unreadNotificationsTotalProvider: $e\n$st');
+      return true;
+    }());
+    return 0;
+  } catch (e, st) {
+    assert(() {
+      debugPrint('unreadNotificationsTotalProvider: $e\n$st');
+      return true;
+    }());
+    return 0;
+  }
 });
 
 final notificationsListProvider =

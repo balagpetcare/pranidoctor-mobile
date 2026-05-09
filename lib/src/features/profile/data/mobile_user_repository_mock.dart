@@ -35,6 +35,7 @@ class MobileUserRepositoryMock implements MobileUserRepository {
       area: patch.area ?? _user.area,
       role: _user.role,
       profilePhotoUrl: _user.profilePhotoUrl,
+      loadStatus: MobileProfileLoadStatus.loaded,
     );
     return _user;
   }

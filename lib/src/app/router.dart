@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'navigation_keys.dart';
 import '../features/auth/doctor/presentation/doctor_login_screen.dart';
+import '../features/animals/presentation/animal_list_screen.dart';
 import '../features/auth/login_entry_screen.dart';
 import '../features/auth/technician/presentation/technician_login_screen.dart';
 import '../features/home/doctor/presentation/doctor_home_screen.dart';
@@ -207,6 +208,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AboutScreen.routePath,
         name: AboutScreen.routeName,
         builder: (context, state) => const AboutScreen(),
+      ),
+      GoRoute(
+        path: AnimalListScreen.routePath,
+        name: AnimalListScreen.routeName,
+        builder: (context, state) => const AnimalListScreen(),
       ),
       GoRoute(
         path: KnowledgeHubHomeScreen.routePath,

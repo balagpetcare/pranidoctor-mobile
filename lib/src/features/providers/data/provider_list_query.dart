@@ -26,6 +26,20 @@ class ProviderListQuery {
 
   static const ProviderListQuery initial = ProviderListQuery();
 
+  /// Whether any list filter differs from “all” (area/type/service toggles).
+  bool get hasNonDefaultDoctorFilters {
+    if (areaSlug != null && areaSlug!.trim().isNotEmpty) return true;
+    if (areaId != null && areaId!.trim().isNotEmpty) return true;
+    if (animalType != null) return true;
+    if (homeVisit != null) return true;
+    if (emergency != null) return true;
+    if (onlineConsultation != null) return true;
+    if (serviceCategoryId != null && serviceCategoryId!.trim().isNotEmpty) {
+      return true;
+    }
+    return false;
+  }
+
   Map<String, String> toQueryParameters() {
     final m = <String, String>{};
     if (areaSlug != null && areaSlug!.isNotEmpty) {

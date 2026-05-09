@@ -19,6 +19,7 @@ dependencies:
   flutter_secure_storage: ^10.1.0
   shared_preferences: ^2.5.5
   intl: ^0.20.2
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -40,3 +41,4 @@ flutter:
     - assets/brand/logos/
     - assets/brand/app_icons/
     - assets/brand/illustrations/
+    - assets/images/home/

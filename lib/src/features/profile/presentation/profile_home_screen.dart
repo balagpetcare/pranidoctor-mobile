@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
-import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
+import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
+import 'package:pranidoctor_mobile/src/features/home/application/home_shell_tab_provider.dart';
+import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/application/profile_providers.dart';
-import 'package:pranidoctor_mobile/src/features/profile/data/profile_api_exception.dart';
+import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/about_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/app_settings_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/area_setting_screen.dart';
@@ -17,163 +20,484 @@ import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/log
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_header_card.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_settings_list_tile.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/support_contact_card.dart';
+import 'package:pranidoctor_mobile/src/features/animals/presentation/animal_list_screen.dart';
+import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
 
 /// Customer profile hub (bottom tab body): header, menu, support, logout.
 class ProfileHomeScreen extends ConsumerWidget {
   const ProfileHomeScreen({super.key});
 
+  static Future<void> _safePush(BuildContext context, String location) async {
+    try {
+      await context.push(location);
+    } catch (e, stack) {
+      assert(() {
+        debugPrint('ProfileHomeScreen: push failed: $e\n$stack');
+        return true;
+      }());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('এই পাতাটি খুলতে পারিনি।'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncUser = ref.watch(mobileUserProvider);
     final scheme = Theme.of(context).colorScheme;
-    final hPad = pdScreenPadding(context).horizontal;
+
+    Future<void> onRefresh() async {
+      ref.invalidate(mobileUserProvider);
+      try {
+        await ref.read(mobileUserProvider.future);
+      } catch (_) {
+        /* RefreshIndicator — errors surface as guest data. */
+      }
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('প্রোফাইল')),
+      backgroundColor: scheme.surfaceContainerLowest,
+      appBar: AppBar(
+        title: const Text('প্রোফাইল'),
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: asyncUser.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: hPad),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 48, color: scheme.error),
-                const SizedBox(height: 12),
-                Text(
-                  e is ProfileApiException
-                      ? e.message
-                      : 'প্রোফাইল লোড করা যায়নি।',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => ref.invalidate(mobileUserProvider),
-                  child: const Text('আবার চেষ্টা করুন'),
-                ),
-              ],
+        loading: () => CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: CircularProgressIndicator(color: scheme.primary),
+              ),
             ),
-          ),
+          ],
         ),
-        data: (user) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(mobileUserProvider);
-            await ref.read(mobileUserProvider.future);
-          },
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8),
-                sliver: SliverToBoxAdapter(
+        error: (e, stack) {
+          assert(() {
+            debugPrint('mobileUserProvider unexpected error: $e\n$stack');
+            return true;
+          }());
+          return _ProfileScrollBody(
+            user: MobileUser.guestFallback(
+              MobileProfileLoadStatus.fallbackUnavailable,
+            ),
+            forceInfoBanner: true,
+            onRefresh: onRefresh,
+          );
+        },
+        data: (user) => _ProfileScrollBody(
+          user: user,
+          forceInfoBanner: false,
+          onRefresh: onRefresh,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileScrollBody extends ConsumerStatefulWidget {
+  const _ProfileScrollBody({
+    required this.user,
+    required this.forceInfoBanner,
+    required this.onRefresh,
+  });
+
+  final MobileUser user;
+  final bool forceInfoBanner;
+  final Future<void> Function() onRefresh;
+
+  @override
+  ConsumerState<_ProfileScrollBody> createState() => _ProfileScrollBodyState();
+}
+
+class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
+  bool _retryBusy = false;
+
+  bool get _showInfoBanner =>
+      widget.forceInfoBanner ||
+      widget.user.loadStatus != MobileProfileLoadStatus.loaded;
+
+  Future<void> _onRetryLoad() async {
+    if (_retryBusy) return;
+    setState(() => _retryBusy = true);
+    ref.invalidate(mobileUserProvider);
+    try {
+      await ref.read(mobileUserProvider.future);
+    } catch (_) {
+      /* Guest fallback — no throw to UI. */
+    }
+    if (mounted) {
+      setState(() => _retryBusy = false);
+    }
+  }
+
+  static Widget _sectionTitle(BuildContext context, String title) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+      child: Text(
+        title,
+        style: textTheme.labelLarge?.copyWith(
+          color: scheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  static List<Widget> _withDividers(List<Widget> tiles) {
+    final out = <Widget>[];
+    for (var i = 0; i < tiles.length; i++) {
+      out.add(tiles[i]);
+      if (i < tiles.length - 1) {
+        out.add(const Divider(height: 1));
+      }
+    }
+    return out;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final hPad = pdScreenPadding(context).horizontal;
+    final maxW = pdReadableMaxWidth(context);
+    final bottomPad =
+        24.0 + MediaQuery.viewPaddingOf(context).bottom.clamp(0.0, 36.0);
+    final auth = ref.watch(sessionNotifierProvider);
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 8),
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxW),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: Image.asset(
-                          PraniAssets.primaryLogo,
-                          height: 44,
-                          fit: BoxFit.contain,
-                          semanticLabel: 'প্রাণী ডাক্তার লোগো',
-                          cacheWidth: PraniAssetDecode.logoHeaderPx,
-                          cacheHeight: PraniAssetDecode.logoHeaderPx,
+                      if (_showInfoBanner) ...[
+                        _ProfileSoftInfoBanner(
+                          onRetry: _onRetryLoad,
+                          retryBusy: _retryBusy,
                         ),
+                        const SizedBox(height: PraniSpacing.md),
+                      ],
+                      ProfileHeaderCard(
+                        user: widget.user,
+                        onPrimaryAction: () async {
+                          await ProfileHomeScreen._safePush(
+                            context,
+                            EditProfileScreen.routePath,
+                          );
+                          if (context.mounted) {
+                            ref.invalidate(mobileUserProvider);
+                          }
+                        },
                       ),
-                      const SizedBox(height: 12),
-                      ProfileHeaderCard(user: user),
                     ],
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: hPad),
-                sliver: SliverToBoxAdapter(
-                  child: Card(
-                    child: Column(
-                      children: [
-                        ProfileSettingsListTile(
-                          icon: Icons.edit_outlined,
-                          title: 'প্রোফাইল সম্পাদনা',
-                          onTap: () async {
-                            await context.push(EditProfileScreen.routePath);
-                            if (context.mounted) {
-                              ref.invalidate(mobileUserProvider);
-                            }
-                          },
-                        ),
-                        const Divider(height: 1),
-                        ProfileSettingsListTile(
-                          icon: Icons.place_outlined,
-                          title: 'এলাকা / ঠিকানা',
-                          onTap: () async {
-                            await context.push(AreaSettingScreen.routePath);
-                            if (context.mounted) {
-                              ref.invalidate(mobileUserProvider);
-                            }
-                          },
-                        ),
-                        const Divider(height: 1),
-                        ProfileSettingsListTile(
-                          icon: Icons.settings_outlined,
-                          title: 'সেটিংস',
-                          onTap: () =>
-                              context.push(AppSettingsScreen.routePath),
-                        ),
-                        const Divider(height: 1),
-                        ProfileSettingsListTile(
-                          icon: Icons.help_outline,
-                          title: 'সাহায্য ও সহায়তা',
-                          onTap: () =>
-                              context.push(HelpSupportScreen.routePath),
-                        ),
-                        const Divider(height: 1),
-                        ProfileSettingsListTile(
-                          icon: Icons.info_outline,
-                          title: 'আমাদের সম্পর্কে',
-                          onTap: () => context.push(AboutScreen.routePath),
-                        ),
-                        const Divider(height: 1),
-                        ProfileSettingsListTile(
-                          icon: Icons.notifications_outlined,
-                          title: 'নোটিফিকেশন',
-                          trailing: ref
-                              .watch(unreadNotificationsTotalProvider)
-                              .when(
-                                data: (c) => c > 0
-                                    ? Badge(
-                                        label: Text(c > 99 ? '99+' : '$c'),
-                                        child: const Icon(Icons.chevron_right),
-                                      )
-                                    : const Icon(Icons.chevron_right),
-                                loading: () => const Icon(Icons.chevron_right),
-                                error: (_, _) =>
-                                    const Icon(Icons.chevron_right),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: hPad),
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxW),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _sectionTitle(context, 'অ্যাকাউন্ট'),
+                      Card(
+                        child: Column(
+                          children: _withDividers([
+                            ProfileSettingsListTile(
+                              icon: Icons.person_outlined,
+                              title: 'আমার প্রোফাইল',
+                              onTap: () async {
+                                await ProfileHomeScreen._safePush(
+                                  context,
+                                  EditProfileScreen.routePath,
+                                );
+                                if (context.mounted) {
+                                  ref.invalidate(mobileUserProvider);
+                                }
+                              },
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.place_outlined,
+                              title: 'ঠিকানা / এলাকা',
+                              onTap: () async {
+                                await ProfileHomeScreen._safePush(
+                                  context,
+                                  AreaSettingScreen.routePath,
+                                );
+                                if (context.mounted) {
+                                  ref.invalidate(mobileUserProvider);
+                                }
+                              },
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.pets_outlined,
+                              title: 'আমার প্রাণী',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                AnimalListScreen.routePath,
                               ),
-                          onTap: () =>
-                              context.push(NotificationsListScreen.routePath),
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.grid_view_outlined,
+                              title: 'আমার অনুরোধ',
+                              onTap: () {
+                                ref
+                                    .read(homeShellTabIndexProvider.notifier)
+                                    .select(2);
+                              },
+                            ),
+                          ]),
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: PraniSpacing.sm),
+                      _sectionTitle(context, 'সেবা'),
+                      Card(
+                        child: Column(
+                          children: _withDividers([
+                            ProfileSettingsListTile(
+                              icon: Icons.history_rounded,
+                              title: 'বুকিং ইতিহাস',
+                              onTap: () {
+                                ref
+                                    .read(homeShellTabIndexProvider.notifier)
+                                    .select(2);
+                              },
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.payments_outlined,
+                              title: 'পেমেন্ট / বিলিং',
+                              onTap: () {
+                                ref
+                                    .read(homeShellTabIndexProvider.notifier)
+                                    .select(2);
+                              },
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.medical_information_outlined,
+                              title: 'প্রেসক্রিপশন / চিকিৎসা সারাংশ',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                KnowledgeHubHomeScreen.routePath,
+                              ),
+                            ),
+                          ]),
+                        ),
+                      ),
+                      const SizedBox(height: PraniSpacing.sm),
+                      _sectionTitle(context, 'অ্যাপ'),
+                      Card(
+                        child: Column(
+                          children: _withDividers([
+                            ProfileSettingsListTile(
+                              icon: Icons.notifications_outlined,
+                              title: 'নোটিফিকেশন',
+                              trailing: ref
+                                  .watch(unreadNotificationsTotalProvider)
+                                  .when(
+                                    data: (c) => c > 0
+                                        ? Badge(
+                                            label: Text(c > 99 ? '99+' : '$c'),
+                                            child: const Icon(
+                                              Icons.chevron_right,
+                                            ),
+                                          )
+                                        : const Icon(Icons.chevron_right),
+                                    loading: () =>
+                                        const Icon(Icons.chevron_right),
+                                    error: (e, _) =>
+                                        const Icon(Icons.chevron_right),
+                                  ),
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                NotificationsListScreen.routePath,
+                              ),
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.settings_outlined,
+                              title: 'অ্যাপ সেটিংস',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                AppSettingsScreen.routePath,
+                              ),
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.support_agent_outlined,
+                              title: 'হেল্প / সাপোর্ট',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                HelpSupportScreen.routePath,
+                              ),
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.info_outline,
+                              title: 'প্রাণী ডাক্তার সম্পর্কে',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                AboutScreen.routePath,
+                              ),
+                            ),
+                            ProfileSettingsListTile(
+                              icon: auth.isAuthenticated
+                                  ? Icons.logout_rounded
+                                  : Icons.login_rounded,
+                              title: auth.isAuthenticated
+                                  ? 'লগআউট'
+                                  : 'লগইন করুন',
+                              onTap: () async {
+                                if (auth.isAuthenticated) {
+                                  await showPdLogoutConfirmAndExecute(
+                                    context,
+                                    ref,
+                                  );
+                                } else if (context.mounted) {
+                                  context.go(LoginEntryScreen.routePath);
+                                }
+                              },
+                            ),
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(hPad, PraniSpacing.lg, hPad, 8),
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxW),
+                  child: const SupportContactCard(),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(hPad, 8, hPad, bottomPad),
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxW),
+                  child: Text(
+                    'প্রাণী ডাক্তার অ্যাপ ব্যবহারের জন্য ধন্যবাদ।',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.35,
                     ),
                   ),
                 ),
               ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8),
-                sliver: const SliverToBoxAdapter(child: SupportContactCard()),
-              ),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 32),
-                sliver: SliverToBoxAdapter(
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        showPdLogoutConfirmAndExecute(context, ref),
-                    icon: const Icon(Icons.logout),
-                    label: const Text('লগআউট'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSoftInfoBanner extends StatelessWidget {
+  const _ProfileSoftInfoBanner({
+    required this.onRetry,
+    required this.retryBusy,
+  });
+
+  final VoidCallback onRetry;
+  final bool retryBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(PraniRadii.lg),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.65),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(PraniSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: scheme.primary,
+                  size: 22,
+                ),
+                const SizedBox(width: PraniSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'প্রোফাইল তথ্য এখনো পাওয়া যায়নি',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'আপনি অতিথি হিসেবে অ্যাপ ব্যবহার করছেন। লগইন বা প্রোফাইল সেটআপ করলে তথ্য দেখা যাবে।',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: PraniSpacing.md),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonal(
+                onPressed: retryBusy ? null : onRetry,
+                child: retryBusy
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: scheme.primary,
+                        ),
+                      )
+                    : const Text('আবার চেষ্টা করুন'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

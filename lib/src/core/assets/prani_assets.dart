@@ -41,6 +41,20 @@ abstract final class PraniAssets {
 
   static const String altLogoEarthTone =
       'assets/brand/logos/prani_doctor_alt_logo_earth_tone.png';
+
+  /// Customer home hero illustration (`assets/images/home/hero_farm_vet.png`).
+  static const String homeHeroFarmVet = 'assets/images/home/hero_farm_vet.png';
+
+  /// Nearby doctors empty state (`assets/images/home/empty_nearby_doctors.png`).
+  static const String homeEmptyNearbyDoctors =
+      'assets/images/home/empty_nearby_doctors.png';
+
+  /// Emergency CTA illustration (`assets/images/home/emergency_vet.png`).
+  static const String homeEmergencyVet = 'assets/images/home/emergency_vet.png';
+
+  /// Vaccination promo banner (`assets/images/home/promo_vaccination.png`).
+  static const String homePromoVaccination =
+      'assets/images/home/promo_vaccination.png';
 }
 
 /// Decode pixel budgets for [Image.asset] `cacheWidth` / `cacheHeight` (memory).
@@ -60,11 +74,16 @@ abstract final class PraniAssetDecode {
 }
 
 /// Bounded brand image for heroes, banners, and empty states.
+///
+/// When [aspectRatio] is set, height follows width (`width / aspectRatio`) so
+/// the hero scales on narrow and wide phones without a fixed pixel height.
+/// When null, a fixed [height] is used (legacy behavior).
 class PraniBrandHero extends StatelessWidget {
   const PraniBrandHero({
     super.key,
     required this.assetPath,
     this.height = 160,
+    this.aspectRatio,
     this.fit = BoxFit.cover,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.alignment = Alignment.center,
@@ -75,6 +94,9 @@ class PraniBrandHero extends StatelessWidget {
 
   final String assetPath;
   final double height;
+
+  /// If non-null, layout height is `maxWidth / aspectRatio` (ignores [height]).
+  final double? aspectRatio;
   final BoxFit fit;
   final BorderRadius borderRadius;
   final Alignment alignment;
@@ -93,26 +115,32 @@ class PraniBrandHero extends StatelessWidget {
             ? constraints.maxWidth
             : mq.size.width;
         final decodeW = (layoutW * dpr).round().clamp(120, decodeMaxPx);
-        final decodeH = (height * dpr).round().clamp(80, decodeMaxPx);
+        final layoutH = aspectRatio != null && aspectRatio! > 0
+            ? layoutW / aspectRatio!
+            : height;
+        final decodeH = (layoutH * dpr).round().clamp(80, decodeMaxPx);
+        final image = Image.asset(
+          assetPath,
+          fit: fit,
+          alignment: alignment,
+          gaplessPlayback: true,
+          semanticLabel: semanticLabel,
+          cacheWidth: decodeW,
+          cacheHeight: decodeH,
+        );
         return ClipRRect(
           borderRadius: borderRadius,
           child: ColoredBox(
             color:
                 backgroundColor ??
                 Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: SizedBox(
-              width: double.infinity,
-              height: height,
-              child: Image.asset(
-                assetPath,
-                fit: fit,
-                alignment: alignment,
-                gaplessPlayback: true,
-                semanticLabel: semanticLabel,
-                cacheWidth: decodeW,
-                cacheHeight: decodeH,
-              ),
-            ),
+            child: aspectRatio != null && aspectRatio! > 0
+                ? AspectRatio(aspectRatio: aspectRatio!, child: image)
+                : SizedBox(
+                    width: double.infinity,
+                    height: height,
+                    child: image,
+                  ),
           ),
         );
       },

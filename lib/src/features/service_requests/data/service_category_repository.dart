@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
@@ -51,7 +52,14 @@ class ServiceCategoryRepository {
       return raw
           .map((e) => ServiceCategoryOption.fromJson(e as Map<String, dynamic>))
           .toList();
-    } on DioException catch (e) {
+    } on DioException catch (e, st) {
+      if (e.response?.statusCode == 404) {
+        assert(() {
+          debugPrint('ServiceCategoryRepository.list 404 -> []\n$st');
+          return true;
+        }());
+        return [];
+      }
       throw _mapDio(e);
     }
   }

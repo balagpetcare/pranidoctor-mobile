@@ -59,6 +59,22 @@ abstract final class PraniShadows {
     ),
   ];
 
+  /// Softer elevation for dense home grids (Pixel-friendly).
+  static List<BoxShadow> homeCardSoft = const [
+    BoxShadow(
+      color: Color(0x081F2937),
+      offset: Offset(0, 3),
+      blurRadius: 12,
+      spreadRadius: -2,
+    ),
+    BoxShadow(
+      color: Color(0x061F2937),
+      offset: Offset(0, 1),
+      blurRadius: 5,
+      spreadRadius: -1,
+    ),
+  ];
+
   static List<BoxShadow> cardDark = const [
     BoxShadow(
       color: Color(0x66000000),

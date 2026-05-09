@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/screen_padding.dart';
 import '../../core/assets/prani_assets.dart';
+import '../../design_system/prani_tokens.dart';
 import '../auth/login_entry_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -57,129 +58,222 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  double _illustrationHeight(double screenH, double screenW) {
+    final h = screenH * 0.22;
+    return h.clamp(132.0, (screenW * 0.52).clamp(156.0, 214.0));
+  }
+
+  Widget _illustrationSlot(
+    BuildContext context,
+    _OnboardPage p,
+    double slotHeight,
+    ColorScheme scheme,
+  ) {
+    final maxDecode = PraniAssetDecode.onboardingIllustrationMaxPx;
+
+    if (p.illustrationAsset != null) {
+      final cacheW = PraniAssetDecode.cacheExtentPx(
+        context,
+        MediaQuery.sizeOf(context).width - 32,
+        maxDecode,
+      );
+      final cacheH = PraniAssetDecode.cacheExtentPx(
+        context,
+        slotHeight,
+        maxDecode,
+      );
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(PraniRadii.lg),
+        child: SizedBox(
+          width: double.infinity,
+          height: slotHeight,
+          child: Image.asset(
+            p.illustrationAsset!,
+            fit: BoxFit.contain,
+            gaplessPlayback: true,
+            semanticLabel: 'খামার ও গবাদি প্রাণীর চিত্রায়ণ',
+            cacheWidth: cacheW,
+            cacheHeight: cacheH,
+          ),
+        ),
+      );
+    }
+
+    final iconBox = (slotHeight * 0.72).clamp(112.0, 168.0);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(PraniRadii.lg),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: slotHeight,
+        child: Center(
+          child: Icon(
+            p.icon,
+            size: (iconBox * 0.36).clamp(56.0, 78.0),
+            color: scheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final pad = pdScreenPadding(context);
+    final mq = MediaQuery.of(context);
+    final bottomSafe = mq.padding.bottom;
+    final illH = _illustrationHeight(mq.size.height, mq.size.width);
+
     return Scaffold(
       appBar: AppBar(title: const Text('স্বাগতম')),
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _pages.length,
-              onPageChanged: (i) => setState(() => _page = i),
-              itemBuilder: (context, index) {
-                final p = _pages[index];
-                return Padding(
-                  padding: pad.copyWith(top: 8, bottom: 16),
-                  child: Column(
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _pages.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (context, index) {
+                  final p = _pages[index];
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      pad.left,
+                      PraniSpacing.sm,
+                      pad.right,
+                      PraniSpacing.md,
+                    ),
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _illustrationSlot(context, p, illH, scheme),
+                        SizedBox(height: PraniSpacing.section),
+                        Text(
+                          p.title,
+                          textAlign: TextAlign.center,
+                          style: textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.35,
+                            height: 1.25,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: PraniSpacing.md),
+                        Text(
+                          p.body,
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            height: 1.48,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                pad.left,
+                PraniSpacing.sm,
+                pad.right,
+                bottomSafe + PraniSpacing.md,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _pages.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOut,
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        height: 8,
+                        width: i == _page ? 22 : 8,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: i == _page
+                              ? scheme.primary
+                              : scheme.outlineVariant.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: PraniSpacing.lg),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      if (p.illustrationAsset != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 200,
-                              child: Image.asset(
-                                p.illustrationAsset!,
-                                fit: BoxFit.contain,
-                                gaplessPlayback: true,
-                                semanticLabel:
-                                    'খামার ও গবাদি প্রাণীর চিত্রায়ণ',
-                                cacheWidth: PraniAssetDecode.cacheExtentPx(
-                                  context,
-                                  MediaQuery.sizeOf(context).width - 24,
-                                  PraniAssetDecode.onboardingIllustrationMaxPx,
-                                ),
-                                cacheHeight: PraniAssetDecode.cacheExtentPx(
-                                  context,
-                                  200,
-                                  PraniAssetDecode.onboardingIllustrationMaxPx,
-                                ),
+                      SizedBox(
+                        width: 100,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: _page > 0
+                              ? TextButton(
+                                  onPressed: () {
+                                    _pageController.previousPage(
+                                      duration: const Duration(
+                                        milliseconds: 280,
+                                      ),
+                                      curve: Curves.easeOutCubic,
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: PraniSpacing.sm,
+                                      vertical: PraniSpacing.sm,
+                                    ),
+                                  ),
+                                  child: const Text('পিছনে'),
+                                )
+                              : const SizedBox(height: 48),
+                        ),
+                      ),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 148),
+                            child: FilledButton(
+                              onPressed: _page < _pages.length - 1
+                                  ? () {
+                                      _pageController.nextPage(
+                                        duration: const Duration(
+                                          milliseconds: 280,
+                                        ),
+                                        curve: Curves.easeOutCubic,
+                                      );
+                                    }
+                                  : _finish,
+                              child: Text(
+                                _page < _pages.length - 1
+                                    ? 'পরের ধাপ'
+                                    : 'শুরু করুন',
                               ),
                             ),
                           ),
-                        )
-                      else
-                        Icon(p.icon, size: 76, color: scheme.primary),
-                      const SizedBox(height: 24),
-                      Text(
-                        p.title,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        p.body,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              _pages.length,
-              (i) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: CircleAvatar(
-                  radius: 5,
-                  backgroundColor: i == _page
-                      ? scheme.primary
-                      : scheme.outlineVariant,
-                ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: pad.copyWith(bottom: 24),
-            child: Row(
-              children: [
-                if (_page > 0)
-                  TextButton(
-                    onPressed: () {
-                      _pageController.previousPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOut,
-                      );
-                    },
-                    child: const Text('পিছনে'),
-                  ),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: _page < _pages.length - 1
-                        ? FilledButton(
-                            onPressed: () {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 280),
-                                curve: Curves.easeOut,
-                              );
-                            },
-                            child: const Text('পরের ধাপ'),
-                          )
-                        : FilledButton(
-                            onPressed: _finish,
-                            child: const Text('শুরু করুন'),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

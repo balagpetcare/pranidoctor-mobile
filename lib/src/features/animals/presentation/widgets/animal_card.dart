@@ -4,6 +4,56 @@ import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_mode
 import 'package:pranidoctor_mobile/src/features/animals/presentation/widgets/animal_labels.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/widgets/animal_photo_placeholder.dart';
 
+/// Leading icon for list cards (photo URL handled separately in [_AnimalListLeading]).
+IconData _animalLeadingIconFor(AnimalProfile animal) {
+  final t = animal.animalType;
+  if (t != null) {
+    return switch (t) {
+      AnimalType.CATTLE => Icons.agriculture_outlined,
+      AnimalType.GOAT => Icons.pets_outlined,
+      AnimalType.POULTRY => Icons.egg_outlined,
+      AnimalType.DOG => Icons.pets,
+      AnimalType.CAT => Icons.cruelty_free_outlined,
+      AnimalType.OTHER => Icons.pets_outlined,
+    };
+  }
+  return _iconFromSpeciesText(animal.species);
+}
+
+IconData _iconFromSpeciesText(String species) {
+  final x = species.toLowerCase().trim();
+  if (x.isEmpty) return Icons.pets_outlined;
+  if (x.contains('cattle') ||
+      x.contains('cow') ||
+      x.contains('buffalo') ||
+      x.contains('গরু') ||
+      x.contains('মহিষ')) {
+    return Icons.agriculture_outlined;
+  }
+  if (x.contains('goat') || x.contains('ছাগল')) {
+    return Icons.pets_outlined;
+  }
+  if (x.contains('sheep') || x.contains('lamb') || x.contains('ভেড়া')) {
+    return Icons.grass_outlined;
+  }
+  if (x.contains('duck') ||
+      x.contains('chicken') ||
+      x.contains('poultry') ||
+      x.contains('bird') ||
+      x.contains('হাঁস') ||
+      x.contains('মুরগি')) {
+    return Icons.egg_outlined;
+  }
+  return Icons.pets_outlined;
+}
+
+bool _animalHasDisplayPhoto(AnimalProfile animal) {
+  final u = animal.photoUrl?.trim();
+  return u != null &&
+      u.isNotEmpty &&
+      (u.startsWith('http://') || u.startsWith('https://'));
+}
+
 class AnimalCard extends StatelessWidget {
   const AnimalCard({super.key, required this.animal, required this.onTap});
 
@@ -13,10 +63,14 @@ class AnimalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final titleStyle = Theme.of(context).textTheme.titleMedium;
-    final subtitleStyle = Theme.of(
-      context,
-    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant);
+    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+      height: 1.32,
+    );
+    final subtitleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: scheme.onSurfaceVariant,
+      height: 1.35,
+    );
 
     final typeLabel = animal.animalType != null
         ? animalTypeLabelBn(animal.animalType!)
@@ -52,21 +106,23 @@ class AnimalCard extends StatelessWidget {
     if (bits.isNotEmpty) sexAgeSummary = bits.join(' · ');
 
     return Card(
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              AnimalPhotoPlaceholder(photoUrl: animal.photoUrl, size: 56),
+              _AnimalListLeading(animal: animal),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Text(
@@ -93,23 +149,89 @@ class AnimalCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(typeLabel, style: subtitleStyle),
+                    Text(
+                      typeLabel,
+                      style: subtitleStyle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     if (breedLine != null) ...[
                       const SizedBox(height: 2),
-                      Text(breedLine, style: subtitleStyle),
+                      Text(
+                        breedLine,
+                        style: subtitleStyle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                     if (sexAgeSummary != null) ...[
                       const SizedBox(height: 4),
-                      Text(sexAgeSummary, style: subtitleStyle),
+                      Text(
+                        sexAgeSummary,
+                        style: subtitleStyle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: scheme.primary),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: scheme.outline,
+                size: 22,
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimalListLeading extends StatelessWidget {
+  const _AnimalListLeading({required this.animal});
+
+  final AnimalProfile animal;
+
+  static const double _size = 56;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final icon = _animalLeadingIconFor(animal);
+
+    if (_animalHasDisplayPhoto(animal)) {
+      return SizedBox(
+        width: _size,
+        height: _size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            AnimalPhotoPlaceholder(photoUrl: animal.photoUrl, size: _size),
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Material(
+                elevation: 1,
+                color: scheme.primary,
+                shape: const CircleBorder(),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(icon, size: 14, color: scheme.onPrimary),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: _size / 2,
+      backgroundColor: scheme.primaryContainer,
+      child: Icon(icon, color: scheme.onPrimaryContainer, size: 28),
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
@@ -13,6 +15,21 @@ final profileRepositoryProvider = Provider<MobileUserRepository>((ref) {
   return MobileUserRepositoryLive(ref.watch(apiClientProvider));
 });
 
-final mobileUserProvider = FutureProvider.autoDispose<MobileUser>((ref) {
-  return ref.watch(profileRepositoryProvider).fetchMe();
+/// Fetches `GET /api/mobile/me` with a hard timeout so the Profile tab never
+/// spins forever if the client, storage read, or network stalls.
+///
+/// **Note:** If `Dio` `onRequest` (e.g. secure token read) hangs beyond this
+/// timeout, the Profile tab still recovers; consider a bounded read in the
+/// interceptor if that is ever observed in the field.
+final mobileUserProvider = FutureProvider.autoDispose<MobileUser>((ref) async {
+  try {
+    return await ref
+        .read(profileRepositoryProvider)
+        .fetchMe()
+        .timeout(const Duration(seconds: 25));
+  } on TimeoutException {
+    return MobileUser.guestFallback(
+      MobileProfileLoadStatus.fallbackUnavailable,
+    );
+  }
 });

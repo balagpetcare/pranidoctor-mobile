@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/network/dio_provider.dart';
 
 final mobileOtpAuthRepositoryProvider = Provider<MobileOtpAuthRepository>((
@@ -8,6 +10,9 @@ final mobileOtpAuthRepositoryProvider = Provider<MobileOtpAuthRepository>((
 ) {
   return MobileOtpAuthRepository(ref.watch(dioProvider));
 });
+
+/// How the OTP send step completed (SMS API vs dev terminal fallback).
+enum OtpSendChannel { smsApi, devTerminalFallback }
 
 class OtpAuthException implements Exception {
   OtpAuthException(this.message);
@@ -22,37 +27,71 @@ class MobileOtpAuthRepository {
 
   final Dio _dio;
 
-  Future<void> requestOtp(String phone) async {
+  Future<OtpSendChannel> requestOtp(String phone) async {
+    if (!AppConfig.useDevOtpFallback) {
+      try {
+        await _postRequestOtp(phone);
+      } on DioException catch (e) {
+        throw OtpAuthException(_messageFromDio(e));
+      }
+      return OtpSendChannel.smsApi;
+    }
     try {
-      final res = await _dio.post<Map<String, dynamic>>(
-        '/api/mobile/auth/otp/request',
-        data: <String, dynamic>{'phone': phone},
-      );
-      _ensureOk(res.data);
+      await _postRequestOtp(phone);
+      return OtpSendChannel.smsApi;
+    } on DioException catch (e) {
+      if (_isUnreachableNetwork(e)) {
+        debugPrint(
+          '[PraniDoctor][DEV OTP] phone=$phone otp=${AppConfig.devOtpCode}',
+        );
+        return OtpSendChannel.devTerminalFallback;
+      }
+      throw OtpAuthException(_messageFromDio(e));
+    }
+  }
+
+  Future<void> _postRequestOtp(String phone) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/mobile/auth/otp/request',
+      data: <String, dynamic>{'phone': phone},
+    );
+    _ensureOk(res.data);
+  }
+
+  Future<String> verifyOtp(String phone, String code) async {
+    final trimmed = code.trim();
+    if (AppConfig.useDevOtpFallback && trimmed == AppConfig.devOtpCode) {
+      try {
+        return await _postVerifyOtp(phone, trimmed);
+      } on DioException catch (e) {
+        if (_isUnreachableNetwork(e)) {
+          return AppConfig.devCustomerAccessToken;
+        }
+        throw OtpAuthException(_messageFromDio(e));
+      }
+    }
+    try {
+      return await _postVerifyOtp(phone, trimmed);
     } on DioException catch (e) {
       throw OtpAuthException(_messageFromDio(e));
     }
   }
 
-  Future<String> verifyOtp(String phone, String code) async {
-    try {
-      final res = await _dio.post<Map<String, dynamic>>(
-        '/api/mobile/auth/otp/verify',
-        data: <String, dynamic>{'phone': phone, 'code': code},
-      );
-      _ensureOk(res.data);
-      final data = res.data?['data'];
-      if (data is! Map<String, dynamic>) {
-        throw OtpAuthException('সার্ভার থেকে টোকেন পাওয়া যায়নি।');
-      }
-      final token = data['accessToken'];
-      if (token is! String || token.isEmpty) {
-        throw OtpAuthException('সার্ভার থেকে টোকেন পাওয়া যায়নি।');
-      }
-      return token;
-    } on DioException catch (e) {
-      throw OtpAuthException(_messageFromDio(e));
+  Future<String> _postVerifyOtp(String phone, String code) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      '/api/mobile/auth/otp/verify',
+      data: <String, dynamic>{'phone': phone, 'code': code},
+    );
+    _ensureOk(res.data);
+    final data = res.data?['data'];
+    if (data is! Map<String, dynamic>) {
+      throw OtpAuthException('সার্ভার থেকে টোকেন পাওয়া যায়নি।');
     }
+    final token = data['accessToken'];
+    if (token is! String || token.isEmpty) {
+      throw OtpAuthException('সার্ভার থেকে টোকেন পাওয়া যায়নি।');
+    }
+    return token;
   }
 
   void _ensureOk(Map<String, dynamic>? body) {
@@ -64,12 +103,28 @@ class MobileOtpAuthRepository {
     throw OtpAuthException('অনুরোধ ব্যর্থ হয়েছে।');
   }
 
+  bool _isUnreachableNetwork(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+      case DioExceptionType.badCertificate:
+      case DioExceptionType.cancel:
+        return true;
+      case DioExceptionType.badResponse:
+        return false;
+      case DioExceptionType.unknown:
+        return e.response == null;
+    }
+  }
+
   String _messageFromDio(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['error'] is Map) {
       final msg = (data['error'] as Map)['message'];
       if (msg is String && msg.isNotEmpty) return msg;
     }
-    return 'নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।';
+    return 'নেটওয়ার্ক সমস্যা হয়েছে। আবার চেষ্টা করুন।';
   }
 }

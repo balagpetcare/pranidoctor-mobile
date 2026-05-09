@@ -19,6 +19,7 @@ ios/Flutter/Flutter.podspec
 # Environment / secrets
 .env
 .env.*
+!.env.example
 *.keystore
 *.jks
 key.properties

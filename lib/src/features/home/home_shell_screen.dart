@@ -26,6 +26,7 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final index = ref.watch(homeShellTabIndexProvider);
     _activatedTabs.add(index);
     return Scaffold(
@@ -49,40 +50,52 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
               : const SizedBox.shrink(),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        minimum: EdgeInsets.zero,
-        child: NavigationBar(
-          selectedIndex: index,
-          onDestinationSelected: (i) =>
-              ref.read(homeShellTabIndexProvider.notifier).select(i),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'হোম',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.medical_services_outlined),
-              selectedIcon: Icon(Icons.medical_services),
-              label: 'ডাক্তার',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.grid_view_outlined),
-              selectedIcon: Icon(Icons.grid_view_rounded),
-              label: 'সেবা',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.notifications_outlined),
-              selectedIcon: Icon(Icons.notifications),
-              label: 'নোটিফিকেশন',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'প্রোফাইল',
-            ),
-          ],
+      bottomNavigationBar: Material(
+        elevation: 6,
+        shadowColor: Colors.black.withValues(alpha: 0.12),
+        surfaceTintColor: Colors.transparent,
+        color: scheme.surface,
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 4),
+          child: NavigationBar(
+            height: 72,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            backgroundColor: scheme.surface,
+            indicatorColor: scheme.primaryContainer,
+            selectedIndex: index,
+            onDestinationSelected: (i) =>
+                ref.read(homeShellTabIndexProvider.notifier).select(i),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: 'হোম',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.medical_services_outlined),
+                selectedIcon: Icon(Icons.medical_services_rounded),
+                label: 'ডাক্তার',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.grid_view_outlined),
+                selectedIcon: Icon(Icons.grid_view_rounded),
+                label: 'সেবা',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.notifications_outlined),
+                selectedIcon: Icon(Icons.notifications_rounded),
+                label: 'নোটিফিকেশন',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded),
+                selectedIcon: Icon(Icons.person_rounded),
+                label: 'প্রোফাইল',
+              ),
+            ],
+          ),
         ),
       ),
     );
