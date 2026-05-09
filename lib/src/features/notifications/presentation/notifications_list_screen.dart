@@ -64,9 +64,7 @@ class NotificationsListScreen extends ConsumerWidget {
                 Icon(Icons.error_outline, size: 48, color: scheme.error),
                 const SizedBox(height: 12),
                 Text(
-                  e is NotificationApiException
-                      ? e.message
-                      : 'লোড করা যায়নি',
+                  e is NotificationApiException ? e.message : 'লোড করা যায়নি',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
@@ -168,9 +166,7 @@ void _showNotificationDetail(BuildContext context, AppNotification n) {
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text(n.title),
-      content: SingleChildScrollView(
-        child: Text(n.body),
-      ),
+      content: SingleChildScrollView(child: Text(n.body)),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(),
@@ -251,9 +247,9 @@ class _NotificationCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 n.title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               Text(
@@ -265,9 +261,9 @@ class _NotificationCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 dateLabel,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
           ),

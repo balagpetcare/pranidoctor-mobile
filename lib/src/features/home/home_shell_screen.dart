@@ -86,9 +86,9 @@ class _ProfileTab extends ConsumerWidget {
             Text(
               'অ্যাকাউন্ট ও সেটিংস এখানে থাকবে।',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             Card(

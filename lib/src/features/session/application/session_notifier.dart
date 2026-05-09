@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/storage/token_storage.dart';
 
-enum AppRole { customer, doctor }
+enum AppRole { customer, doctor, technician }
 
 class SessionState {
   const SessionState({this.role, this.isAuthenticated = false});
@@ -32,8 +32,14 @@ class SessionNotifier extends Notifier<SessionState> {
 
     final prefs = await SharedPreferences.getInstance();
     final roleName = prefs.getString(_lastRoleKey);
-    final role =
-        roleName == AppRole.doctor.name ? AppRole.doctor : AppRole.customer;
+    final AppRole role;
+    if (roleName == 'doctor') {
+      role = AppRole.doctor;
+    } else if (roleName == 'technician') {
+      role = AppRole.technician;
+    } else {
+      role = AppRole.customer;
+    }
     state = SessionState(role: role, isAuthenticated: true);
   }
 
@@ -41,10 +47,7 @@ class SessionNotifier extends Notifier<SessionState> {
     await ref.read(tokenStorageProvider).writeAccessToken(accessToken);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastRoleKey, AppRole.customer.name);
-    state = const SessionState(
-      role: AppRole.customer,
-      isAuthenticated: true,
-    );
+    state = const SessionState(role: AppRole.customer, isAuthenticated: true);
   }
 
   Future<void> setRole(AppRole role) async {

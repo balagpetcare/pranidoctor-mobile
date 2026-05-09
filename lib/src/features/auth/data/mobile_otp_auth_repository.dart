@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_provider.dart';
 
-final mobileOtpAuthRepositoryProvider = Provider<MobileOtpAuthRepository>((ref) {
+final mobileOtpAuthRepositoryProvider = Provider<MobileOtpAuthRepository>((
+  ref,
+) {
   return MobileOtpAuthRepository(ref.watch(dioProvider));
 });
 

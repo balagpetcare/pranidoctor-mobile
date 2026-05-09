@@ -7,6 +7,8 @@ import '../../app/screen_padding.dart';
 import '../../core/config/app_config.dart';
 import '../session/application/session_notifier.dart';
 import '../home/home_shell_screen.dart';
+import '../auth/doctor/presentation/doctor_login_screen.dart';
+import '../auth/technician/presentation/technician_login_screen.dart';
 import 'data/mobile_otp_auth_repository.dart';
 
 /// Customer login via SMS OTP (`/api/mobile/auth/otp/*`).
@@ -63,8 +65,9 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     }
     setState(() => _busy = true);
     try {
-      final token =
-          await ref.read(mobileOtpAuthRepositoryProvider).verifyOtp(phone, code);
+      final token = await ref
+          .read(mobileOtpAuthRepositoryProvider)
+          .verifyOtp(phone, code);
       await ref.read(sessionNotifierProvider.notifier).signInCustomer(token);
       if (!mounted) return;
       context.go(HomeShellScreen.routePath);
@@ -76,7 +79,9 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   }
 
   void _snack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -100,10 +105,7 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
             ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 28),
-          Text(
-            'মোবাইল নম্বর',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('মোবাইল নম্বর', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           TextField(
             controller: _phoneController,
@@ -124,10 +126,7 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
             child: Text(_otpSent ? 'কোড আবার পাঠান' : 'যাচাইকরণ কোড পাঠান'),
           ),
           const SizedBox(height: 28),
-          Text(
-            'যাচাইকরণ কোড',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('যাচাইকরণ কোড', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           TextField(
             controller: _otpController,
@@ -158,8 +157,8 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
                 child: Text(
                   'অথবা',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               Expanded(child: Divider(color: scheme.outlineVariant)),
@@ -181,6 +180,26 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
             onPressed: null,
             icon: const Icon(Icons.facebook, size: 22),
             label: const Text('Facebook দিয়ে লগইন (শীঘ্রই)'),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'পেশাদার প্রবেশ',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton(
+                onPressed: () => context.push(DoctorLoginScreen.routePath),
+                child: const Text('চিকিৎসক'),
+              ),
+              TextButton(
+                onPressed: () => context.push(TechnicianLoginScreen.routePath),
+                child: const Text('AI টেকনিশিয়ান'),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           Text(

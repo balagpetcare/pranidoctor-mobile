@@ -7,4 +7,11 @@ abstract final class AppConfig {
     'API_BASE_URL',
     defaultValue: 'http://localhost:3000',
   );
+
+  /// When `true`, AI technician workflow uses in-memory mock data (no HTTP).
+  /// `flutter run --dart-define=USE_MOCK_TECHNICIAN_API=true`
+  static const bool useMockTechnicianApi = bool.fromEnvironment(
+    'USE_MOCK_TECHNICIAN_API',
+    defaultValue: false,
+  );
 }

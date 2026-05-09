@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'navigation_keys.dart';
 import '../features/auth/doctor/presentation/doctor_login_screen.dart';
 import '../features/auth/login_entry_screen.dart';
+import '../features/auth/technician/presentation/technician_login_screen.dart';
 import '../features/home/doctor/presentation/doctor_home_screen.dart';
 import '../features/home/home_shell_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -19,6 +20,12 @@ import '../features/tutorials/presentation/tutorial_detail_screen.dart';
 import '../features/tutorials/presentation/tutorial_list_screen.dart';
 import '../features/notifications/presentation/notifications_list_screen.dart';
 import '../features/session/application/session_notifier.dart';
+import '../features/technician_ai/presentation/technician_ai_record_form_screen.dart';
+import '../features/technician_ai/presentation/technician_complete_job_screen.dart';
+import '../features/technician_ai/presentation/technician_dashboard_screen.dart';
+import '../features/technician_ai/presentation/technician_job_detail_screen.dart';
+import '../features/technician_ai/presentation/technician_jobs_screen.dart';
+import '../features/technician_ai/presentation/technician_requests_screen.dart';
 
 bool _isPublicCustomerPath(String path) {
   return path == SplashScreen.routePath ||
@@ -44,6 +51,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       }
       if (_isPublicCustomerPath(loc)) return null;
       if (loc.startsWith('/doctor')) return null;
+      if (loc.startsWith('/technician')) return null;
       if (!auth.isAuthenticated) return LoginEntryScreen.routePath;
       return null;
     },
@@ -72,6 +80,52 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: DoctorLoginScreen.routePath,
         name: DoctorLoginScreen.routeName,
         builder: (context, state) => const DoctorLoginScreen(),
+      ),
+      GoRoute(
+        path: TechnicianLoginScreen.routePath,
+        name: TechnicianLoginScreen.routeName,
+        builder: (context, state) => const TechnicianLoginScreen(),
+      ),
+      GoRoute(
+        path: TechnicianDashboardScreen.routePath,
+        name: TechnicianDashboardScreen.routeName,
+        builder: (context, state) => const TechnicianDashboardScreen(),
+      ),
+      GoRoute(
+        path: TechnicianRequestsScreen.routePath,
+        name: TechnicianRequestsScreen.routeName,
+        builder: (context, state) => const TechnicianRequestsScreen(),
+      ),
+      GoRoute(
+        path: TechnicianJobsScreen.routePath,
+        name: TechnicianJobsScreen.routeName,
+        builder: (context, state) => const TechnicianJobsScreen(),
+      ),
+      GoRoute(
+        path: '/technician/jobs/:jobId',
+        name: TechnicianJobDetailScreen.routeName,
+        builder: (context, state) {
+          final id = state.pathParameters['jobId']!;
+          return TechnicianJobDetailScreen(jobId: id);
+        },
+        routes: [
+          GoRoute(
+            path: 'record',
+            name: 'technicianAiRecord',
+            builder: (context, state) {
+              final id = state.pathParameters['jobId']!;
+              return TechnicianAiRecordFormScreen(jobId: id);
+            },
+          ),
+          GoRoute(
+            path: 'complete',
+            name: 'technicianCompleteJob',
+            builder: (context, state) {
+              final id = state.pathParameters['jobId']!;
+              return TechnicianCompleteJobScreen(jobId: id);
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: DoctorHomeScreen.routePath,
