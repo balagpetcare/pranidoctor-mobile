@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../constants/pd_spacing.dart';
 
@@ -22,6 +23,7 @@ class PdTextField extends StatelessWidget {
     this.suffixIcon,
     this.autofillHints,
     this.validator,
+    this.inputFormatters,
   });
 
   final TextEditingController? controller;
@@ -40,6 +42,7 @@ class PdTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final Iterable<String>? autofillHints;
   final FormFieldValidator<String>? validator;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +72,7 @@ class PdTextField extends StatelessWidget {
         autofillHints: autofillHints,
         decoration: decoration,
         validator: validator,
+        inputFormatters: inputFormatters,
       );
     }
 
@@ -84,6 +88,7 @@ class PdTextField extends StatelessWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       autofillHints: autofillHints,
+      inputFormatters: inputFormatters,
       decoration: decoration,
     );
   }

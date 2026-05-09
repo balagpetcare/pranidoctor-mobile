@@ -6,6 +6,7 @@ import 'navigation_keys.dart';
 import 'router_error_screen.dart';
 import '../features/auth/doctor/presentation/doctor_login_screen.dart';
 import '../features/auth/login_entry_screen.dart';
+import '../features/auth/otp_verify_screen.dart';
 import '../features/home/doctor/presentation/doctor_home_screen.dart';
 import '../features/home/home_shell_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -24,7 +25,38 @@ import '../features/session/application/session_notifier.dart';
 bool _isPublicCustomerPath(String path) {
   return path == SplashScreen.routePath ||
       path == OnboardingScreen.routePath ||
-      path == LoginEntryScreen.routePath;
+      path == LoginEntryScreen.routePath ||
+      path ==
+          '${LoginEntryScreen.routePath}/${OtpVerifyScreen.routePathSegment}';
+}
+
+class _OtpRouteExtra {
+  _OtpRouteExtra({required this.phone, this.ttl});
+
+  final String phone;
+  final int? ttl;
+}
+
+_OtpRouteExtra _otpExtraFrom(GoRouterState state) {
+  final ex = state.extra;
+  if (ex is String && ex.isNotEmpty) {
+    return _OtpRouteExtra(phone: ex, ttl: null);
+  }
+  if (ex is Map) {
+    final p = ex['phone'];
+    final t = ex['ttl'];
+    if (p is String && p.isNotEmpty) {
+      int? ttl;
+      if (t is int) ttl = t;
+      if (t is num) ttl = t.toInt();
+      return _OtpRouteExtra(phone: p, ttl: ttl);
+    }
+  }
+  final q = state.uri.queryParameters['phone'];
+  if (q != null && q.isNotEmpty) {
+    return _OtpRouteExtra(phone: Uri.decodeComponent(q), ttl: null);
+  }
+  return _OtpRouteExtra(phone: '');
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -41,9 +73,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final loc = state.uri.path;
       final auth = ref.read(sessionNotifierProvider);
 
-      if (loc == LoginEntryScreen.routePath && auth.isAuthenticated) {
+      if (auth.isAuthenticated &&
+          (loc == LoginEntryScreen.routePath ||
+              loc.startsWith('${LoginEntryScreen.routePath}/'))) {
         return HomeShellScreen.routePath;
       }
+
+      if (loc ==
+          '${LoginEntryScreen.routePath}/${OtpVerifyScreen.routePathSegment}') {
+        if (_otpExtraFrom(state).phone.isEmpty) {
+          return LoginEntryScreen.routePath;
+        }
+      }
+
       if (_isPublicCustomerPath(loc)) return null;
       if (loc.startsWith('/doctor')) return null;
       if (!auth.isAuthenticated) return LoginEntryScreen.routePath;
@@ -64,6 +106,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: LoginEntryScreen.routePath,
         name: LoginEntryScreen.routeName,
         builder: (context, state) => const LoginEntryScreen(),
+        routes: [
+          GoRoute(
+            path: OtpVerifyScreen.routePathSegment,
+            name: OtpVerifyScreen.routeName,
+            builder: (context, state) {
+              final e = _otpExtraFrom(state);
+              return OtpVerifyScreen(
+                apiPhone: e.phone,
+                resendCooldownSeconds: e.ttl,
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: HomeShellScreen.routePath,
