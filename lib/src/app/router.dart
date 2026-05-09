@@ -15,6 +15,8 @@ import '../features/providers/presentation/doctor_list_screen.dart';
 import '../features/providers/presentation/provider_finder_landing_screen.dart';
 import '../features/providers/presentation/technician_detail_screen.dart';
 import '../features/providers/presentation/technician_list_screen.dart';
+import '../features/service_requests/data/service_request_model.dart';
+import '../features/service_requests/presentation/booking_success_screen.dart';
 import '../features/service_requests/presentation/booking_wizard_screen.dart';
 import '../features/service_requests/presentation/service_requests_tab_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -194,7 +196,34 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: BookingWizardScreen.routePath,
         name: BookingWizardScreen.routeName,
-        builder: (context, state) => const BookingWizardScreen(),
+        builder: (context, state) {
+          ServiceRequestType? preset;
+          final raw = state.uri.queryParameters['preset'];
+          if (raw != null && raw.isNotEmpty) {
+            try {
+              preset = ServiceRequestType.values.byName(raw);
+            } catch (_) {
+              preset = null;
+            }
+          }
+          return BookingWizardScreen(initialServiceType: preset);
+        },
+      ),
+      GoRoute(
+        path: BookingSuccessScreen.routePath,
+        name: BookingSuccessScreen.routeName,
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is ServiceRequest) {
+            return BookingSuccessScreen(request: extra);
+          }
+          return Scaffold(
+            appBar: AppBar(title: const Text('ত্রুটি')),
+            body: const Center(
+              child: Text('কোনো অনুরোধের তথ্য নেই। হোম থেকে আবার চেষ্টা করুন।'),
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/service-requests/:requestId',

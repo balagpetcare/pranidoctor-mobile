@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/screen_padding.dart';
 import '../../../core/constants/pd_spacing.dart';
 import '../../notifications/presentation/notifications_list_screen.dart';
-import '../../providers/presentation/provider_finder_landing_screen.dart';
+import '../../service_requests/data/service_request_model.dart';
 import '../../service_requests/presentation/booking_wizard_screen.dart';
 import '../../tutorials/presentation/tutorial_list_screen.dart';
 import 'widgets/customer_emergency_cta_card.dart';
@@ -25,13 +25,8 @@ class CustomerHomeScreen extends StatelessWidget {
   final VoidCallback onOpenAnimalsTab;
   final VoidCallback onOpenRequestsTab;
 
-  void _onlineConsultationPlaceholder(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text('অনলাইন পরামর্শ শীঘ্রই চালু হবে।'),
-      ),
-    );
+  String _bookingWithPreset(ServiceRequestType type) {
+    return '${BookingWizardScreen.routePath}?preset=${type.name}';
   }
 
   @override
@@ -61,8 +56,11 @@ class CustomerHomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: PdSpacing.xl),
                         CustomerEmergencyCtaCard(
-                          onPressed: () =>
-                              context.push(BookingWizardScreen.routePath),
+                          onPressed: () => context.push(
+                            _bookingWithPreset(
+                              ServiceRequestType.EMERGENCY_DOCTOR,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: PdSpacing.xl),
                         const CustomerHomeSectionTitle(
@@ -73,17 +71,20 @@ class CustomerHomeScreen extends StatelessWidget {
                           icon: Icons.medical_services_outlined,
                           title: 'ডাক্তার — বাড়িতে পরিদর্শন',
                           subtitle: 'বাড়িতে গিয়ে চিকিৎসা — অনুরোধ জমা দিন।',
-                          onTap: () =>
-                              context.push(BookingWizardScreen.routePath),
+                          onTap: () => context.push(
+                            _bookingWithPreset(
+                              ServiceRequestType.DOCTOR_HOME_VISIT,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: PdSpacing.sm),
                         CustomerServiceActionCard(
                           icon: Icons.smart_toy_outlined,
                           title: 'AI টেকনিশিয়ান',
                           subtitle:
-                              'ডাক্তার ও টেকনিশিয়ান খুঁজুন — এলাকা ও সেবা অনুযায়ী।',
+                              'এআই টেকনিশিয়ান সেবার অনুরোধ জমা দিন বা পরবর্তীতে প্রদানকারী বেছে নিন।',
                           onTap: () => context.push(
-                            ProviderFinderLandingScreen.routePath,
+                            _bookingWithPreset(ServiceRequestType.AI_SERVICE),
                           ),
                         ),
                         const SizedBox(height: PdSpacing.sm),
@@ -92,7 +93,11 @@ class CustomerHomeScreen extends StatelessWidget {
                           title: 'অনলাইন পরামর্শ',
                           subtitle: 'শীঘ্রই চালু হবে — এখন ট্যাপ করে জানুন।',
                           muted: true,
-                          onTap: () => _onlineConsultationPlaceholder(context),
+                          onTap: () => context.push(
+                            _bookingWithPreset(
+                              ServiceRequestType.ONLINE_CONSULTATION_LATER,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: PdSpacing.xl),
                         const CustomerHomeSectionTitle(title: 'দ্রুত পথ'),

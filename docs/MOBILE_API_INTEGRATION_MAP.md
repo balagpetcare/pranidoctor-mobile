@@ -53,6 +53,8 @@
 
 ## Service requests (mobile)
 
+**Entry / success routes (M07):** `GET` query `preset` on `/booking/new` is app-only; **`POST` still** `POST /api/mobile/service-requests`. After create, app navigates to **`/booking/success`** (client route) with no extra HTTP call.
+
 | Method | Path | Repository | Used by |
 |--------|------|------------|---------|
 | POST | `/api/mobile/service-requests` | `ServiceRequestRepository` — `service_request_repository.dart` | `BookingWizardScreen` |
