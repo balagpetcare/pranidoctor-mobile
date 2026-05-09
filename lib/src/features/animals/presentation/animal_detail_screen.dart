@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/widgets/pd_async_states.dart';
 import 'package:pranidoctor_mobile/src/features/animals/application/animals_providers.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_model.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_repository.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/animal_form_screen.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/widgets/animal_labels.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/widgets/animal_photo_placeholder.dart';
+import 'package:pranidoctor_mobile/src/features/animals/presentation/widgets/animal_server_field_placeholder.dart';
 
 class AnimalDetailScreen extends ConsumerWidget {
   const AnimalDetailScreen({super.key, required this.animalId});
@@ -46,25 +48,14 @@ class AnimalDetailScreen extends ConsumerWidget {
         ],
       ),
       body: asyncAnimal.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: hPad),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  e is AnimalApiException ? e.message : 'লোড করা যায়নি',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () =>
-                      ref.invalidate(animalDetailProvider(animalId)),
-                  child: const Text('আবার চেষ্টা করুন'),
-                ),
-              ],
-            ),
+        loading: () => const PdLoadingBody(message: 'বিবরণ লোড হচ্ছে…'),
+        error: (e, _) => Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: PdErrorBody(
+            title: 'লোড করা যায়নি',
+            message: e is AnimalApiException ? e.message : null,
+            retryLabel: 'আবার চেষ্টা করুন',
+            onRetry: () => ref.invalidate(animalDetailProvider(animalId)),
           ),
         ),
         data: (animal) => _DetailBody(
@@ -205,9 +196,17 @@ class _DetailBody extends ConsumerWidget {
           ),
         if (animal.weightKg?.isNotEmpty == true)
           _DetailRow(label: 'ওজন (কেজি)', value: animal.weightKg!),
+        _DetailRow(label: 'রং', value: 'সার্ভারে এখনও সংরক্ষণ হয় না (শীঘ্রই)'),
         _DetailRow(
-          label: 'নোট',
+          label: 'স্বাস্থ্য নোট',
           value: animal.notes?.trim().isNotEmpty == true ? animal.notes! : '—',
+        ),
+        const SizedBox(height: 12),
+        const AnimalServerFieldPlaceholder(
+          title: 'টিকাদান',
+          message:
+              'টিকার রেকর্ড শীঘ্রই আলাদা ক্ষেত্রে দেখানো হবে। এখন স্বাস্থ্য নোটে লিখে রাখতে পারেন।',
+          icon: Icons.medical_services_outlined,
         ),
         const SizedBox(height: 28),
         if (animal.active)

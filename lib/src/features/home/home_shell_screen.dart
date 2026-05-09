@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../animals/presentation/animals_tab_screen.dart';
 import 'presentation/customer_home_screen.dart';
 import 'presentation/customer_shell_tab_placeholders.dart';
 
@@ -27,7 +28,7 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
             onOpenAnimalsTab: () => setState(() => _index = 1),
             onOpenRequestsTab: () => setState(() => _index = 2),
           ),
-          const AnimalsTabPlaceholderScreen(),
+          const AnimalsTabScreen(),
           const RequestsTabPlaceholderScreen(),
           const KnowledgeTabPlaceholderScreen(),
           const ProfileTabPlaceholderScreen(),

@@ -51,6 +51,16 @@ class AnimalCard extends StatelessWidget {
     if (ageLine != null) bits.add(ageLine);
     if (bits.isNotEmpty) sexAgeSummary = bits.join(' · ');
 
+    final weightLine = animal.weightKg?.trim().isNotEmpty == true
+        ? 'ওজন: ${animal.weightKg!.trim()} কেজি'
+        : null;
+
+    String? metaLine;
+    final metaBits = <String>[];
+    if (sexAgeSummary != null) metaBits.add(sexAgeSummary);
+    if (weightLine != null) metaBits.add(weightLine);
+    if (metaBits.isNotEmpty) metaLine = metaBits.join(' · ');
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -98,9 +108,9 @@ class AnimalCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(breedLine, style: subtitleStyle),
                     ],
-                    if (sexAgeSummary != null) ...[
+                    if (metaLine != null) ...[
                       const SizedBox(height: 4),
-                      Text(sexAgeSummary, style: subtitleStyle),
+                      Text(metaLine, style: subtitleStyle),
                     ],
                   ],
                 ),
