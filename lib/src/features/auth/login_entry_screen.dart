@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/screen_padding.dart';
+import '../../core/assets/prani_assets.dart';
 import '../../core/config/app_config.dart';
 import '../session/application/session_notifier.dart';
 import '../home/home_shell_screen.dart';
@@ -91,8 +93,23 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('প্রবেশ')),
       body: ListView(
-        padding: pad.copyWith(top: 12, bottom: 28),
+        padding: pad.copyWith(
+          top: 12,
+          bottom: 28 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Image.asset(
+                PraniAssets.horizontalLogo,
+                height: 52,
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                semanticLabel: 'প্রাণী ডাক্তার ওয়ার্ডমার্ক',
+              ),
+            ),
+          ),
           Text(
             'গ্রাহক হিসেবে লগইন',
             style: Theme.of(context).textTheme.headlineSmall,
@@ -201,14 +218,16 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text(
-            'API ভিত্তি: ${AppConfig.apiBaseUrl}',
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: scheme.outline),
-          ),
+          if (kDebugMode) ...[
+            const SizedBox(height: 24),
+            Text(
+              'API ভিত্তি (ডিবাগ): ${AppConfig.apiBaseUrl}',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.outline),
+            ),
+          ],
         ],
       ),
     );

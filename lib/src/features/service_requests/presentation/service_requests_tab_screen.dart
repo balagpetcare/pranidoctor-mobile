@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/app/user_visible_async_error.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
 import 'package:pranidoctor_mobile/src/features/billing/data/billing_payment_summary_model.dart';
 import 'package:pranidoctor_mobile/src/features/billing/presentation/widgets/customer_billing_summary_card.dart';
@@ -56,10 +57,17 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.all(hPad),
                 children: [
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 24),
+                  PraniBrandHero(
+                    assetPath: PraniAssets.serviceTracking,
+                    height: 156,
+                    fit: BoxFit.cover,
+                    semanticLabel: 'সেবা অনুরোধ ট্র্যাকিং',
+                  ),
+                  const SizedBox(height: 20),
                   Icon(
                     Icons.assignment_outlined,
-                    size: 56,
+                    size: 40,
                     color: scheme.primary,
                   ),
                   const SizedBox(height: 20),
@@ -142,7 +150,7 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'লোড হয়নি',
+                  'লোড করা যায়নি',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -161,6 +169,13 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
         data: (r) => ListView(
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 32),
           children: [
+            PraniBrandHero(
+              assetPath: PraniAssets.serviceTracking,
+              height: 136,
+              fit: BoxFit.cover,
+              semanticLabel: 'অনুরোধ ট্র্যাকিং ও খামার সেবা',
+            ),
+            const SizedBox(height: 16),
             _StatusBanner(status: r.status),
             const SizedBox(height: 16),
             CustomerBillingSummaryCard(

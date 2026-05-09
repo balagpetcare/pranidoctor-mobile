@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,8 +34,8 @@ class TechnicianLoginScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             mock
-                ? 'ডেমো ডেটা: USE_MOCK_TECHNICIAN_API=true'
-                : 'লাইভ API: সার্ভারে টেকনিশিয়ান এন্ডপয়েন্ট প্রয়োজন।',
+                ? 'ডেমো মোড চালু। প্রদর্শনের জন্য কৃত্রিম ডেটা ব্যবহার করা হচ্ছে।'
+                : 'লাইভ সার্ভারে টেকনিশিয়ান এন্ডপয়েন্ট সংযুক্ত থাকলে আসল ডেটা দেখা যাবে।',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -42,7 +43,7 @@ class TechnicianLoginScreen extends ConsumerWidget {
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               labelText: 'ইমেইল (শীঘ্রই)',
-              hintText: 'tech@example.com',
+              hintText: 'টেক@উদাহরণ.কম',
             ),
             enabled: false,
           ),
@@ -65,12 +66,13 @@ class TechnicianLoginScreen extends ConsumerWidget {
             child: const Text('চালিয়ে যান (খোলস)'),
           ),
           const SizedBox(height: 12),
-          Text(
-            'API: ${AppConfig.apiBaseUrl}',
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: scheme.outline),
-          ),
+          if (kDebugMode)
+            Text(
+              'API (ডিবাগ): ${AppConfig.apiBaseUrl}',
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.outline),
+            ),
         ],
       ),
     );

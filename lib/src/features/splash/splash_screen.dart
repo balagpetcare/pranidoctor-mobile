@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/screen_padding.dart';
+import '../../core/assets/prani_assets.dart';
 import '../auth/login_entry_screen.dart';
 import '../home/home_shell_screen.dart';
 import '../onboarding/onboarding_screen.dart';
@@ -51,52 +52,72 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final scheme = Theme.of(context).colorScheme;
     final pad = pdScreenPadding(context);
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: pad,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.pets, size: 80, color: scheme.primary),
-                const SizedBox(height: 24),
-                Text(
-                  'Prani Doctor',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineMedium?.copyWith(color: scheme.onSurface),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'প্রাণি ডাক্তার',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'পোষা ও খামার প্রাণির যত্ন — এক অ্যাপে',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    color: scheme.primary,
-                  ),
-                ),
-              ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            PraniAssets.splashFarm,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            excludeFromSemantics: true,
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  scheme.surface.withValues(alpha: 0.55),
+                  scheme.surface.withValues(alpha: 0.92),
+                ],
+              ),
             ),
           ),
-        ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: pad,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      PraniAssets.primaryLogo,
+                      height: 112,
+                      fit: BoxFit.contain,
+                      gaplessPlayback: true,
+                      semanticLabel: 'প্রাণী ডাক্তার লোগো',
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'প্রাণী ডাক্তার',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(color: scheme.onSurface),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'খামারের প্রাণীর স্বাস্থ্যসেবা এখন হাতের মুঠোয়',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

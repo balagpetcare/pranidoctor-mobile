@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_repository.dart';
 
@@ -47,6 +48,13 @@ class DoctorDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  PraniBrandHero(
+                    assetPath: PraniAssets.doctorVisitCow,
+                    height: 152,
+                    fit: BoxFit.cover,
+                    semanticLabel: 'খামারে গরু ও ডাক্তার পরিদর্শনের চিত্রায়ণ',
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     d.name,
                     style: Theme.of(context).textTheme.headlineSmall,

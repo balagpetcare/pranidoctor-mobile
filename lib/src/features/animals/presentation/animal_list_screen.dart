@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/animals/application/animals_providers.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_repository.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/animal_detail_screen.dart';
@@ -121,8 +122,20 @@ class _EmptyBody extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.pets_outlined, size: 72, color: scheme.primary),
-            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: SizedBox(
+                width: double.infinity,
+                height: 188,
+                child: Image.asset(
+                  PraniAssets.animalEmptyState,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                  semanticLabel: 'খামার ও গবাদি প্রাণীর খালি তালিকার চিত্রায়ণ',
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
               'কোনো প্রাণির তথ্য নেই',
               textAlign: TextAlign.center,
@@ -130,7 +143,7 @@ class _EmptyBody extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'আপনার পোষা বা খামারের প্রাণি যোগ করে রাখুন — পরিষেবা নিতে সুবিধা হবে।',
+              'গরু, ছাগল, ভেড়া, হাঁস ও মুরগির মতো খামারের প্রাণির প্রোফাইল যোগ করুন — ডাক্তার বা টেকনিশিয়ান ডাকতে সুবিধা হবে।',
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,

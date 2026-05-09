@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/animals/application/animals_providers.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_model.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_repository.dart';
@@ -302,6 +303,22 @@ class _AnimalFormScreenState extends ConsumerState<AnimalFormScreen> {
         child: ListView(
           padding: pad.copyWith(top: 16, bottom: 32),
           children: [
+            if (!_isEdit) ...[
+              PraniBrandHero(
+                assetPath: PraniAssets.animalEmptyState,
+                height: 132,
+                fit: BoxFit.contain,
+                semanticLabel: 'খামারের প্রাণী যোগ করার চিত্রায়ণ',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'গরু, ছাগল, ভেড়া, হাঁস বা মুরগির তথ্য যোগ করুন',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             // Controlled selection — must track current state on rebuild.
             DropdownButtonFormField<AnimalType>(
               value: _animalType,

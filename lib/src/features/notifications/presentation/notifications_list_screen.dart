@@ -3,12 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/data/notification_model.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/data/notification_repository.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/presentation/widgets/notification_type_labels.dart';
 
-final _notificationDateFmt = DateFormat('yyyy-MM-dd HH:mm');
+String _formatNotificationTimestamp(BuildContext context, DateTime utc) {
+  final local = utc.toLocal();
+  final locale = Localizations.localeOf(context).toString();
+  return DateFormat('d MMM yyyy, HH:mm', locale).format(local);
+}
 
 /// Customer notification inbox — `GET /api/mobile/notifications` (Bearer via Dio).
 class NotificationsListScreen extends ConsumerWidget {
@@ -166,9 +171,16 @@ class _NotificationsEmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            PraniBrandHero(
+              assetPath: PraniAssets.serviceTracking,
+              height: 132,
+              fit: BoxFit.cover,
+              semanticLabel: 'সেবা অনুরোধ ট্র্যাকিং',
+            ),
+            const SizedBox(height: 20),
             Icon(
               Icons.notifications_off_outlined,
-              size: 56,
+              size: 44,
               color: scheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
@@ -251,7 +263,7 @@ List<Widget> _buildGroupedNotificationSlivers({
             final n = sectionItems[index];
             return _NotificationCard(
               notification: n,
-              dateLabel: _notificationDateFmt.format(n.createdAt.toLocal()),
+              dateLabel: _formatNotificationTimestamp(context, n.createdAt),
               onOpen: () => _openNotificationDetail(context, ref, n),
               onMarkRead: n.isUnread
                   ? () async {
@@ -369,7 +381,7 @@ Future<void> _openNotificationDetail(
               ],
               const SizedBox(height: 12),
               Text(
-                _notificationDateFmt.format(n.createdAt.toLocal()),
+                _formatNotificationTimestamp(context, n.createdAt),
                 style: Theme.of(
                   ctx,
                 ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),

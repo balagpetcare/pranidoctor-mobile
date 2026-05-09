@@ -7,7 +7,7 @@ void main() {
   testWidgets('Prani Doctor app builds', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: PraniDoctorApp()));
     await tester.pump();
-    expect(find.textContaining('Prani Doctor'), findsWidgets);
+    expect(find.textContaining('প্রাণী ডাক্তার'), findsWidgets);
     await tester.pump(const Duration(milliseconds: 1600));
   });
 }

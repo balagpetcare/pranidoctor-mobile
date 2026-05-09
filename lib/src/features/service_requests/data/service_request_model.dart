@@ -24,9 +24,10 @@ enum ServiceRequestType {
 
   String get labelBn {
     return switch (this) {
-      ServiceRequestType.DOCTOR_HOME_VISIT => 'ডাক্তার — বাড়িতে পরিদর্শন',
-      ServiceRequestType.EMERGENCY_DOCTOR => 'জরুরি ডাক্তার',
-      ServiceRequestType.AI_SERVICE => 'AI সেবা',
+      ServiceRequestType.DOCTOR_HOME_VISIT =>
+        'ডাক্তার — খামারে/বাড়িতে পরিদর্শন',
+      ServiceRequestType.EMERGENCY_DOCTOR => 'জরুরি ডাক্তার (খামার)',
+      ServiceRequestType.AI_SERVICE => 'কৃত্রিম প্রজনন — AI টেকনিশিয়ান',
       ServiceRequestType.ONLINE_CONSULTATION_LATER => 'অনলাইন পরামর্শ (পরে)',
     };
   }

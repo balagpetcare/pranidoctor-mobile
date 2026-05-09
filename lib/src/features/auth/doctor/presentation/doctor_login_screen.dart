@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +40,7 @@ class DoctorLoginScreen extends ConsumerWidget {
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               labelText: 'ইমেইল',
-              hintText: 'doctor@example.com',
+              hintText: 'ডাক্তার@উদাহরণ.কম',
             ),
             enabled: false,
           ),
@@ -62,12 +63,13 @@ class DoctorLoginScreen extends ConsumerWidget {
             child: const Text('চালিয়ে যান (খোলস)'),
           ),
           const SizedBox(height: 12),
-          Text(
-            'API: ${AppConfig.apiBaseUrl}',
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(color: scheme.outline),
-          ),
+          if (kDebugMode)
+            Text(
+              'API (ডিবাগ): ${AppConfig.apiBaseUrl}',
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.outline),
+            ),
         ],
       ),
     );

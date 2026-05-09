@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_repository.dart';
 
@@ -47,6 +48,21 @@ class TechnicianDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  PraniBrandHero(
+                    assetPath: PraniAssets.aiTechnicianCattle,
+                    height: 152,
+                    fit: BoxFit.cover,
+                    semanticLabel: 'গবাদি পশুর কৃত্রিম প্রজনন টেকনিশিয়ান সেবা',
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'কৃত্রিম প্রজনন ও গবাদি পরিচর্যায় প্রশিক্ষিত টেকনিশিয়ান',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     t.name,
                     style: Theme.of(context).textTheme.headlineSmall,

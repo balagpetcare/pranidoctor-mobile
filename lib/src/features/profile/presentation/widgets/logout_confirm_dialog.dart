@@ -13,16 +13,22 @@ Future<void> showPdLogoutConfirmAndExecute(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
+      icon: Icon(
+        Icons.logout_rounded,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       title: const Text('প্রস্থান করবেন?'),
-      content: const Text('আপনার সেশন বন্ধ হবে। পরে আবার লগইন করতে হবে।'),
+      content: const Text(
+        'লগআউট করলে এই ডিভাইসের সেশন শেষ হবে। আবার ব্যবহার করতে মোবাইল নম্বর দিয়ে যাচাইকরণ লাগবে।',
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('বাতিল'),
+          child: const Text('থাকুন'),
         ),
         FilledButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('প্রস্থান'),
+          child: const Text('লগআউট'),
         ),
       ],
     ),

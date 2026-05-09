@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/support_contact_card.dart';
 
@@ -20,6 +21,16 @@ class HelpSupportScreen extends StatelessWidget {
       body: ListView(
         padding: pad.copyWith(top: 16, bottom: 32),
         children: [
+          Center(
+            child: Image.asset(
+              PraniAssets.primaryLogo,
+              height: 64,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+              semanticLabel: 'প্রাণী ডাক্তার লোগো',
+            ),
+          ),
+          const SizedBox(height: 20),
           Text(
             'দ্রুত নির্দেশনা',
             style: Theme.of(context).textTheme.titleMedium,

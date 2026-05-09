@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
+
 /// Shows network photo when [photoUrl] is valid; otherwise a themed placeholder.
 /// Image upload is not implemented server-side — placeholder only (see docs).
 class AnimalPhotoPlaceholder extends StatelessWidget {
@@ -30,8 +32,7 @@ class AnimalPhotoPlaceholder extends StatelessWidget {
           width: dim,
           height: dim,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              _fallback(context, scheme, dim),
+          errorBuilder: (context, error, stackTrace) => _fallback(scheme, dim),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return SizedBox(
@@ -53,18 +54,22 @@ class AnimalPhotoPlaceholder extends StatelessWidget {
       );
     }
 
-    return _fallback(context, scheme, dim);
+    return _fallback(scheme, dim);
   }
 
-  Widget _fallback(BuildContext context, ColorScheme scheme, double dim) {
-    return Container(
-      width: dim,
-      height: dim,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+  Widget _fallback(ColorScheme scheme, double dim) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: dim,
+        height: dim,
+        child: Image.asset(
+          PraniAssets.animalEmptyState,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          semanticLabel: 'পশুর ছবি নেই — খামার প্রাণীর জন্য স্থানধারী চিত্র',
+        ),
       ),
-      child: Icon(Icons.pets_rounded, size: dim * 0.45, color: scheme.primary),
     );
   }
 }

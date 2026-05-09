@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/screen_padding.dart';
+import '../../core/assets/prani_assets.dart';
 import '../auth/login_entry_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -23,22 +24,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const _pages = <_OnboardPage>[
     _OnboardPage(
-      title: 'আপনার প্রাণির জন্য দ্রুত সাহায্য',
+      title: 'খামার ও গবাদি প্রাণীর সেবা',
       body:
-          'জরুরি অবস্থায় ডাক্তার ডাকুন, নিকটস্থ চিকিৎসক খুঁজুন — সবকিছু গ্রাহকের ভাষায় ও সহজ ধাপে।',
+          'গরু, ছাগল, ভেড়া, হাঁস, মুরগি ও খামারের প্রাণীর জন্য ডাক্তার ও AI টেকনিশিয়ান সেবা — জেলা ও গ্রাম পর্যায়ের খামারিদের জন্য।',
       icon: Icons.health_and_safety_outlined,
+      illustrationAsset: PraniAssets.onboardingFarmer,
     ),
     _OnboardPage(
-      title: 'ডাক্তার ও টেকনিশিয়ান',
+      title: 'ডাক্তার ও কৃত্রিম প্রজনন',
       body:
-          'পরামর্শ, চিকিৎসার ইতিহাস ও টিউটোরিয়াল — এক জায়গায়। পরের আপডেটে আসল সেবা যুক্ত হবে।',
+          'জরুরি ডাক্তার, হোম ভিজিট ও কৃত্রিম প্রজনন (AI টেকনিশিয়ান) — খামারের গবাদি পশুর স্বাস্থ্য ঘিরে।',
       icon: Icons.groups_outlined,
     ),
     _OnboardPage(
       title: 'শুরু করুন',
       body:
-          'এখন অ্যাপটি চালু করুন; পরবর্তী কাজে লগইন ও সার্ভার সংযোগ যুক্ত হবে।',
-      icon: Icons.pets,
+          'পশুর প্রোফাইল ও সেবার অনুরোধ এক অ্যাপে রাখুন; লগইন করে ডাক্তার বা টেকনিশিয়ান খুঁজুন।',
+      icon: Icons.agriculture_outlined,
     ),
   ];
 
@@ -75,7 +77,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(p.icon, size: 76, color: scheme.primary),
+                      if (p.illustrationAsset != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 200,
+                              child: Image.asset(
+                                p.illustrationAsset!,
+                                fit: BoxFit.contain,
+                                gaplessPlayback: true,
+                                semanticLabel:
+                                    'খামার ও গবাদি প্রাণীর চিত্রায়ণ',
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Icon(p.icon, size: 76, color: scheme.primary),
                       const SizedBox(height: 24),
                       Text(
                         p.title,
@@ -156,9 +177,11 @@ class _OnboardPage {
     required this.title,
     required this.body,
     required this.icon,
+    this.illustrationAsset,
   });
 
   final String title;
   final String body;
   final IconData icon;
+  final String? illustrationAsset;
 }

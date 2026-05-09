@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/application/profile_providers.dart';
@@ -66,7 +67,20 @@ class ProfileHomeScreen extends ConsumerWidget {
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 8),
                 sliver: SliverToBoxAdapter(
-                  child: ProfileHeaderCard(user: user),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Image.asset(
+                          PraniAssets.primaryLogo,
+                          height: 44,
+                          fit: BoxFit.contain,
+                          semanticLabel: 'প্রাণী ডাক্তার লোগো',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ProfileHeaderCard(user: user),
+                    ],
+                  ),
                 ),
               ),
               SliverPadding(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +17,7 @@ class DoctorHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final base = ref.watch(apiClientProvider).baseUrl;
+    final base = kDebugMode ? ref.watch(apiClientProvider).baseUrl : null;
     return Scaffold(
       appBar: AppBar(
         title: const Text('চিকিৎসক হোম'),
@@ -55,26 +56,28 @@ class DoctorHomeScreen extends ConsumerWidget {
               onTap: () => context.push(KnowledgeHubHomeScreen.routePath),
             ),
           ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'API ক্লায়েন্ট',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 6),
-                  SelectableText(
-                    base,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+          if (kDebugMode && base != null) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'API ক্লায়েন্ট (ডিবাগ)',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 6),
+                    SelectableText(
+                      base,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

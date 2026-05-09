@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 
 /// Matches `pubspec.yaml` version until `package_info_plus` is added.
 const String kPraniDoctorAppVersionLabel = '১.০.০ (১)';
@@ -22,10 +23,16 @@ class AboutScreen extends StatelessWidget {
       body: ListView(
         padding: pad.copyWith(top: 24, bottom: 32),
         children: [
-          Icon(Icons.pets, size: 64, color: scheme.primary),
+          Image.asset(
+            PraniAssets.primaryLogo,
+            height: 96,
+            fit: BoxFit.contain,
+            gaplessPlayback: true,
+            semanticLabel: 'প্রাণী ডাক্তার লোগো',
+          ),
           const SizedBox(height: 16),
           Text(
-            'প্রাণি ডাক্তার',
+            'প্রাণী ডাক্তার',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
@@ -35,12 +42,11 @@ class AboutScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ).textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           Text(
-            'পোষা ও খামার প্রাণির যত্ন, চিকিৎসক ও টেকনিশিয়ানের সেবা — এক অ্যাপে। '
-            'বাংলাদেশের প্রাণিসম্পদ মালিকদের জন্য তৈরি।',
+            'প্রাণী ডাক্তার বাংলাদেশের খামারি ও গৃহপালিত প্রাণীর স্বাস্থ্যসেবার জন্য তৈরি একটি ডিজিটাল প্ল্যাটফর্ম।',
             textAlign: TextAlign.center,
             style: Theme.of(
               context,

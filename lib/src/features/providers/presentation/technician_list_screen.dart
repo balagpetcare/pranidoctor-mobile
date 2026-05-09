@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_repository.dart';
 import 'package:pranidoctor_mobile/src/features/providers/presentation/technician_detail_screen.dart';
@@ -29,6 +30,22 @@ class TechnicianListScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxW),
+                child: PraniBrandHero(
+                  assetPath: PraniAssets.aiTechnicianCattle,
+                  height: 148,
+                  fit: BoxFit.cover,
+                  semanticLabel:
+                      'গবাদি পশু ও কৃত্রিম প্রজনন টেকনিশিয়ান সেবার চিত্র',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           ProviderFilterPanel(
             query: query,
             showOnlineConsultation: false,

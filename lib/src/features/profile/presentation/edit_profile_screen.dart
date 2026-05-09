@@ -164,7 +164,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         controller: _email,
                         decoration: const InputDecoration(
                           labelText: 'ইমেইল (ঐচ্ছিক)',
-                          hintText: 'example@mail.com',
+                          hintText: 'যেমন: নাম@ডোমেইন.কম',
                         ),
                         keyboardType: TextInputType.emailAddress,
                         validator: _validateEmail,

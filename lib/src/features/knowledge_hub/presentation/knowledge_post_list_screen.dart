@@ -311,7 +311,7 @@ class _InlineError extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        TextButton(onPressed: onRetry, child: const Text('রিফ্রেশ')),
+        TextButton(onPressed: onRetry, child: const Text('আবার চেষ্টা করুন')),
       ],
     );
   }

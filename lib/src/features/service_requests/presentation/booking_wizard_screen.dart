@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/animals/application/animals_providers.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/application/service_requests_providers.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
@@ -209,45 +210,59 @@ class _BookingWizardScreenState extends ConsumerState<BookingWizardScreen> {
             onPressed: _back,
           ),
         ),
-        body: Column(
-          children: [
-            LinearProgressIndicator(value: (_index + 1) / _pageCount),
-            Expanded(
-              child: PageView(
-                controller: _page,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _index = i),
-                children: [
-                  _AnimalStep(paddingH: hPad),
-                  _ServiceTypeStep(paddingH: hPad),
-                  _ProblemStep(paddingH: hPad),
-                  _DescriptionStep(paddingH: hPad),
-                  _LocationStep(paddingH: hPad),
-                  _PreferredTimeStep(paddingH: hPad),
-                  _ReviewStep(
-                    paddingH: hPad,
-                    draft: draft,
-                    submitting: _submitting,
-                    onSubmit: _submit,
-                  ),
-                ],
+        body: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: Column(
+            children: [
+              LinearProgressIndicator(value: (_index + 1) / _pageCount),
+              Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 0),
+                child: PraniBrandHero(
+                  assetPath: PraniAssets.serviceTracking,
+                  height: 128,
+                  fit: BoxFit.cover,
+                  semanticLabel: 'খামার সেবা অনুরোধ ট্র্যাকিং অ্যাপ চিত্রায়ণ',
+                ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 16),
-              child: Row(
-                children: [
-                  if (_index < _pageCount - 1)
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _next,
-                        child: const Text('পরবর্তী'),
-                      ),
+              Expanded(
+                child: PageView(
+                  controller: _page,
+                  physics: const NeverScrollableScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _index = i),
+                  children: [
+                    _AnimalStep(paddingH: hPad),
+                    _ServiceTypeStep(paddingH: hPad),
+                    _ProblemStep(paddingH: hPad),
+                    _DescriptionStep(paddingH: hPad),
+                    _LocationStep(paddingH: hPad),
+                    _PreferredTimeStep(paddingH: hPad),
+                    _ReviewStep(
+                      paddingH: hPad,
+                      draft: draft,
+                      submitting: _submitting,
+                      onSubmit: _submit,
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 16),
+                child: Row(
+                  children: [
+                    if (_index < _pageCount - 1)
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _next,
+                          child: const Text('পরবর্তী'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -327,6 +342,14 @@ class _ServiceTypeStep extends ConsumerWidget {
     return ListView(
       padding: EdgeInsets.fromLTRB(paddingH, 16, paddingH, 24),
       children: [
+        Text(
+          'খামারের গবাদি প্রাণীর জন্য সেবার ধরন বেছে নিন',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: scheme.onSurfaceVariant,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 14),
         for (final t in ServiceRequestType.values) ...[
           Card(
             margin: const EdgeInsets.only(bottom: 10),
@@ -392,7 +415,7 @@ class _ProblemStepState extends ConsumerState<_ProblemStep> {
             maxLines: 8,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'যেমন: জ্বর, খাবার খাচ্ছে না…',
+              hintText: 'যেমন: গরু জ্বর শুনছে, ছাগল খাবার খাচ্ছে না…',
             ),
             onChanged: (v) =>
                 ref.read(bookingDraftProvider.notifier).setProblem(v),
@@ -613,6 +636,14 @@ class _ReviewStep extends ConsumerWidget {
     return ListView(
       padding: EdgeInsets.fromLTRB(paddingH, 16, paddingH, 24),
       children: [
+        Text(
+          'জমা দেওয়ার আগে তথ্য একবার দেখে নিন — খামারের প্রাণী ও সেবা মিলিয়ে নিন।',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 14),
         Text('যাচাই করুন', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         _ReviewRow('পশু', animalName ?? '—'),
