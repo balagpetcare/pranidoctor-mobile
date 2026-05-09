@@ -28,4 +28,11 @@ abstract final class AppConfig {
     'USE_MOCK_KNOWLEDGE_API',
     defaultValue: false,
   );
+
+  /// Profile `GET/PATCH /api/mobile/me` demo user when API is unavailable.
+  /// `flutter run --dart-define=USE_MOCK_PROFILE_API=true`
+  static const bool useMockProfileApi = bool.fromEnvironment(
+    'USE_MOCK_PROFILE_API',
+    defaultValue: false,
+  );
 }

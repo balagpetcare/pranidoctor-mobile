@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../animals/presentation/animals_tab_screen.dart';
-import '../auth/login_entry_screen.dart';
-import '../notifications/application/notifications_providers.dart';
-import '../notifications/presentation/notifications_list_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
-import '../session/application/session_notifier.dart';
 import 'home_screen.dart';
 
 class HomeShellScreen extends ConsumerStatefulWidget {
@@ -32,7 +28,7 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
           HomeScreen(),
           ServiceRequestsTabScreen(),
           AnimalsTabScreen(),
-          _ProfileTab(),
+          ProfileHomeScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -61,86 +57,6 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ProfileTab extends ConsumerWidget {
-  const _ProfileTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          children: [
-            Icon(Icons.person_outline, size: 64, color: scheme.secondary),
-            const SizedBox(height: 20),
-            Text(
-              'প্রোফাইল',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'অ্যাকাউন্ট ও সেটিংস এখানে থাকবে।',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      Icons.notifications_outlined,
-                      color: scheme.primary,
-                    ),
-                    title: const Text('নোটিফিকেশন'),
-                    trailing: ref
-                        .watch(unreadNotificationsTotalProvider)
-                        .when(
-                          data: (c) => c > 0
-                              ? Badge(
-                                  label: Text(c > 99 ? '99+' : '$c'),
-                                  child: const Icon(Icons.chevron_right),
-                                )
-                              : const Icon(Icons.chevron_right),
-                          loading: () => const Icon(Icons.chevron_right),
-                          error: (_, _) => const Icon(Icons.chevron_right),
-                        ),
-                    onTap: () =>
-                        context.push(NotificationsListScreen.routePath),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            const _SignOutButton(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SignOutButton extends ConsumerWidget {
-  const _SignOutButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return FilledButton.tonal(
-      onPressed: () async {
-        await ref.read(sessionNotifierProvider.notifier).signOut();
-        if (context.mounted) {
-          context.go(LoginEntryScreen.routePath);
-        }
-      },
-      child: const Text('প্রস্থান / লগইন স্ক্রিনে'),
     );
   }
 }

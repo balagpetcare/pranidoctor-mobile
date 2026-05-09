@@ -21,6 +21,11 @@ import '../features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import '../features/knowledge_hub/presentation/knowledge_post_detail_screen.dart';
 import '../features/knowledge_hub/presentation/knowledge_post_list_screen.dart';
 import '../features/notifications/presentation/notifications_list_screen.dart';
+import '../features/profile/presentation/about_screen.dart';
+import '../features/profile/presentation/app_settings_screen.dart';
+import '../features/profile/presentation/area_setting_screen.dart';
+import '../features/profile/presentation/edit_profile_screen.dart';
+import '../features/profile/presentation/help_support_screen.dart';
 import '../features/session/application/session_notifier.dart';
 import '../features/technician_ai/presentation/technician_ai_record_form_screen.dart';
 import '../features/technician_ai/presentation/technician_complete_job_screen.dart';
@@ -177,6 +182,31 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: NotificationsListScreen.routePath,
         name: NotificationsListScreen.routeName,
         builder: (context, state) => const NotificationsListScreen(),
+      ),
+      GoRoute(
+        path: EditProfileScreen.routePath,
+        name: EditProfileScreen.routeName,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: AreaSettingScreen.routePath,
+        name: AreaSettingScreen.routeName,
+        builder: (context, state) => const AreaSettingScreen(),
+      ),
+      GoRoute(
+        path: AppSettingsScreen.routePath,
+        name: AppSettingsScreen.routeName,
+        builder: (context, state) => const AppSettingsScreen(),
+      ),
+      GoRoute(
+        path: HelpSupportScreen.routePath,
+        name: HelpSupportScreen.routeName,
+        builder: (context, state) => const HelpSupportScreen(),
+      ),
+      GoRoute(
+        path: AboutScreen.routePath,
+        name: AboutScreen.routeName,
+        builder: (context, state) => const AboutScreen(),
       ),
       GoRoute(
         path: KnowledgeHubHomeScreen.routePath,
