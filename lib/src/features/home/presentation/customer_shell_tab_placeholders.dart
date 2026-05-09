@@ -7,21 +7,6 @@ import '../../../core/widgets/shell_tab_placeholder.dart';
 import '../../auth/login_entry_screen.dart';
 import '../../session/application/session_notifier.dart';
 
-/// M02 placeholder — হোম ট্যাব।
-class HomeTabPlaceholderScreen extends StatelessWidget {
-  const HomeTabPlaceholderScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ShellTabPlaceholder(
-      icon: Icons.home_outlined,
-      title: 'হোম',
-      message:
-          'এখানে হোম ড্যাশবোর্ড, দ্রুত কাজ ও সূচনা থাকবে। বর্তমানে MVP প্লেসহোল্ডার।',
-    );
-  }
-}
-
 /// M02 placeholder — আমার পশু।
 class AnimalsTabPlaceholderScreen extends StatelessWidget {
   const AnimalsTabPlaceholderScreen({super.key});

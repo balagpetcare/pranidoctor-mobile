@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'presentation/customer_home_screen.dart';
 import 'presentation/customer_shell_tab_placeholders.dart';
 
 class HomeShellScreen extends ConsumerStatefulWidget {
@@ -21,12 +22,15 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _index,
-        children: const [
-          HomeTabPlaceholderScreen(),
-          AnimalsTabPlaceholderScreen(),
-          RequestsTabPlaceholderScreen(),
-          KnowledgeTabPlaceholderScreen(),
-          ProfileTabPlaceholderScreen(),
+        children: [
+          CustomerHomeScreen(
+            onOpenAnimalsTab: () => setState(() => _index = 1),
+            onOpenRequestsTab: () => setState(() => _index = 2),
+          ),
+          const AnimalsTabPlaceholderScreen(),
+          const RequestsTabPlaceholderScreen(),
+          const KnowledgeTabPlaceholderScreen(),
+          const ProfileTabPlaceholderScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
