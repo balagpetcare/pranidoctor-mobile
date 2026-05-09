@@ -6,10 +6,11 @@ import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/data/notification_model.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/data/notification_repository.dart';
+import 'package:pranidoctor_mobile/src/features/notifications/presentation/widgets/notification_type_labels.dart';
 
 final _notificationDateFmt = DateFormat('yyyy-MM-dd HH:mm');
 
-/// Customer notification inbox — GET `/api/notifications` (Bearer via Dio).
+/// Customer notification inbox — `GET /api/mobile/notifications` (Bearer via Dio).
 class NotificationsListScreen extends ConsumerWidget {
   const NotificationsListScreen({super.key});
 
@@ -22,11 +23,33 @@ class NotificationsListScreen extends ConsumerWidget {
     final notifier = ref.read(notificationsListProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
     final hPad = pdScreenPadding(context).horizontal;
+    final unreadAsync = ref.watch(unreadNotificationsTotalProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('নোটিফিকেশন'),
         actions: [
+          unreadAsync.when(
+            data: (c) => c > 0
+                ? Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 4),
+                    child: Center(
+                      child: Chip(
+                        avatar: Icon(
+                          Icons.mark_email_unread_outlined,
+                          size: 18,
+                          color: scheme.primary,
+                        ),
+                        label: Text('$c অপঠিত'),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
           IconButton(
             tooltip: 'সব পড়া চিহ্নিত করুন',
             onPressed: listState.isLoading
@@ -110,47 +133,16 @@ class NotificationsListScreen extends ConsumerWidget {
                 if (page.items.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(
-                      child: Text(
-                        'কোনো নোটিফিকেশন নেই',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
+                    child: _NotificationsEmptyState(scheme: scheme),
                   )
                 else
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 24),
-                    sliver: SliverList.separated(
-                      itemCount: page.items.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final n = page.items[index];
-                        return _NotificationCard(
-                          notification: n,
-                          dateLabel: _notificationDateFmt.format(
-                            n.createdAt.toLocal(),
-                          ),
-                          onOpen: () => _showNotificationDetail(context, n),
-                          onMarkRead: n.isUnread
-                              ? () async {
-                                  try {
-                                    await notifier.markRead(n.id);
-                                  } on NotificationApiException catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text(e.message)),
-                                      );
-                                    }
-                                  }
-                                }
-                              : null,
-                        );
-                      },
-                    ),
+                  ..._buildGroupedNotificationSlivers(
+                    context: context,
+                    scheme: scheme,
+                    hPad: hPad,
+                    items: page.items,
+                    notifier: notifier,
+                    ref: ref,
                   ),
               ],
             ),
@@ -161,19 +153,237 @@ class NotificationsListScreen extends ConsumerWidget {
   }
 }
 
-void _showNotificationDetail(BuildContext context, AppNotification n) {
-  showDialog<void>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(n.title),
-      content: SingleChildScrollView(child: Text(n.body)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('বন্ধ করুন'),
+class _NotificationsEmptyState extends StatelessWidget {
+  const _NotificationsEmptyState({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.notifications_off_outlined,
+              size: 56,
+              color: scheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'কোনো নোটিফিকেশন নেই',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'নতুন আপডেট এবং অনুরোধের খবর এখানে দেখা যাবে।',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
         ),
-      ],
-    ),
+      ),
+    );
+  }
+}
+
+({List<AppNotification> recent, List<AppNotification> older})
+_partitionRecentOlder(List<AppNotification> items) {
+  final sorted = List<AppNotification>.from(items)
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  final cutoff = DateTime.now().subtract(const Duration(days: 7));
+  final recent = <AppNotification>[];
+  final older = <AppNotification>[];
+  for (final n in sorted) {
+    if (n.createdAt.toLocal().isAfter(cutoff)) {
+      recent.add(n);
+    } else {
+      older.add(n);
+    }
+  }
+  return (recent: recent, older: older);
+}
+
+List<Widget> _buildGroupedNotificationSlivers({
+  required BuildContext context,
+  required ColorScheme scheme,
+  required double hPad,
+  required List<AppNotification> items,
+  required NotificationsListNotifier notifier,
+  required WidgetRef ref,
+}) {
+  final parts = _partitionRecentOlder(items);
+  final slivers = <Widget>[];
+
+  void addSection(String title, List<AppNotification> sectionItems) {
+    if (sectionItems.isEmpty) return;
+    slivers.add(
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 0),
+        sliver: SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: scheme.primary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    slivers.add(
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 8),
+        sliver: SliverList.separated(
+          itemCount: sectionItems.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final n = sectionItems[index];
+            return _NotificationCard(
+              notification: n,
+              dateLabel: _notificationDateFmt.format(n.createdAt.toLocal()),
+              onOpen: () => _openNotificationDetail(context, ref, n),
+              onMarkRead: n.isUnread
+                  ? () async {
+                      try {
+                        await notifier.markRead(n.id);
+                      } on NotificationApiException catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.message)));
+                        }
+                      }
+                    }
+                  : null,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  addSection('সাম্প্রতিক', parts.recent);
+  addSection('পুরোনো', parts.older);
+
+  if (slivers.isEmpty) {
+    return [
+      SliverFillRemaining(
+        hasScrollBody: false,
+        child: _NotificationsEmptyState(scheme: scheme),
+      ),
+    ];
+  }
+
+  slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 24)));
+  return slivers;
+}
+
+Future<void> _openNotificationDetail(
+  BuildContext context,
+  WidgetRef ref,
+  AppNotification n,
+) async {
+  final notifier = ref.read(notificationsListProvider.notifier);
+
+  if (n.isUnread) {
+    notifier.markRead(n.id).catchError((Object e) {
+      if (!context.mounted) return;
+      final msg = e is NotificationApiException
+          ? e.message
+          : 'পড়া চিহ্নিত করা যায়নি';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    });
+  }
+
+  if (!context.mounted) return;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (ctx) {
+      final bottomInset = MediaQuery.paddingOf(ctx).bottom;
+      final scheme = Theme.of(ctx).colorScheme;
+      final typeIcon = notificationTypeIcon(n.type);
+      final typeLabel = notificationTypeLabelBn(n.type);
+
+      return Padding(
+        padding: EdgeInsets.fromLTRB(24, 8, 24, 16 + bottomInset),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: scheme.primaryContainer.withValues(
+                      alpha: 0.6,
+                    ),
+                    child: Icon(typeIcon, color: scheme.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          typeLabel,
+                          style: Theme.of(ctx).textTheme.labelLarge?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          n.title,
+                          style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(n.body, style: Theme.of(ctx).textTheme.bodyLarge),
+              if (n.relatedRequestId != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'সংক্লিষ্ট অনুরোধ: ${n.relatedRequestId}',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                _notificationDateFmt.format(n.createdAt.toLocal()),
+                style: Theme.of(
+                  ctx,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('বন্ধ করুন'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 
@@ -194,14 +404,16 @@ class _NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final n = notification;
+    final typeIcon = notificationTypeIcon(n.type);
+    final typeLabel = notificationTypeLabelBn(n.type);
 
     return Material(
       color: n.isUnread
           ? scheme.primaryContainer.withValues(alpha: 0.35)
           : scheme.surfaceContainerLowest,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: onOpen,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -209,32 +421,55 @@ class _NotificationCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: n.isUnread
-                          ? scheme.primary.withValues(alpha: 0.15)
-                          : scheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      n.isUnread ? 'অপঠিত' : 'পঠিত',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: scheme.surfaceContainerHighest,
+                    child: Icon(typeIcon, color: scheme.primary, size: 22),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      n.type.replaceAll('_', ' '),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                typeLabel,
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: n.isUnread
+                                    ? scheme.primary.withValues(alpha: 0.15)
+                                    : scheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                n.isUnread ? 'অপঠিত' : 'পঠিত',
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          n.title,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   ),
                   if (onMarkRead != null)
@@ -245,13 +480,6 @@ class _NotificationCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                n.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 6),
               Text(
                 n.body,
                 maxLines: 3,

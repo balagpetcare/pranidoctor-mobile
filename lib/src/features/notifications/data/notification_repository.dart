@@ -20,6 +20,8 @@ class NotificationRepository {
 
   final ApiClient _client;
 
+  static const String _basePath = '/api/mobile/notifications';
+
   Map<String, dynamic> _unwrap(Response<dynamic> response) {
     final data = response.data;
     if (data is! Map<String, dynamic>) {
@@ -49,7 +51,7 @@ class NotificationRepository {
   }) async {
     try {
       final res = await _client.get<dynamic>(
-        '/api/notifications',
+        _basePath,
         queryParameters: <String, dynamic>{
           'limit': limit.toString(),
           'offset': offset.toString(),
@@ -73,7 +75,7 @@ class NotificationRepository {
 
   Future<void> markRead(String id) async {
     try {
-      final res = await _client.patch<dynamic>('/api/notifications/$id/read');
+      final res = await _client.patch<dynamic>('$_basePath/$id/read');
       _unwrap(res);
     } on DioException catch (e) {
       throw _mapDio(e);
@@ -82,7 +84,7 @@ class NotificationRepository {
 
   Future<int> markAllRead() async {
     try {
-      final res = await _client.patch<dynamic>('/api/notifications/read-all');
+      final res = await _client.patch<dynamic>('$_basePath/read-all');
       final inner = _unwrap(res);
       final n = inner['updatedCount'];
       if (n is num) return n.toInt();

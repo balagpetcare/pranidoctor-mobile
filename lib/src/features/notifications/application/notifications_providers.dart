@@ -7,6 +7,13 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository(ref.watch(apiClientProvider));
 });
 
+/// Total unread count from list API (`unreadOnly: true`, minimal page size).
+final unreadNotificationsTotalProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(notificationRepositoryProvider);
+  final page = await repo.list(limit: 1, offset: 0, unreadOnly: true);
+  return page.total;
+});
+
 final notificationsListProvider =
     AsyncNotifierProvider<NotificationsListNotifier, NotificationsPageData>(
       NotificationsListNotifier.new,
@@ -25,10 +32,15 @@ class NotificationsListNotifier extends AsyncNotifier<NotificationsPageData> {
 
   Future<void> refresh() async {
     state = await AsyncValue.guard(() => _load());
+    ref.invalidate(unreadNotificationsTotalProvider);
   }
 
   @override
-  Future<NotificationsPageData> build() async => _load();
+  Future<NotificationsPageData> build() async {
+    final data = await _load();
+    ref.invalidate(unreadNotificationsTotalProvider);
+    return data;
+  }
 
   Future<NotificationsPageData> _load() async {
     final repo = ref.read(notificationRepositoryProvider);

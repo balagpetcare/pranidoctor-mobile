@@ -8,6 +8,7 @@ import '../providers/presentation/doctor_list_screen.dart';
 import '../providers/presentation/technician_list_screen.dart';
 import '../tutorials/presentation/tutorial_list_screen.dart';
 import '../notifications/presentation/notifications_list_screen.dart';
+import '../notifications/presentation/widgets/notification_bell_icon_button.dart';
 
 /// Customer home skeleton — menu items only; no backend calls.
 class HomeScreen extends ConsumerWidget {
@@ -32,7 +33,14 @@ class HomeScreen extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        const SliverAppBar.large(title: Text('হোম')),
+        SliverAppBar.large(
+          title: const Text('হোম'),
+          actions: [
+            NotificationBellIconButton(
+              onPressed: () => context.push(NotificationsListScreen.routePath),
+            ),
+          ],
+        ),
         SliverPadding(
           padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 24),
           sliver: SliverToBoxAdapter(

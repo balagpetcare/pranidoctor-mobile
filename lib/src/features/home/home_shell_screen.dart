@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../animals/presentation/animals_tab_screen.dart';
 import '../auth/login_entry_screen.dart';
+import '../notifications/application/notifications_providers.dart';
 import '../notifications/presentation/notifications_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
 import '../session/application/session_notifier.dart';
@@ -100,7 +101,18 @@ class _ProfileTab extends ConsumerWidget {
                       color: scheme.primary,
                     ),
                     title: const Text('নোটিফিকেশন'),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: ref
+                        .watch(unreadNotificationsTotalProvider)
+                        .when(
+                          data: (c) => c > 0
+                              ? Badge(
+                                  label: Text(c > 99 ? '99+' : '$c'),
+                                  child: const Icon(Icons.chevron_right),
+                                )
+                              : const Icon(Icons.chevron_right),
+                          loading: () => const Icon(Icons.chevron_right),
+                          error: (_, _) => const Icon(Icons.chevron_right),
+                        ),
                     onTap: () =>
                         context.push(NotificationsListScreen.routePath),
                   ),
