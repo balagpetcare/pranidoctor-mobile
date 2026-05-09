@@ -1,0 +1,153 @@
+import 'package:dio/dio.dart';
+
+import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_model.dart';
+
+class AnimalApiException implements Exception {
+  AnimalApiException(this.message, {this.code});
+
+  final String message;
+  final String? code;
+
+  @override
+  String toString() => message;
+}
+
+class AnimalProfileRepository {
+  AnimalProfileRepository(this._client);
+
+  final ApiClient _client;
+
+  Map<String, dynamic> _unwrap(Response<dynamic> response) {
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+    }
+    if (data['ok'] != true) {
+      final err = data['error'];
+      final msg = err is Map && err['message'] is String
+          ? err['message'] as String
+          : 'অনুরোধ ব্যর্থ হয়েছে';
+      final code = err is Map && err['code'] is String
+          ? err['code'] as String
+          : null;
+      throw AnimalApiException(msg, code: code);
+    }
+    final inner = data['data'];
+    if (inner is! Map<String, dynamic>) {
+      throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+    }
+    return inner;
+  }
+
+  Future<List<AnimalProfile>> list({bool includeInactive = false}) async {
+    try {
+      final res = await _client.get<dynamic>(
+        '/api/mobile/animals',
+        queryParameters: includeInactive ? {'includeInactive': 'true'} : null,
+      );
+      final inner = _unwrap(res);
+      final raw = inner['animals'];
+      if (raw is! List<dynamic>) {
+        throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return raw
+          .map((e) => AnimalProfile.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<AnimalProfile> getById(String id) async {
+    try {
+      final res = await _client.get<dynamic>('/api/mobile/animals/$id');
+      final inner = _unwrap(res);
+      final raw = inner['animal'];
+      if (raw is! Map<String, dynamic>) {
+        throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return AnimalProfile.fromJson(raw);
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<AnimalProfile> create(Map<String, dynamic> body) async {
+    try {
+      final res = await _client.post<dynamic>(
+        '/api/mobile/animals',
+        data: body,
+      );
+      final inner = _unwrap(res);
+      final raw = inner['animal'];
+      if (raw is! Map<String, dynamic>) {
+        throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return AnimalProfile.fromJson(raw);
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<AnimalProfile> update(String id, Map<String, dynamic> body) async {
+    try {
+      final res = await _client.patch<dynamic>(
+        '/api/mobile/animals/$id',
+        data: body,
+      );
+      final inner = _unwrap(res);
+      final raw = inner['animal'];
+      if (raw is! Map<String, dynamic>) {
+        throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return AnimalProfile.fromJson(raw);
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<AnimalProfile> deactivate(String id) async {
+    try {
+      final res = await _client.patch<dynamic>(
+        '/api/mobile/animals/$id/deactivate',
+      );
+      final inner = _unwrap(res);
+      final raw = inner['animal'];
+      if (raw is! Map<String, dynamic>) {
+        throw AnimalApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return AnimalProfile.fromJson(raw);
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  AnimalApiException _mapDio(DioException e) {
+    if (e.response?.data is Map<String, dynamic>) {
+      final data = e.response!.data as Map<String, dynamic>;
+      if (data['ok'] == false && data['error'] is Map) {
+        final err = data['error'] as Map;
+        final msg = err['message'] is String
+            ? err['message'] as String
+            : 'নেটওয়ার্ক ত্রুটি';
+        final code = err['code'] is String ? err['code'] as String : null;
+        return AnimalApiException(msg, code: code);
+      }
+    }
+    final code = e.response?.statusCode;
+    if (code == 401) {
+      return AnimalApiException(
+        'লগইন প্রয়োজন বা সেশন শেষ',
+        code: 'UNAUTHORIZED',
+      );
+    }
+    if (code == 403) {
+      return AnimalApiException('অনুমতি নেই', code: 'FORBIDDEN');
+    }
+    if (code == 404) {
+      return AnimalApiException('খুঁজে পাওয়া যায়নি', code: 'NOT_FOUND');
+    }
+    return AnimalApiException(e.message ?? 'সংযোগ ত্রুটি', code: 'NETWORK');
+  }
+}

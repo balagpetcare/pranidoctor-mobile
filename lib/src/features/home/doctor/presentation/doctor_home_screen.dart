@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/login_entry_screen.dart';
 import '../../../session/application/session_notifier.dart';
+import '../../../tutorials/presentation/tutorial_list_screen.dart';
 
 class DoctorHomeScreen extends ConsumerWidget {
   const DoctorHomeScreen({super.key});
@@ -43,6 +44,18 @@ class DoctorHomeScreen extends ConsumerWidget {
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.menu_book_outlined, color: scheme.primary),
+              title: const Text('নলেজ হাব (টিউটোরিয়াল)'),
+              subtitle: const Text(
+                'প্রকাশিত নির্দেশনা ও নিবন্ধ — গ্রাহকদের মতোই দেখুন',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(TutorialListScreen.routePath),
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),

@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/screen_padding.dart';
 import '../auth/login_entry_screen.dart';
+import '../home/home_shell_screen.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../session/application/session_notifier.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -29,13 +31,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _goNext() async {
     await Future<void>.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
+    await ref.read(sessionNotifierProvider.notifier).hydrateFromStorage();
+    if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
     final done = prefs.getBool(SplashScreen._onboardingDoneKey) ?? false;
+    final auth = ref.read(sessionNotifierProvider).isAuthenticated;
     if (!mounted) return;
-    if (done) {
-      context.go(LoginEntryScreen.routePath);
-    } else {
+    if (!done) {
       context.go(OnboardingScreen.routePath);
+    } else if (auth) {
+      context.go(HomeShellScreen.routePath);
+    } else {
+      context.go(LoginEntryScreen.routePath);
     }
   }
 

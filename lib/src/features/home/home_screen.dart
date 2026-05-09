@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/screen_padding.dart';
 import '../../core/network/api_client.dart';
+import '../providers/presentation/doctor_list_screen.dart';
+import '../providers/presentation/technician_list_screen.dart';
+import '../tutorials/presentation/tutorial_list_screen.dart';
+import '../notifications/presentation/notifications_list_screen.dart';
 
 /// Customer home skeleton — menu items only; no backend calls.
 class HomeScreen extends ConsumerWidget {
@@ -15,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
     'আমার পশু',
     'চিকিৎসার ইতিহাস',
     'টিউটোরিয়াল',
+    'নোটিফিকেশন',
   ];
 
   @override
@@ -41,7 +47,24 @@ class HomeScreen extends ConsumerWidget {
                       _HomeMenuTile(
                         label: _menuItems[i],
                         scheme: scheme,
-                        onTap: () {},
+                        onTap: () {
+                          switch (i) {
+                            case 1:
+                              context.push(DoctorListScreen.routePath);
+                              break;
+                            case 2:
+                              context.push(TechnicianListScreen.routePath);
+                              break;
+                            case 5:
+                              context.push(TutorialListScreen.routePath);
+                              break;
+                            case 6:
+                              context.push(NotificationsListScreen.routePath);
+                              break;
+                            default:
+                              break;
+                          }
+                        },
                       ),
                     ],
                     const SizedBox(height: 16),

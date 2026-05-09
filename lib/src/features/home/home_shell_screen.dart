@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../animals/presentation/animals_tab_screen.dart';
 import '../auth/login_entry_screen.dart';
+import '../notifications/presentation/notifications_list_screen.dart';
+import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
 import '../session/application/session_notifier.dart';
 import 'home_screen.dart';
 
@@ -26,8 +29,8 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
         index: _index,
         children: const [
           HomeScreen(),
-          _RequestsPlaceholderTab(),
-          _MyAnimalsPlaceholderTab(),
+          ServiceRequestsTabScreen(),
+          AnimalsTabScreen(),
           _ProfileTab(),
         ],
       ),
@@ -61,106 +64,53 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
   }
 }
 
-class _RequestsPlaceholderTab extends StatelessWidget {
-  const _RequestsPlaceholderTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return _PlaceholderScaffold(
-      title: 'অনুরোধ',
-      subtitle:
-          'জরুরি ডাক বা চিকিৎসা অনুরোধ এখানে দেখাবে। ব্যাকএন্ড সংযোগের পর কাজ শুরু হবে।',
-      icon: Icons.assignment_outlined,
-      iconColor: scheme.primary,
-    );
-  }
-}
-
-class _MyAnimalsPlaceholderTab extends StatelessWidget {
-  const _MyAnimalsPlaceholderTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return _PlaceholderScaffold(
-      title: 'আমার পশু',
-      subtitle: 'প্রাণির তালিকা, ট্যাগ ও স্বাস্থ্য সারাংশ — খুব শীঘ্রই।',
-      icon: Icons.pets_outlined,
-      iconColor: scheme.tertiary,
-    );
-  }
-}
-
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends ConsumerWidget {
   const _ProfileTab();
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return _PlaceholderScaffold(
-      title: 'প্রোফাইল',
-      subtitle: 'অ্যাকাউন্ট ও সেটিংস এখানে থাকবে।',
-      icon: Icons.person_outline,
-      iconColor: scheme.secondary,
-      extra: const _SignOutButton(),
-    );
-  }
-}
-
-class _PlaceholderScaffold extends StatelessWidget {
-  const _PlaceholderScaffold({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.iconColor,
-    this.extra,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color iconColor;
-  final Widget? extra;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 48,
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, size: 64, color: iconColor),
-                    const SizedBox(height: 20),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      subtitle,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (extra != null) ...[const SizedBox(height: 28), extra!],
-                  ],
-                ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          children: [
+            Icon(Icons.person_outline, size: 64, color: scheme.secondary),
+            const SizedBox(height: 20),
+            Text(
+              'প্রোফাইল',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'অ্যাকাউন্ট ও সেটিংস এখানে থাকবে।',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: scheme.onSurfaceVariant,
               ),
             ),
-          );
-        },
+            const SizedBox(height: 24),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.notifications_outlined,
+                      color: scheme.primary,
+                    ),
+                    title: const Text('নোটিফিকেশন'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () =>
+                        context.push(NotificationsListScreen.routePath),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            const _SignOutButton(),
+          ],
+        ),
       ),
     );
   }

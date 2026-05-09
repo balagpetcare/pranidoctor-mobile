@@ -25,6 +25,28 @@ class SessionNotifier extends Notifier<SessionState> {
   @override
   SessionState build() => const SessionState();
 
+  /// Restores session flag from stored JWT (splash / cold start).
+  Future<void> hydrateFromStorage() async {
+    final token = await ref.read(tokenStorageProvider).readAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final roleName = prefs.getString(_lastRoleKey);
+    final role =
+        roleName == AppRole.doctor.name ? AppRole.doctor : AppRole.customer;
+    state = SessionState(role: role, isAuthenticated: true);
+  }
+
+  Future<void> signInCustomer(String accessToken) async {
+    await ref.read(tokenStorageProvider).writeAccessToken(accessToken);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastRoleKey, AppRole.customer.name);
+    state = const SessionState(
+      role: AppRole.customer,
+      isAuthenticated: true,
+    );
+  }
+
   Future<void> setRole(AppRole role) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastRoleKey, role.name);

@@ -32,3 +32,4 @@ GoogleService-Info.plist
 # OS
 .DS_Store
 Thumbs.db
+ios/Flutter/ephemeral/

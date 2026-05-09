@@ -2,19 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'navigation_keys.dart';
 import '../features/auth/doctor/presentation/doctor_login_screen.dart';
 import '../features/auth/login_entry_screen.dart';
 import '../features/home/doctor/presentation/doctor_home_screen.dart';
 import '../features/home/home_shell_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/providers/presentation/doctor_detail_screen.dart';
+import '../features/providers/presentation/doctor_list_screen.dart';
+import '../features/providers/presentation/technician_detail_screen.dart';
+import '../features/providers/presentation/technician_list_screen.dart';
+import '../features/service_requests/presentation/booking_wizard_screen.dart';
+import '../features/service_requests/presentation/service_requests_tab_screen.dart';
 import '../features/splash/splash_screen.dart';
+import '../features/tutorials/presentation/tutorial_detail_screen.dart';
+import '../features/tutorials/presentation/tutorial_list_screen.dart';
+import '../features/notifications/presentation/notifications_list_screen.dart';
+import '../features/session/application/session_notifier.dart';
 
-final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+bool _isPublicCustomerPath(String path) {
+  return path == SplashScreen.routePath ||
+      path == OnboardingScreen.routePath ||
+      path == LoginEntryScreen.routePath;
+}
 
 final goRouterProvider = Provider<GoRouter>((ref) {
+  final refresh = ValueNotifier<int>(0);
+  ref.listen(sessionNotifierProvider, (_, _) => refresh.value++);
+  ref.onDispose(refresh.dispose);
+
   return GoRouter(
-    navigatorKey: _rootKey,
+    navigatorKey: pdRootNavigatorKey,
     initialLocation: SplashScreen.routePath,
+    refreshListenable: refresh,
+    redirect: (context, state) {
+      final loc = state.uri.path;
+      final auth = ref.read(sessionNotifierProvider);
+
+      if (loc == LoginEntryScreen.routePath && auth.isAuthenticated) {
+        return HomeShellScreen.routePath;
+      }
+      if (_isPublicCustomerPath(loc)) return null;
+      if (loc.startsWith('/doctor')) return null;
+      if (!auth.isAuthenticated) return LoginEntryScreen.routePath;
+      return null;
+    },
     routes: [
       GoRoute(
         path: SplashScreen.routePath,
@@ -45,6 +77,69 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: DoctorHomeScreen.routePath,
         name: DoctorHomeScreen.routeName,
         builder: (context, state) => const DoctorHomeScreen(),
+      ),
+      GoRoute(
+        path: DoctorListScreen.routePath,
+        name: DoctorListScreen.routeName,
+        builder: (context, state) => const DoctorListScreen(),
+        routes: [
+          GoRoute(
+            path: ':doctorId',
+            name: DoctorDetailScreen.routeName,
+            builder: (context, state) {
+              final id = state.pathParameters['doctorId']!;
+              return DoctorDetailScreen(doctorId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: TechnicianListScreen.routePath,
+        name: TechnicianListScreen.routeName,
+        builder: (context, state) => const TechnicianListScreen(),
+        routes: [
+          GoRoute(
+            path: ':technicianId',
+            name: TechnicianDetailScreen.routeName,
+            builder: (context, state) {
+              final id = state.pathParameters['technicianId']!;
+              return TechnicianDetailScreen(technicianId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: NotificationsListScreen.routePath,
+        name: NotificationsListScreen.routeName,
+        builder: (context, state) => const NotificationsListScreen(),
+      ),
+      GoRoute(
+        path: TutorialListScreen.routePath,
+        name: TutorialListScreen.routeName,
+        builder: (context, state) => const TutorialListScreen(),
+        routes: [
+          GoRoute(
+            path: ':slugOrId',
+            name: TutorialDetailScreen.routeName,
+            builder: (context, state) {
+              final raw = state.pathParameters['slugOrId']!;
+              return TutorialDetailScreen(slugOrId: raw);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: BookingWizardScreen.routePath,
+        name: BookingWizardScreen.routeName,
+        builder: (context, state) => const BookingWizardScreen(),
+      ),
+      GoRoute(
+        path: '/service-requests/:requestId',
+        name: ServiceRequestDetailScreen.routeName,
+        builder: (context, state) {
+          final id = state.pathParameters['requestId']!;
+          return ServiceRequestDetailScreen(requestId: id);
+        },
       ),
     ],
   );
