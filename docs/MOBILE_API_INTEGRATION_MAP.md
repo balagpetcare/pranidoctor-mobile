@@ -3,7 +3,7 @@
 **Purpose:** Map each HTTP surface the app uses to **repository**, **feature**, and **screens**. Use this when planning tasks M01–M15 so API work stays traceable.
 
 **Base URL:** `AppConfig.apiBaseUrl` (`--dart-define=API_BASE_URL=...`, default `http://localhost:3000`).  
-**Auth:** `Dio` interceptor adds `Authorization: Bearer <accessToken>` from `TokenStorage` when present. **401** clears session and navigates to customer login (`dio_provider.dart`).
+**Auth:** `Dio` interceptor adds `Authorization: Bearer <accessToken>` from `TokenStorage` when present. **401** clears session and navigates to **`LoginEntryScreen`** for customers or **`DoctorLoginScreen`** when the session role was doctor (`dio_provider.dart`).
 
 **Response shape:** Most mobile routes return JSON with `{ "ok": true, "data": { ... } }` or `{ "ok": false, "error": { "message", "code"? } }`. Repositories unwrap `data` consistently.
 
@@ -27,7 +27,7 @@
 | POST | `/api/mobile/auth/otp/request` | `MobileOtpAuthRepository` — `mobile_otp_auth_repository.dart` | `LoginEntryScreen` |
 | POST | `/api/mobile/auth/otp/verify` | same | same (returns `accessToken`, stored via `SessionNotifier.signInCustomer`) |
 
-**Note:** Doctor login/home routes exist in the app but are **not** wired to doctor APIs in this map yet (stub UX).
+**Note:** Doctor login/home routes use **`/api/mobile/doctor/...`** via `DoctorWorkflowRepository` (M09). Stub entry uses **`signInDoctorDemo`** (no JWT).
 
 ---
 
@@ -100,9 +100,26 @@
 
 ---
 
-## Doctor APIs (planned / not in mobile client yet)
+**Note:** Doctor OTP is not implemented yet; **`SessionNotifier.signInDoctor`** stores a doctor JWT in the same secure slot as the customer token when a doctor auth API exists. **`signInDoctorDemo`** clears the token and marks an in-memory doctor session for UI development (`doctor_login_screen.dart`).
 
-The app has **stub** doctor UI (`/doctor/login`, `/doctor/home`). There is **no** `Dio` usage for `/api/doctor/*` in this repo at audit time. Task **M09** should add integration map rows when endpoints are wired.
+---
+
+## Doctor workflow (mobile) — M09
+
+| Method | Path | Repository | Used by |
+|--------|------|------------|---------|
+| GET | `/api/mobile/doctor/requests` | `DoctorWorkflowRepository.listIncomingRequests` — `doctor_workflow_repository.dart` | `DoctorRequestsScreen`, `DoctorHomeScreen` (count) |
+| GET | `/api/mobile/doctor/cases` | `listCases` (optional `?active=true`; client also filters non-terminal) | `DoctorCasesScreen`, `DoctorHomeScreen` (count) |
+| GET | `/api/mobile/doctor/cases/:id` | `getCaseById` | `DoctorCaseDetailScreen` |
+| PATCH | `/api/mobile/doctor/requests/:id/accept` | `acceptRequest` | case detail (pending) |
+| PATCH | `/api/mobile/doctor/requests/:id/reject` | `rejectRequest` | case detail (pending) |
+| PATCH | `/api/mobile/doctor/cases/:id/treatment` | `saveTreatmentNote` | `DoctorTreatmentNoteScreen` |
+| PATCH | `/api/mobile/doctor/cases/:id/prescription` | `savePrescription` | `DoctorPrescriptionScreen` |
+| PATCH | `/api/mobile/doctor/cases/:id/complete` | `completeCase` | `DoctorCompleteCaseScreen` |
+
+**Assumption:** Mutation paths use **`PATCH`** on the sub-resources above. If the backend uses **`POST`** or different path segments, change the private path constants in `doctor_workflow_repository.dart` only.
+
+**List payload keys:** `data.requests` / `data.cases` / `data.items` (see repository). **Detail:** `data.case` / `data.detail` / nested map (see `getCaseById`).
 
 ---
 
@@ -120,7 +137,7 @@ The app has **stub** doctor UI (`/doctor/login`, `/doctor/home`). There is **no*
 | `lib/src/core/network/dio_provider.dart` | `Dio` instance, timeouts, auth header, 401 handler |
 | `lib/src/core/network/api_client.dart` | Thin `get` / `post` / `patch` wrapper |
 | `lib/src/core/storage/token_storage.dart` | Secure token read/write |
-| `lib/src/features/session/application/session_notifier.dart` | Customer sign-in, hydrate, sign-out |
+| `lib/src/features/session/application/session_notifier.dart` | Customer / doctor sign-in (`signInCustomer`, `signInDoctor`, `signInDoctorDemo`), hydrate, sign-out |
 
 ---
 

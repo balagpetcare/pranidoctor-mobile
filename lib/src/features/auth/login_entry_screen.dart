@@ -8,6 +8,7 @@ import '../../app/screen_padding.dart';
 import '../../core/constants/pd_radii.dart';
 import '../../core/validation/bd_phone.dart';
 import '../../core/widgets/pd_text_field.dart';
+import 'doctor/presentation/doctor_login_screen.dart';
 import '../home/home_shell_screen.dart';
 import '../session/application/session_notifier.dart';
 import 'data/mobile_otp_auth_repository.dart';
@@ -175,6 +176,15 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
               child: const Text('ডেমো প্রবেশ (শুধু ডিবাগ)'),
             ),
           ],
+          const SizedBox(height: 16),
+          Center(
+            child: TextButton(
+              onPressed: _loading
+                  ? null
+                  : () => context.push(DoctorLoginScreen.routePath),
+              child: const Text('চিকিৎসক হিসেবে প্রবেশ'),
+            ),
+          ),
         ],
       ),
     );

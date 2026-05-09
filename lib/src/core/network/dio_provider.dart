@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/navigation_keys.dart';
+import '../../features/auth/doctor/presentation/doctor_login_screen.dart';
 import '../../features/auth/login_entry_screen.dart';
 import '../../features/session/application/session_notifier.dart';
 import '../config/app_config.dart';
@@ -33,10 +34,15 @@ final dioProvider = Provider<Dio>((ref) {
       },
       onError: (DioException e, handler) async {
         if (e.response?.statusCode == 401) {
+          final role = ref.read(sessionNotifierProvider).role;
           await ref.read(sessionNotifierProvider.notifier).signOut();
           final ctx = pdRootNavigatorKey.currentContext;
           if (ctx != null && ctx.mounted) {
-            ctx.go(LoginEntryScreen.routePath);
+            ctx.go(
+              role == AppRole.doctor
+                  ? DoctorLoginScreen.routePath
+                  : LoginEntryScreen.routePath,
+            );
           }
         }
         handler.next(e);

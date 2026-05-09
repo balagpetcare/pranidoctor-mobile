@@ -45,6 +45,22 @@ class SessionNotifier extends Notifier<SessionState> {
     state = const SessionState(role: AppRole.customer, isAuthenticated: true);
   }
 
+  /// Doctor mobile JWT — same storage slot as customer until backend splits tokens (see M09 plan R4).
+  Future<void> signInDoctor(String accessToken) async {
+    await ref.read(tokenStorageProvider).writeAccessToken(accessToken);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastRoleKey, AppRole.doctor.name);
+    state = const SessionState(role: AppRole.doctor, isAuthenticated: true);
+  }
+
+  /// Demo / stub doctor session: clears any stored JWT so customer token is not sent to doctor APIs.
+  Future<void> signInDoctorDemo() async {
+    await ref.read(tokenStorageProvider).clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastRoleKey, AppRole.doctor.name);
+    state = const SessionState(role: AppRole.doctor, isAuthenticated: true);
+  }
+
   /// MVP / offline-friendly entry: marks customer session without API or stored JWT.
   /// Cleared on [signOut]; cold start returns to login unless [hydrateFromStorage] finds a token.
   void signInGuest() {

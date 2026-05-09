@@ -7,6 +7,12 @@ import 'router_error_screen.dart';
 import '../features/auth/doctor/presentation/doctor_login_screen.dart';
 import '../features/auth/login_entry_screen.dart';
 import '../features/auth/otp_verify_screen.dart';
+import '../features/doctor_workflow/presentation/doctor_case_detail_screen.dart';
+import '../features/doctor_workflow/presentation/doctor_cases_screen.dart';
+import '../features/doctor_workflow/presentation/doctor_complete_case_screen.dart';
+import '../features/doctor_workflow/presentation/doctor_prescription_screen.dart';
+import '../features/doctor_workflow/presentation/doctor_requests_screen.dart';
+import '../features/doctor_workflow/presentation/doctor_treatment_note_screen.dart';
 import '../features/home/doctor/presentation/doctor_home_screen.dart';
 import '../features/home/home_shell_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -80,7 +86,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (auth.isAuthenticated &&
           (loc == LoginEntryScreen.routePath ||
               loc.startsWith('${LoginEntryScreen.routePath}/'))) {
+        if (auth.role == AppRole.doctor) {
+          return DoctorHomeScreen.routePath;
+        }
         return HomeShellScreen.routePath;
+      }
+
+      if (auth.isAuthenticated && loc == DoctorLoginScreen.routePath) {
+        return DoctorHomeScreen.routePath;
       }
 
       if (loc ==
@@ -138,6 +151,48 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: DoctorHomeScreen.routePath,
         name: DoctorHomeScreen.routeName,
         builder: (context, state) => const DoctorHomeScreen(),
+      ),
+      GoRoute(
+        path: DoctorRequestsScreen.routePath,
+        name: DoctorRequestsScreen.routeName,
+        builder: (context, state) => const DoctorRequestsScreen(),
+      ),
+      GoRoute(
+        path: DoctorCasesScreen.routePath,
+        name: DoctorCasesScreen.routeName,
+        builder: (context, state) => const DoctorCasesScreen(),
+      ),
+      GoRoute(
+        path: '/doctor/cases/:caseId/treatment',
+        name: DoctorTreatmentNoteScreen.routeName,
+        builder: (context, state) {
+          final id = state.pathParameters['caseId']!;
+          return DoctorTreatmentNoteScreen(caseId: id);
+        },
+      ),
+      GoRoute(
+        path: '/doctor/cases/:caseId/prescription',
+        name: DoctorPrescriptionScreen.routeName,
+        builder: (context, state) {
+          final id = state.pathParameters['caseId']!;
+          return DoctorPrescriptionScreen(caseId: id);
+        },
+      ),
+      GoRoute(
+        path: '/doctor/cases/:caseId/complete',
+        name: DoctorCompleteCaseScreen.routeName,
+        builder: (context, state) {
+          final id = state.pathParameters['caseId']!;
+          return DoctorCompleteCaseScreen(caseId: id);
+        },
+      ),
+      GoRoute(
+        path: '/doctor/cases/:caseId',
+        name: DoctorCaseDetailScreen.routeName,
+        builder: (context, state) {
+          final id = state.pathParameters['caseId']!;
+          return DoctorCaseDetailScreen(caseId: id);
+        },
       ),
       GoRoute(
         path: ProviderFinderLandingScreen.routePath,

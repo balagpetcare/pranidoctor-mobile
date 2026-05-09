@@ -54,7 +54,7 @@ class DoctorLoginScreen extends ConsumerWidget {
             onPressed: () async {
               await ref
                   .read(sessionNotifierProvider.notifier)
-                  .setRole(AppRole.doctor);
+                  .signInDoctorDemo();
               if (context.mounted) {
                 context.go(DoctorHomeScreen.routePath);
               }

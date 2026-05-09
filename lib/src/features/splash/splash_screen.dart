@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/screen_padding.dart';
 import '../../core/theme/pd_semantic_colors.dart';
 import '../auth/login_entry_screen.dart';
+import '../home/doctor/presentation/doctor_home_screen.dart';
 import '../home/home_shell_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../session/application/session_notifier.dart';
@@ -36,12 +37,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
     final done = prefs.getBool(SplashScreen._onboardingDoneKey) ?? false;
-    final auth = ref.read(sessionNotifierProvider).isAuthenticated;
+    final session = ref.read(sessionNotifierProvider);
+    final auth = session.isAuthenticated;
     if (!mounted) return;
     if (!done) {
       context.go(OnboardingScreen.routePath);
     } else if (auth) {
-      context.go(HomeShellScreen.routePath);
+      if (session.role == AppRole.doctor) {
+        context.go(DoctorHomeScreen.routePath);
+      } else {
+        context.go(HomeShellScreen.routePath);
+      }
     } else {
       context.go(LoginEntryScreen.routePath);
     }
