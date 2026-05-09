@@ -32,7 +32,8 @@ class AnimalPhotoPlaceholder extends StatelessWidget {
           width: dim,
           height: dim,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _fallback(scheme, dim),
+          errorBuilder: (context, error, stackTrace) =>
+              _fallback(context, scheme, dim),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return SizedBox(
@@ -54,10 +55,11 @@ class AnimalPhotoPlaceholder extends StatelessWidget {
       );
     }
 
-    return _fallback(scheme, dim);
+    return _fallback(context, scheme, dim);
   }
 
-  Widget _fallback(ColorScheme scheme, double dim) {
+  Widget _fallback(BuildContext context, ColorScheme scheme, double dim) {
+    final px = PraniAssetDecode.cacheExtentPx(context, dim, 512);
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
@@ -68,6 +70,8 @@ class AnimalPhotoPlaceholder extends StatelessWidget {
           fit: BoxFit.cover,
           gaplessPlayback: true,
           semanticLabel: 'পশুর ছবি নেই — খামার প্রাণীর জন্য স্থানধারী চিত্র',
+          cacheWidth: px,
+          cacheHeight: px,
         ),
       ),
     );

@@ -29,18 +29,59 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   final _otpController = TextEditingController();
   bool _otpSent = false;
   bool _busy = false;
+  /// Normalized `01XXXXXXXXX` last successfully targeted for OTP (for UI reset on edit).
+  String? _otpTargetPhone;
+
+  static final _bdMobile = RegExp(r'^01\d{9}$');
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneEdited);
+    _otpController.addListener(() => setState(() {}));
+  }
+
+  void _onPhoneEdited() {
+    final normalized = _normalizedBdMobile(_phoneController.text);
+    if (_otpSent &&
+        _otpTargetPhone != null &&
+        normalized.isNotEmpty &&
+        normalized != _otpTargetPhone) {
+      _otpController.clear();
+      _otpSent = false;
+      _otpTargetPhone = null;
+    }
+    setState(() {});
+  }
+
+  /// Digits-only Bangladesh mobile as `01XXXXXXXXX` when valid input is present.
+  String _normalizedBdMobile(String raw) {
+    var d = raw.replaceAll(RegExp(r'\D'), '');
+    if (d.startsWith('880') && d.length >= 13) {
+      d = d.substring(3);
+    }
+    if (d.length == 10 && d.startsWith('1')) {
+      d = '0$d';
+    }
+    return d;
+  }
+
+  bool get _phoneValid => _bdMobile.hasMatch(_normalizedBdMobile(_phoneController.text));
+
+  bool get _otpComplete => _otpController.text.length == 6;
 
   @override
   void dispose() {
+    _phoneController.removeListener(_onPhoneEdited);
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
   }
 
   Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim();
-    if (phone.length < 10) {
-      _snack('সঠিক মোবাইল নম্বর দিন।');
+    final phone = _normalizedBdMobile(_phoneController.text);
+    if (!_bdMobile.hasMatch(phone)) {
+      _snack('সঠিক মোবাইল নম্বর দিন (০১ দিয়ে শুরু, ১১ সংখ্যা)।');
       return;
     }
     setState(() => _busy = true);
@@ -49,20 +90,25 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       if (!mounted) return;
       setState(() {
         _otpSent = true;
+        _otpTargetPhone = phone;
       });
       _snack('যাচাইকরণ কোড SMS এ পাঠানো হয়েছে।');
     } on OtpAuthException catch (e) {
-      _snack(e.message);
+      if (mounted) _snack(e.message);
+    } catch (_) {
+      if (mounted) {
+        _snack('কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _verify() async {
-    final phone = _phoneController.text.trim();
+    final phone = _normalizedBdMobile(_phoneController.text);
     final code = _otpController.text.trim();
-    if (code.length != 6) {
-      _snack('৬ সংখ্যার কোড দিন।');
+    if (!_bdMobile.hasMatch(phone) || code.length != 6) {
+      _snack('মোবাইল ও ৬ সংখ্যার কোড যাচাই করুন।');
       return;
     }
     setState(() => _busy = true);
@@ -74,7 +120,11 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       if (!mounted) return;
       context.go(HomeShellScreen.routePath);
     } on OtpAuthException catch (e) {
-      _snack(e.message);
+      if (mounted) _snack(e.message);
+    } catch (_) {
+      if (mounted) {
+        _snack('প্রবেশ সম্ভব হয়নি। আবার চেষ্টা করুন।');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -107,6 +157,12 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
                 fit: BoxFit.contain,
                 gaplessPlayback: true,
                 semanticLabel: 'প্রাণী ডাক্তার ওয়ার্ডমার্ক',
+                cacheWidth: PraniAssetDecode.cacheExtentPx(
+                  context,
+                  MediaQuery.sizeOf(context).width - pad.horizontal,
+                  PraniAssetDecode.wordmarkMaxWidthPx,
+                ),
+                cacheHeight: PraniAssetDecode.cacheExtentPx(context, 52, 200),
               ),
             ),
           ),
@@ -187,55 +243,4 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
               Expanded(child: Divider(color: scheme.outlineVariant)),
             ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'সোশ্যাল (শীঘ্রই)',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.g_translate, size: 22),
-            label: const Text('Google দিয়ে লগইন (শীঘ্রই)'),
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.facebook, size: 22),
-            label: const Text('Facebook দিয়ে লগইন (শীঘ্রই)'),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'পেশাদার প্রবেশ',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              TextButton(
-                onPressed: () => context.push(DoctorLoginScreen.routePath),
-                child: const Text('চিকিৎসক'),
-              ),
-              TextButton(
-                onPressed: () => context.push(TechnicianLoginScreen.routePath),
-                child: const Text('AI টেকনিশিয়ান'),
-              ),
-            ],
-          ),
-          if (kDebugMode) ...[
-            const SizedBox(height: 24),
-            Text(
-              'API ভিত্তি (ডিবাগ): ${AppConfig.apiBaseUrl}',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: scheme.outline),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
+          const SizedBox(heigh

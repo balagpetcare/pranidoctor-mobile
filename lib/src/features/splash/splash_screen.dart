@@ -26,7 +26,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _goNext();
+    // Let the first frame paint before starting async navigation/storage work.
+    // Helps avoid VM-service handshake timeouts on slow emulators (skipped frames).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _goNext();
+    });
   }
 
   Future<void> _goNext() async {
@@ -55,11 +60,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            PraniAssets.splashFarm,
-            fit: BoxFit.cover,
-            gaplessPlayback: true,
-            excludeFromSemantics: true,
+          Builder(
+            builder: (context) {
+              final mq = MediaQuery.of(context);
+              final dpr = mq.devicePixelRatio;
+              final cw = (mq.size.width * dpr).round().clamp(
+                240,
+                PraniAssetDecode.splashBgMaxWidthPx,
+              );
+              final ch = (mq.size.height * dpr).round().clamp(
+                240,
+                PraniAssetDecode.splashBgMaxHeightPx,
+              );
+              return Image.asset(
+                PraniAssets.splashFarm,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                excludeFromSemantics: true,
+                cacheWidth: cw,
+                cacheHeight: ch,
+              );
+            },
           ),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -86,6 +107,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       fit: BoxFit.contain,
                       gaplessPlayback: true,
                       semanticLabel: 'প্রাণী ডাক্তার লোগো',
+                      cacheWidth: PraniAssetDecode.logoSquarePx,
+                      cacheHeight: PraniAssetDecode.logoSquarePx,
                     ),
                     const SizedBox(height: 20),
                     Text(

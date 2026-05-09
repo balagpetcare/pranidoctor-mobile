@@ -29,6 +29,8 @@ class AboutScreen extends StatelessWidget {
             fit: BoxFit.contain,
             gaplessPlayback: true,
             semanticLabel: 'প্রাণী ডাক্তার লোগো',
+            cacheWidth: PraniAssetDecode.logoSquarePx,
+            cacheHeight: PraniAssetDecode.logoSquarePx,
           ),
           const SizedBox(height: 16),
           Text(

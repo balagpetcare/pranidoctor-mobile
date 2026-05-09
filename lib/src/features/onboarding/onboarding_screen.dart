@@ -91,6 +91,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 gaplessPlayback: true,
                                 semanticLabel:
                                     'খামার ও গবাদি প্রাণীর চিত্রায়ণ',
+                                cacheWidth: PraniAssetDecode.cacheExtentPx(
+                                  context,
+                                  MediaQuery.sizeOf(context).width - 24,
+                                  PraniAssetDecode.onboardingIllustrationMaxPx,
+                                ),
+                                cacheHeight: PraniAssetDecode.cacheExtentPx(
+                                  context,
+                                  200,
+                                  PraniAssetDecode.onboardingIllustrationMaxPx,
+                                ),
                               ),
                             ),
                           ),

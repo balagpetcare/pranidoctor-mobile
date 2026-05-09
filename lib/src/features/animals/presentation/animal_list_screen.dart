@@ -132,6 +132,16 @@ class _EmptyBody extends StatelessWidget {
                   fit: BoxFit.contain,
                   gaplessPlayback: true,
                   semanticLabel: 'খামার ও গবাদি প্রাণীর খালি তালিকার চিত্রায়ণ',
+                  cacheWidth: PraniAssetDecode.cacheExtentPx(
+                    context,
+                    MediaQuery.sizeOf(context).width - 56,
+                    PraniAssetDecode.heroMaxPx,
+                  ),
+                  cacheHeight: PraniAssetDecode.cacheExtentPx(
+                    context,
+                    188,
+                    PraniAssetDecode.heroMaxPx,
+                  ),
                 ),
               ),
             ),

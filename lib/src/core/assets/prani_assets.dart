@@ -43,6 +43,22 @@ abstract final class PraniAssets {
       'assets/brand/logos/prani_doctor_alt_logo_earth_tone.png';
 }
 
+/// Decode pixel budgets for [Image.asset] `cacheWidth` / `cacheHeight` (memory).
+abstract final class PraniAssetDecode {
+  static const int splashBgMaxWidthPx = 1080;
+  static const int splashBgMaxHeightPx = 1920;
+  static const int logoSquarePx = 384;
+  static const int logoHeaderPx = 256;
+  static const int heroMaxPx = 1200;
+  static const int onboardingIllustrationMaxPx = 900;
+  static const int wordmarkMaxWidthPx = 900;
+
+  static int cacheExtentPx(BuildContext context, double logical, int maxPx) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    return (logical * dpr).round().clamp(48, maxPx);
+  }
+}
+
 /// Bounded brand image for heroes, banners, and empty states.
 class PraniBrandHero extends StatelessWidget {
   const PraniBrandHero({
@@ -54,6 +70,7 @@ class PraniBrandHero extends StatelessWidget {
     this.alignment = Alignment.center,
     this.backgroundColor,
     this.semanticLabel,
+    this.decodeMaxPx = PraniAssetDecode.heroMaxPx,
   });
 
   final String assetPath;
@@ -63,27 +80,42 @@ class PraniBrandHero extends StatelessWidget {
   final Alignment alignment;
   final Color? backgroundColor;
   final String? semanticLabel;
+  final int decodeMaxPx;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: borderRadius,
-      child: ColoredBox(
-        color:
-            backgroundColor ??
-            Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: SizedBox(
-          width: double.infinity,
-          height: height,
-          child: Image.asset(
-            assetPath,
-            fit: fit,
-            alignment: alignment,
-            gaplessPlayback: true,
-            semanticLabel: semanticLabel,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mq = MediaQuery.of(context);
+        final dpr = mq.devicePixelRatio;
+        final layoutW =
+            constraints.maxWidth.isFinite && constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : mq.size.width;
+        final decodeW = (layoutW * dpr).round().clamp(120, decodeMaxPx);
+        final decodeH = (height * dpr).round().clamp(80, decodeMaxPx);
+        return ClipRRect(
+          borderRadius: borderRadius,
+          child: ColoredBox(
+            color:
+                backgroundColor ??
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: SizedBox(
+              width: double.infinity,
+              height: height,
+              child: Image.asset(
+                assetPath,
+                fit: fit,
+                alignment: alignment,
+                gaplessPlayback: true,
+                semanticLabel: semanticLabel,
+                cacheWidth: decodeW,
+                cacheHeight: decodeH,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

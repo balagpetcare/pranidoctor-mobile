@@ -75,6 +75,8 @@ class ProfileHomeScreen extends ConsumerWidget {
                           height: 44,
                           fit: BoxFit.contain,
                           semanticLabel: 'প্রাণী ডাক্তার লোগো',
+                          cacheWidth: PraniAssetDecode.logoHeaderPx,
+                          cacheHeight: PraniAssetDecode.logoHeaderPx,
                         ),
                       ),
                       const SizedBox(height: 12),
