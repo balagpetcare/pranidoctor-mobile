@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'navigation_keys.dart';
+import 'router_error_screen.dart';
 import '../features/auth/doctor/presentation/doctor_login_screen.dart';
 import '../features/auth/login_entry_screen.dart';
 import '../features/home/doctor/presentation/doctor_home_screen.dart';
@@ -35,6 +36,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: pdRootNavigatorKey,
     initialLocation: SplashScreen.routePath,
     refreshListenable: refresh,
+    errorBuilder: (context, state) => RouterErrorScreen(state: state),
     redirect: (context, state) {
       final loc = state.uri.path;
       final auth = ref.read(sessionNotifierProvider);

@@ -29,9 +29,7 @@ class AppNotification {
       type: json['type'] as String,
       title: json['title'] as String,
       body: json['body'] as String,
-      readAt: readRaw == null
-          ? null
-          : DateTime.tryParse(readRaw as String),
+      readAt: readRaw == null ? null : DateTime.tryParse(readRaw as String),
       createdAt: createdRaw is String
           ? DateTime.parse(createdRaw)
           : DateTime.fromMillisecondsSinceEpoch(0),

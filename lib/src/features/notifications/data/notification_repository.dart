@@ -13,10 +13,7 @@ class NotificationApiException implements Exception {
   String toString() => message;
 }
 
-typedef NotificationsPageData = ({
-  List<AppNotification> items,
-  int total,
-});
+typedef NotificationsPageData = ({List<AppNotification> items, int total});
 
 class NotificationRepository {
   NotificationRepository(this._client);
@@ -76,9 +73,7 @@ class NotificationRepository {
 
   Future<void> markRead(String id) async {
     try {
-      final res = await _client.patch<dynamic>(
-        '/api/notifications/$id/read',
-      );
+      final res = await _client.patch<dynamic>('/api/notifications/$id/read');
       _unwrap(res);
     } on DioException catch (e) {
       throw _mapDio(e);
@@ -87,9 +82,7 @@ class NotificationRepository {
 
   Future<int> markAllRead() async {
     try {
-      final res = await _client.patch<dynamic>(
-        '/api/notifications/read-all',
-      );
+      final res = await _client.patch<dynamic>('/api/notifications/read-all');
       final inner = _unwrap(res);
       final n = inner['updatedCount'];
       if (n is num) return n.toInt();
@@ -122,10 +115,7 @@ class NotificationRepository {
       return NotificationApiException('অনুমতি নেই', code: 'FORBIDDEN');
     }
     if (code == 404) {
-      return NotificationApiException(
-        'খুঁজে পাওয়া যায়নি',
-        code: 'NOT_FOUND',
-      );
+      return NotificationApiException('খুঁজে পাওয়া যায়নি', code: 'NOT_FOUND');
     }
     return NotificationApiException(
       e.message ?? 'সংযোগ ত্রুটি',

@@ -32,8 +32,9 @@ class SessionNotifier extends Notifier<SessionState> {
 
     final prefs = await SharedPreferences.getInstance();
     final roleName = prefs.getString(_lastRoleKey);
-    final role =
-        roleName == AppRole.doctor.name ? AppRole.doctor : AppRole.customer;
+    final role = roleName == AppRole.doctor.name
+        ? AppRole.doctor
+        : AppRole.customer;
     state = SessionState(role: role, isAuthenticated: true);
   }
 
@@ -41,10 +42,13 @@ class SessionNotifier extends Notifier<SessionState> {
     await ref.read(tokenStorageProvider).writeAccessToken(accessToken);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastRoleKey, AppRole.customer.name);
-    state = const SessionState(
-      role: AppRole.customer,
-      isAuthenticated: true,
-    );
+    state = const SessionState(role: AppRole.customer, isAuthenticated: true);
+  }
+
+  /// MVP / offline-friendly entry: marks customer session without API or stored JWT.
+  /// Cleared on [signOut]; cold start returns to login unless [hydrateFromStorage] finds a token.
+  void signInGuest() {
+    state = const SessionState(role: AppRole.customer, isAuthenticated: true);
   }
 
   Future<void> setRole(AppRole role) async {
