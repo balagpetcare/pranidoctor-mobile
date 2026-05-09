@@ -71,10 +71,10 @@ class ServiceCategoryOption {
 
   factory ServiceCategoryOption.fromJson(Map<String, dynamic> json) {
     return ServiceCategoryOption(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
-      description: json['description'] as String?,
+      id: _optString(json['id']) ?? '',
+      name: _optString(json['name']) ?? '',
+      slug: _optString(json['slug']) ?? '',
+      description: _optString(json['description']),
     );
   }
 }
@@ -94,10 +94,10 @@ class ServiceRequestAnimalRef {
 
   factory ServiceRequestAnimalRef.fromJson(Map<String, dynamic> json) {
     return ServiceRequestAnimalRef(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      species: json['species'] as String,
-      active: json['active'] as bool,
+      id: _optString(json['id']) ?? '',
+      name: _optString(json['name']) ?? '—',
+      species: _optString(json['species']) ?? '—',
+      active: json['active'] is bool ? json['active'] as bool : true,
     );
   }
 }
@@ -178,6 +178,29 @@ class ServiceRequest {
   String? get assignedTechnicianDisplayName =>
       _displayNameFromProviderRef(assignedTechnician);
 
+  String? get assignedDoctorPhone => _phoneFromProviderRef(assignedDoctor);
+
+  String? get assignedTechnicianPhone =>
+      _phoneFromProviderRef(assignedTechnician);
+
+  /// Human-readable urgency (API may omit; booking sometimes merges into [description]).
+  String get urgencyDisplayBn {
+    final raw = urgency?.trim();
+    if (raw == null || raw.isEmpty) {
+      return isEmergency ? 'জরুরি' : '—';
+    }
+    switch (raw) {
+      case 'normal':
+        return 'সাধারণ';
+      case 'urgent':
+        return 'দ্রুত';
+      case 'emergency':
+        return 'জরুরি';
+      default:
+        return raw;
+    }
+  }
+
   static String? _displayNameFromProviderRef(Map<String, dynamic>? ref) {
     if (ref == null) return null;
     final d = ref['displayName'];
@@ -186,56 +209,73 @@ class ServiceRequest {
     return t.isEmpty ? null : t;
   }
 
+  static String? _phoneFromProviderRef(Map<String, dynamic>? ref) {
+    if (ref == null) return null;
+    for (final key in ['phone', 'mobile', 'phoneNumber']) {
+      final v = ref[key];
+      final s = _optString(v);
+      if (s != null) return s;
+    }
+    return null;
+  }
+
   factory ServiceRequest.fromJson(Map<String, dynamic> json) {
-    Map<String, dynamic>? asMap(dynamic v) =>
-        v is Map<String, dynamic> ? v : null;
+    Map<String, dynamic>? asMap(dynamic v) => _asMap(v);
+
+    final now = DateTime.now();
+
+    ServiceRequestAnimalRef? animalParsed;
+    final animalMap = asMap(json['animal']);
+    if (animalMap != null) {
+      try {
+        animalParsed = ServiceRequestAnimalRef.fromJson(animalMap);
+      } catch (_) {
+        animalParsed = null;
+      }
+    }
+
+    ServiceCategoryOption? categoryParsed;
+    final catMap = asMap(json['serviceCategory']);
+    if (catMap != null) {
+      try {
+        categoryParsed = ServiceCategoryOption.fromJson(catMap);
+      } catch (_) {
+        categoryParsed = null;
+      }
+    }
 
     return ServiceRequest(
-      id: json['id'] as String,
-      customerId: json['customerId'] as String,
-      animalId: json['animalId'] as String,
-      serviceCategoryId: json['serviceCategoryId'] as String,
-      serviceType: ServiceRequestType.fromJson(json['serviceType'] as String),
-      status: ServiceRequestStatus.fromJson(json['status'] as String),
-      submittedAt: DateTime.parse(json['submittedAt'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      problemOrSymptom: json['problemOrSymptom'] as String?,
-      description: json['description'] as String?,
-      areaId: json['areaId'] as String?,
-      villageId: json['villageId'] as String?,
-      locationText: json['locationText'] as String?,
-      preferredTime: json['preferredTime'] as String?,
-      scheduledStart: json['scheduledStart'] == null
-          ? null
-          : DateTime.tryParse(json['scheduledStart'] as String),
-      scheduledEnd: json['scheduledEnd'] == null
-          ? null
-          : DateTime.tryParse(json['scheduledEnd'] as String),
-      assignedDoctorId: json['assignedDoctorId'] as String?,
-      assignedTechnicianId: json['assignedTechnicianId'] as String?,
-      isEmergency: json['isEmergency'] as bool? ?? false,
-      emergencyNotes: json['emergencyNotes'] as String?,
-      urgency: json['urgency'] as String?,
-      assignedAt: json['assignedAt'] == null
-          ? null
-          : DateTime.tryParse(json['assignedAt'] as String),
-      startedAt: json['startedAt'] == null
-          ? null
-          : DateTime.tryParse(json['startedAt'] as String),
-      completedAt: json['completedAt'] == null
-          ? null
-          : DateTime.tryParse(json['completedAt'] as String),
-      cancelledAt: json['cancelledAt'] == null
-          ? null
-          : DateTime.tryParse(json['cancelledAt'] as String),
-      cancelReason: json['cancelReason'] as String?,
-      serviceCategory: asMap(json['serviceCategory']) == null
-          ? null
-          : ServiceCategoryOption.fromJson(asMap(json['serviceCategory'])!),
-      animal: asMap(json['animal']) == null
-          ? null
-          : ServiceRequestAnimalRef.fromJson(asMap(json['animal'])!),
+      id: _optString(json['id']) ?? '',
+      customerId: _optString(json['customerId']) ?? '',
+      animalId: _optString(json['animalId']) ?? '',
+      serviceCategoryId: _optString(json['serviceCategoryId']) ?? '',
+      serviceType: _parseServiceType(json['serviceType']),
+      status: _parseStatus(json['status']),
+      submittedAt: _parseDateTime(json['submittedAt']) ?? now,
+      createdAt: _parseDateTime(json['createdAt']) ?? now,
+      updatedAt: _parseDateTime(json['updatedAt']) ?? now,
+      problemOrSymptom: _optString(json['problemOrSymptom']),
+      description: _optString(json['description']),
+      areaId: _optString(json['areaId']),
+      villageId: _optString(json['villageId']),
+      locationText: _optString(json['locationText']),
+      preferredTime: _optString(json['preferredTime']),
+      scheduledStart: _parseDateTime(json['scheduledStart']),
+      scheduledEnd: _parseDateTime(json['scheduledEnd']),
+      assignedDoctorId: _optString(json['assignedDoctorId']),
+      assignedTechnicianId: _optString(json['assignedTechnicianId']),
+      isEmergency: json['isEmergency'] is bool
+          ? json['isEmergency'] as bool
+          : false,
+      emergencyNotes: _optString(json['emergencyNotes']),
+      urgency: _optString(json['urgency']),
+      assignedAt: _parseDateTime(json['assignedAt']),
+      startedAt: _parseDateTime(json['startedAt']),
+      completedAt: _parseDateTime(json['completedAt']),
+      cancelledAt: _parseDateTime(json['cancelledAt']),
+      cancelReason: _optString(json['cancelReason']),
+      serviceCategory: categoryParsed,
+      animal: animalParsed,
       assignedDoctor: asMap(json['assignedDoctor']),
       assignedTechnician: asMap(json['assignedTechnician']),
     );
@@ -245,5 +285,40 @@ class ServiceRequest {
     return status == ServiceRequestStatus.PENDING ||
         status == ServiceRequestStatus.ACCEPTED ||
         status == ServiceRequestStatus.ASSIGNED;
+  }
+}
+
+String? _optString(dynamic v) {
+  if (v == null) return null;
+  if (v is String) {
+    final t = v.trim();
+    return t.isEmpty ? null : t;
+  }
+  return v.toString();
+}
+
+Map<String, dynamic>? _asMap(dynamic v) => v is Map<String, dynamic> ? v : null;
+
+DateTime? _parseDateTime(dynamic v) {
+  if (v == null) return null;
+  if (v is String) return DateTime.tryParse(v);
+  return null;
+}
+
+ServiceRequestType _parseServiceType(dynamic v) {
+  if (v is! String) return ServiceRequestType.DOCTOR_HOME_VISIT;
+  try {
+    return ServiceRequestType.fromJson(v);
+  } catch (_) {
+    return ServiceRequestType.DOCTOR_HOME_VISIT;
+  }
+}
+
+ServiceRequestStatus _parseStatus(dynamic v) {
+  if (v is! String) return ServiceRequestStatus.PENDING;
+  try {
+    return ServiceRequestStatus.fromJson(v);
+  } catch (_) {
+    return ServiceRequestStatus.PENDING;
   }
 }

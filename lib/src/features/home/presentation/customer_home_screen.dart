@@ -6,6 +6,7 @@ import '../../../core/constants/pd_spacing.dart';
 import '../../notifications/presentation/notifications_list_screen.dart';
 import '../../service_requests/data/service_request_model.dart';
 import '../../service_requests/presentation/booking_wizard_screen.dart';
+import '../../service_requests/presentation/service_requests_list_screen.dart';
 import '../../tutorials/presentation/tutorial_list_screen.dart';
 import 'widgets/customer_emergency_cta_card.dart';
 import 'widgets/customer_home_header.dart';
@@ -106,6 +107,14 @@ class CustomerHomeScreen extends StatelessWidget {
                           title: 'আমার পশু',
                           subtitle: 'প্রোফাইল ও তালিকা',
                           onTap: onOpenAnimalsTab,
+                        ),
+                        const SizedBox(height: PdSpacing.sm),
+                        CustomerShortcutCard(
+                          icon: Icons.assignment_outlined,
+                          title: 'আমার অনুরোধ',
+                          subtitle: 'সব অনুরোধ দেখুন ও ট্র্যাক করুন',
+                          onTap: () =>
+                              context.push(ServiceRequestsListScreen.routePath),
                         ),
                         const SizedBox(height: PdSpacing.sm),
                         CustomerShortcutCard(

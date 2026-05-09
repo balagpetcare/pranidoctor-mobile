@@ -18,7 +18,8 @@ import '../features/providers/presentation/technician_list_screen.dart';
 import '../features/service_requests/data/service_request_model.dart';
 import '../features/service_requests/presentation/booking_success_screen.dart';
 import '../features/service_requests/presentation/booking_wizard_screen.dart';
-import '../features/service_requests/presentation/service_requests_tab_screen.dart';
+import '../features/service_requests/presentation/service_request_detail_screen.dart';
+import '../features/service_requests/presentation/service_requests_list_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/tutorials/presentation/tutorial_detail_screen.dart';
 import '../features/tutorials/presentation/tutorial_list_screen.dart';
@@ -224,6 +225,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: ServiceRequestsListScreen.routePath,
+        name: ServiceRequestsListScreen.routeName,
+        builder: (context, state) => const ServiceRequestsListScreen(),
       ),
       GoRoute(
         path: '/service-requests/:requestId',

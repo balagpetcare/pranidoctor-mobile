@@ -6,7 +6,8 @@ import 'package:pranidoctor_mobile/src/core/constants/pd_spacing.dart';
 import 'package:pranidoctor_mobile/src/core/widgets/pd_buttons.dart';
 import 'package:pranidoctor_mobile/src/features/home/home_shell_screen.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
-import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
+import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_request_detail_screen.dart';
+import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_list_screen.dart';
 
 /// Shown after [POST /api/mobile/service-requests] succeeds.
 ///
@@ -69,9 +70,15 @@ class BookingSuccessScreen extends StatelessWidget {
               const SizedBox(height: PdSpacing.xl),
               PdPrimaryButton(
                 label: 'অনুরোধের বিস্তারিত দেখুন',
-                onPressed: () => context.go(
+                onPressed: () => context.push(
                   ServiceRequestDetailScreen.routePathFor(request.id),
                 ),
+              ),
+              const SizedBox(height: PdSpacing.sm),
+              PdSecondaryButton(
+                label: 'আমার সব অনুরোধ',
+                onPressed: () =>
+                    context.push(ServiceRequestsListScreen.routePath),
               ),
               const SizedBox(height: PdSpacing.sm),
               PdSecondaryButton(

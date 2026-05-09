@@ -7,7 +7,7 @@ import '../../../../core/widgets/pd_app_card.dart';
 import '../../../../core/widgets/pd_buttons.dart';
 import '../../../service_requests/application/service_requests_providers.dart';
 import '../../../service_requests/data/service_request_model.dart';
-import '../../../service_requests/presentation/service_requests_tab_screen.dart';
+import '../../../service_requests/presentation/service_request_detail_screen.dart';
 
 /// Latest service request summary or empty/error states (Bangla).
 class CustomerRecentRequestCard extends ConsumerWidget {
