@@ -1,5 +1,7 @@
 // AI technician job / request DTOs (camelCase). Tolerates unknown JSON keys.
 
+import 'package:pranidoctor_mobile/src/features/billing/data/billing_payment_summary_model.dart';
+
 /// High-level UI phase for status cards (maps from API `status` + flags).
 enum TechnicianWorkflowPhase {
   newRequest,
@@ -252,6 +254,7 @@ class TechnicianJobDetail {
     this.completedAt,
     this.hasAiRecord = false,
     this.aiRecord,
+    this.billing,
   });
 
   final String id;
@@ -270,6 +273,7 @@ class TechnicianJobDetail {
   final DateTime? completedAt;
   final bool hasAiRecord;
   final TechnicianAiServiceRecord? aiRecord;
+  final BillingPaymentSummary? billing;
 
   bool get canAccept {
     final s = status.toUpperCase();
@@ -334,6 +338,7 @@ class TechnicianJobDetail {
       aiRecord: recordJson is Map<String, dynamic>
           ? TechnicianAiServiceRecord.fromJson(recordJson)
           : null,
+      billing: BillingPaymentSummary.fromRootJson(json),
     );
   }
 
@@ -344,6 +349,7 @@ class TechnicianJobDetail {
     TechnicianAiServiceRecord? aiRecord,
     DateTime? startedAt,
     DateTime? completedAt,
+    BillingPaymentSummary? billing,
   }) {
     final nextStatus = status ?? this.status;
     final nextHas = hasAiRecord ?? this.hasAiRecord;
@@ -366,6 +372,7 @@ class TechnicianJobDetail {
       completedAt: completedAt ?? this.completedAt,
       hasAiRecord: nextHas,
       aiRecord: aiRecord ?? this.aiRecord,
+      billing: billing ?? this.billing,
     );
   }
 }

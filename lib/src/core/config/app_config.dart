@@ -14,4 +14,11 @@ abstract final class AppConfig {
     'USE_MOCK_TECHNICIAN_API',
     defaultValue: false,
   );
+
+  /// Customer billing demo overlay when API omits `billing` (no-op unless enabled).
+  /// `flutter run --dart-define=USE_MOCK_BILLING_UI=true`
+  static const bool useMockBillingUi = bool.fromEnvironment(
+    'USE_MOCK_BILLING_UI',
+    defaultValue: false,
+  );
 }

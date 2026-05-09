@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
+import 'package:pranidoctor_mobile/src/features/billing/data/billing_payment_summary_model.dart';
+import 'package:pranidoctor_mobile/src/features/billing/presentation/widgets/customer_billing_summary_card.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/application/service_requests_providers.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_repository.dart';
@@ -142,6 +145,11 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
           children: [
             _StatusBanner(status: r.status),
             const SizedBox(height: 16),
+            CustomerBillingSummaryCard(
+              summary: _customerBillingForDisplay(r),
+              isEmpty: _customerBillingEmpty(r),
+            ),
+            const SizedBox(height: 16),
             _DetailSection(title: 'সেবার ধরন', body: r.serviceType.labelBn),
             _DetailSection(title: 'স্ট্যাটাস', body: r.status.labelBn),
             if (r.assignedDoctorDisplayName != null)
@@ -225,6 +233,20 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
   static String _formatDt(DateTime t) {
     final d = t.toLocal();
     return '${d.day}/${d.month}/${d.year}, ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  static BillingPaymentSummary? _customerBillingForDisplay(ServiceRequest r) {
+    var b = r.billing;
+    if (b == null && AppConfig.useMockBillingUi) {
+      b = BillingPaymentSummary.demoForCustomerPreview();
+    }
+    return b;
+  }
+
+  static bool _customerBillingEmpty(ServiceRequest r) {
+    final b = _customerBillingForDisplay(r);
+    if (b == null) return true;
+    return b.isEmptyForCustomerView;
   }
 
   static Future<void> _confirmCancel(

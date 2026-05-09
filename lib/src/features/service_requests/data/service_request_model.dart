@@ -1,6 +1,8 @@
 // Service request / booking — API types (camelCase, matches pranidoctor-web DTOs).
 // ignore_for_file: constant_identifier_names
 
+import 'package:pranidoctor_mobile/src/features/billing/data/billing_payment_summary_model.dart';
+
 enum ServiceRequestType {
   DOCTOR_HOME_VISIT,
   EMERGENCY_DOCTOR,
@@ -135,6 +137,7 @@ class ServiceRequest {
     this.animal,
     this.assignedDoctor,
     this.assignedTechnician,
+    this.billing,
   });
 
   final String id;
@@ -170,6 +173,9 @@ class ServiceRequest {
   final ServiceRequestAnimalRef? animal;
   final Map<String, dynamic>? assignedDoctor;
   final Map<String, dynamic>? assignedTechnician;
+
+  /// Optional billing snapshot when API includes `billing` / `payment` map.
+  final BillingPaymentSummary? billing;
 
   /// Display name from mobile API `assignedDoctor` / `assignedTechnician` objects (`displayName`).
   String? get assignedDoctorDisplayName =>
@@ -238,6 +244,7 @@ class ServiceRequest {
           : ServiceRequestAnimalRef.fromJson(asMap(json['animal'])!),
       assignedDoctor: asMap(json['assignedDoctor']),
       assignedTechnician: asMap(json['assignedTechnician']),
+      billing: BillingPaymentSummary.fromRootJson(json),
     );
   }
 

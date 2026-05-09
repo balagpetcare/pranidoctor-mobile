@@ -1,3 +1,4 @@
+import 'package:pranidoctor_mobile/src/features/billing/data/billing_payment_summary_model.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_job_models.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_job_repository.dart';
@@ -74,6 +75,7 @@ class TechnicianJobRepositoryMock implements TechnicianJobRepository {
         followUpReminderNote: '২১ দিন পর পুনঃপরীক্ষা',
         billingNote: 'বিলিং — পরে নিশ্চিত করা হবে',
       ),
+      billing: BillingPaymentSummary.demoForTechnicianJob(),
     ),
   };
 

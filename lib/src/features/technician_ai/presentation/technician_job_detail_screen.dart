@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/features/billing/presentation/widgets/provider_earning_summary_card.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/application/technician_job_providers.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_job_models.dart';
@@ -142,12 +143,7 @@ class _TechnicianJobDetailScreenState
                       ? job.aiRecord!.followUpReminderNote!
                       : 'পরে অ্যাপে রিমাইন্ডার সংযুক্ত করা হবে।',
                 ),
-                _PlaceholderSection(
-                  title: 'পেমেন্ট / বিলিং',
-                  body: job.aiRecord?.billingNote?.trim().isNotEmpty == true
-                      ? job.aiRecord!.billingNote!
-                      : 'বিলিং এখনও চূড়ান্ত নয় — পরে নিশ্চিত করা হবে।',
-                ),
+                _TechnicianBillingBlock(job: job),
               ],
             ),
             Positioned(
@@ -337,6 +333,28 @@ class _PlaceholderSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TechnicianBillingBlock extends StatelessWidget {
+  const _TechnicianBillingBlock({required this.job});
+
+  final TechnicianJobDetail job;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = job.billing;
+    final empty = b == null || b.isEmptyForProviderView;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ProviderEarningSummaryCard(
+          summary: empty ? null : b,
+          isEmpty: empty,
+          footerNote: job.aiRecord?.billingNote,
+        ),
+      ],
     );
   }
 }
