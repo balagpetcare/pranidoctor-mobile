@@ -1,4 +1,4 @@
 {
-  "dart.flutterRunAdditionalArgs": ["--no-dds"],
-  "dart.flutterAttachAdditionalArgs": ["--no-dds"]
+  "dart.flutterRunAdditionalArgs": ["--disable-dds"],
+  "dart.flutterAttachAdditionalArgs": ["--disable-dds"]
 }
