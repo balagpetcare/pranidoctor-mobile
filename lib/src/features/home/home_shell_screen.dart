@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../animals/presentation/animals_tab_screen.dart';
-import 'application/home_shell_tab_provider.dart';
+import 'package:pranidoctor_mobile/src/features/home/presentation/doctor_tab_screen.dart';
+import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
+
+import 'application/home_shell_tab_provider.dart';
 import 'home_screen.dart';
 
 class HomeShellScreen extends ConsumerStatefulWidget {
@@ -18,8 +20,8 @@ class HomeShellScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
-  /// Avoid building every tab on first paint — IndexedStack still lays out all
-  /// children, which was forcing four heavy screens to initialize at once.
+  /// Avoid building every tab on first paint — [IndexedStack] still lays out all
+  /// children; defer unvisited tabs until selected once.
   final Set<int> _activatedTabs = {0};
 
   @override
@@ -34,44 +36,55 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
               ? const HomeScreen()
               : const SizedBox.shrink(),
           _activatedTabs.contains(1)
-              ? const ServiceRequestsTabScreen()
+              ? const DoctorTabScreen()
               : const SizedBox.shrink(),
           _activatedTabs.contains(2)
-              ? const AnimalsTabScreen()
+              ? const ServiceRequestsTabScreen()
               : const SizedBox.shrink(),
           _activatedTabs.contains(3)
+              ? const NotificationsListScreen()
+              : const SizedBox.shrink(),
+          _activatedTabs.contains(4)
               ? const ProfileHomeScreen()
               : const SizedBox.shrink(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) =>
-            ref.read(homeShellTabIndexProvider.notifier).select(i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'হোম',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment),
-            label: 'অনুরোধ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.pets_outlined),
-            selectedIcon: Icon(Icons.pets),
-            label: 'আমার পশু',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'প্রোফাইল',
-          ),
-        ],
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: EdgeInsets.zero,
+        child: NavigationBar(
+          selectedIndex: index,
+          onDestinationSelected: (i) =>
+              ref.read(homeShellTabIndexProvider.notifier).select(i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'হোম',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.medical_services_outlined),
+              selectedIcon: Icon(Icons.medical_services),
+              label: 'ডাক্তার',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.grid_view_outlined),
+              selectedIcon: Icon(Icons.grid_view_rounded),
+              label: 'সেবা',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.notifications_outlined),
+              selectedIcon: Icon(Icons.notifications),
+              label: 'নোটিফিকেশন',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'প্রোফাইল',
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
