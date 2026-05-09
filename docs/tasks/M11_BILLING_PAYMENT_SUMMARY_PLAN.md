@@ -8,7 +8,7 @@
 **Scope:** Customer and provider **billing / payment summary UI** (receipt-style cards, badges, role-aware fields). **Implementation** delivered per §15–§17.  
 **Isolation:** No BPA/WPA, Quarbani 2026, or other products.
 
-**Last updated:** 2026-05-09 (implemented §17; verification §18)
+**Last updated:** 2026-05-09 (§17 implementation; §18–§19 verification & git audit)
 
 ---
 
@@ -333,17 +333,44 @@ Same list as §15 **Created** + **Updated** above.
 
 | Check | Result | Notes |
 |--------|--------|--------|
-| **`dart format .`** | **PASS** | `Formatted 78 files (0 changed)` — working tree already conformed to formatter. |
+| **`dart format .`** | **PASS** | e.g. `Formatted 79 files` (2 files changed on first run after M11 error-handling edits). |
 | **`flutter analyze`** | **PASS** | `No issues found!` |
-| **`flutter test`** | **PASS** | `All tests passed!` (5 tests: billing widget tests, technician badge tests, app builds). |
+| **`flutter test`** | **PASS** | `All tests passed!` (5 tests). |
 
-### Fixed issues summary
+### User-visible error handling (M11-related)
 
-- None — no analyzer, test, or format drift required fixes after M11.
+- Added `lib/src/app/user_visible_async_error.dart` — maps `ServiceRequestApiException` / `TechnicianApiException` to their **Bengali** `.message`, and any other error to a **generic Bengali** line (no raw `DioException`, types, or stack text in UI).
+- **Service request list & detail** (`service_requests_tab_screen.dart`): list error body and detail `AsyncValue` error no longer use `'$e'` / `লোড হয়নি: $e`.
+- **Technician job detail** (`technician_job_detail_screen.dart`): same; title **লোড হয়নি** + mapped message + **আবার চেষ্টা** unchanged.
+- **Customer billing card** still has Bengali **empty** copy; no separate async error inside the card (parent screen handles load errors). **Customer** card does not show commission/payout. **Provider** amounts only in `ProviderEarningSummaryCard`.
+
+### Fixed issues summary (this pass)
+
+- Removed user-facing raw exception string interpolation on M11-touched request/technician job detail surfaces.
 
 ### Remaining known issues
 
-- None from these verification runs. (Product/API gaps unchanged: billing JSON may still be absent from live APIs until backend exposes fields.)
+- Other feature screens (e.g. M10 technician list/jobs, booking wizard) may still show `'$e'` — out of scope for this M11 pass unless a follow-up hardens all `AsyncValue` error UIs.
+- Product/API: billing JSON may still be absent on live APIs until the backend exposes fields.
+
+---
+
+## 19. Git branch audit (post branch-switch warning)
+
+**Inspected:** `task/m11-billing-payment-summary` vs `origin/main` (local `main` at `e5f717a` matches `origin/main` after `fetch`).
+
+| Item | Finding |
+|------|---------|
+| **Current branch** | `task/m11-billing-payment-summary` (tracking `origin/task/m11-billing-payment-summary`) |
+| **Working tree** | **Clean** (no uncommitted changes at audit time) |
+| **Commits on `origin/main..HEAD`** | **2**: `d1f0045` *feat(mobile): add AI technician service workflow pages* (M10), then `c4cfcfc` *feat: add billing and payment summary UI* (M11) |
+| **Merge-base with `origin/main`** | `e5f717a` — same as `main` |
+| **Conclusion** | M11 **includes the full M10 commit**; it is **not** a single commit on top of `main` only. `git diff origin/main...HEAD` spans **34 files / ~4355 insertions** (M10 + M11 + docs). |
+
+### Recommendation
+
+- **A — Keep as-is** if the team expects **technician job UI + billing on job detail** to ship together: rebasing M11 onto `main` without M10 would drop technician routes/screens unless cherry-picked separately.
+- **B — Recreate “billing-only” branch** only if CI/product wants an independent PR: create a fresh branch from **`origin/main`**, **`git cherry-pick c4cfcfc`** (M11 commit only), then resolve conflicts / drop technician-only integrations if that commit assumes M10 files — verify build after cherry-pick.
 
 ---
 

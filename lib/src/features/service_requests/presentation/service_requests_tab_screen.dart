@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/app/user_visible_async_error.dart';
 import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
 import 'package:pranidoctor_mobile/src/features/billing/data/billing_payment_summary_model.dart';
 import 'package:pranidoctor_mobile/src/features/billing/presentation/widgets/customer_billing_summary_card.dart';
@@ -41,7 +42,7 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '$e',
+                userVisibleAsyncErrorBn(e),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
@@ -137,7 +138,24 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
         error: (e, _) => Center(
           child: Padding(
             padding: EdgeInsets.all(hPad),
-            child: Text('লোড হয়নি: $e', textAlign: TextAlign.center),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'লোড হয়নি',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  userVisibleAsyncErrorBn(e),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         data: (r) => ListView(

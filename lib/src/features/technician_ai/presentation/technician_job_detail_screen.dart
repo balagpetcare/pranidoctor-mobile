@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/app/user_visible_async_error.dart';
 import 'package:pranidoctor_mobile/src/features/billing/presentation/widgets/provider_earning_summary_card.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/application/technician_job_providers.dart';
 import 'package:pranidoctor_mobile/src/features/technician_ai/data/technician_api_exception.dart';
@@ -67,7 +68,19 @@ class _TechnicianJobDetailScreenState
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('লোড হয়নি: $e', textAlign: TextAlign.center),
+                Text(
+                  'লোড হয়নি',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  userVisibleAsyncErrorBn(e),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () =>
