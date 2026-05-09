@@ -54,16 +54,19 @@ class TechnicianLoginScreen extends ConsumerWidget {
             enabled: false,
           ),
           const SizedBox(height: 28),
-          FilledButton(
-            onPressed: () async {
-              await ref
-                  .read(sessionNotifierProvider.notifier)
-                  .setRole(AppRole.technician);
-              if (context.mounted) {
-                context.go(TechnicianDashboardScreen.routePath);
-              }
-            },
-            child: const Text('চালিয়ে যান (খোলস)'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () async {
+                await ref
+                    .read(sessionNotifierProvider.notifier)
+                    .setRole(AppRole.technician);
+                if (context.mounted) {
+                  context.go(TechnicianDashboardScreen.routePath);
+                }
+              },
+              child: const Text('চালিয়ে যান (খোলস)'),
+            ),
           ),
           const SizedBox(height: 12),
           if (kDebugMode)

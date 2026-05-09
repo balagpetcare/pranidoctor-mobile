@@ -147,22 +147,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     },
                     child: const Text('পিছনে'),
                   ),
-                const Spacer(),
-                if (_page < _pages.length - 1)
-                  FilledButton(
-                    onPressed: () {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOut,
-                      );
-                    },
-                    child: const Text('পরের ধাপ'),
-                  )
-                else
-                  FilledButton(
-                    onPressed: _finish,
-                    child: const Text('শুরু করুন'),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: _page < _pages.length - 1
+                        ? FilledButton(
+                            onPressed: () {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 280),
+                                curve: Curves.easeOut,
+                              );
+                            },
+                            child: const Text('পরের ধাপ'),
+                          )
+                        : FilledButton(
+                            onPressed: _finish,
+                            child: const Text('শুরু করুন'),
+                          ),
                   ),
+                ),
               ],
             ),
           ),

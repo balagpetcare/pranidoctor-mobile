@@ -138,9 +138,12 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _busy ? null : _sendOtp,
-            child: Text(_otpSent ? 'কোড আবার পাঠান' : 'যাচাইকরণ কোড পাঠান'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _busy ? null : _sendOtp,
+              child: Text(_otpSent ? 'কোড আবার পাঠান' : 'যাচাইকরণ কোড পাঠান'),
+            ),
           ),
           const SizedBox(height: 28),
           Text('যাচাইকরণ কোড', style: Theme.of(context).textTheme.titleMedium),
@@ -161,9 +164,12 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
             onSubmitted: (_) => _verify(),
           ),
           const SizedBox(height: 20),
-          FilledButton(
-            onPressed: _busy ? null : _verify,
-            child: const Text('নিশ্চিত করে প্রবেশ করুন'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _busy ? null : _verify,
+              child: const Text('নিশ্চিত করে প্রবেশ করুন'),
+            ),
           ),
           const SizedBox(height: 28),
           Row(
