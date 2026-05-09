@@ -16,8 +16,10 @@ import '../features/providers/presentation/technician_list_screen.dart';
 import '../features/service_requests/presentation/booking_wizard_screen.dart';
 import '../features/service_requests/presentation/service_requests_tab_screen.dart';
 import '../features/splash/splash_screen.dart';
-import '../features/tutorials/presentation/tutorial_detail_screen.dart';
-import '../features/tutorials/presentation/tutorial_list_screen.dart';
+import '../features/knowledge_hub/presentation/knowledge_categories_screen.dart';
+import '../features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
+import '../features/knowledge_hub/presentation/knowledge_post_detail_screen.dart';
+import '../features/knowledge_hub/presentation/knowledge_post_list_screen.dart';
 import '../features/notifications/presentation/notifications_list_screen.dart';
 import '../features/session/application/session_notifier.dart';
 import '../features/technician_ai/presentation/technician_ai_record_form_screen.dart';
@@ -45,6 +47,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final loc = state.uri.path;
       final auth = ref.read(sessionNotifierProvider);
+
+      if (loc == '/tutorials') {
+        return KnowledgePostListScreen.routePath;
+      }
+      if (loc.startsWith('/tutorials/')) {
+        final tail = loc.substring('/tutorials/'.length);
+        if (tail.isEmpty) return KnowledgePostListScreen.routePath;
+        return '${KnowledgePostListScreen.routePath}/$tail';
+      }
 
       if (loc == LoginEntryScreen.routePath && auth.isAuthenticated) {
         return HomeShellScreen.routePath;
@@ -168,17 +179,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const NotificationsListScreen(),
       ),
       GoRoute(
-        path: TutorialListScreen.routePath,
-        name: TutorialListScreen.routeName,
-        builder: (context, state) => const TutorialListScreen(),
+        path: KnowledgeHubHomeScreen.routePath,
+        name: KnowledgeHubHomeScreen.routeName,
+        builder: (context, state) => const KnowledgeHubHomeScreen(),
         routes: [
           GoRoute(
-            path: ':slugOrId',
-            name: TutorialDetailScreen.routeName,
-            builder: (context, state) {
-              final raw = state.pathParameters['slugOrId']!;
-              return TutorialDetailScreen(slugOrId: raw);
-            },
+            path: 'categories',
+            name: KnowledgeCategoriesScreen.routeName,
+            builder: (context, state) => const KnowledgeCategoriesScreen(),
+          ),
+          GoRoute(
+            path: 'posts',
+            name: KnowledgePostListScreen.routeName,
+            builder: (context, state) => const KnowledgePostListScreen(),
+            routes: [
+              GoRoute(
+                path: ':slugOrId',
+                name: KnowledgePostDetailScreen.routeName,
+                builder: (context, state) {
+                  final raw = state.pathParameters['slugOrId']!;
+                  return KnowledgePostDetailScreen(slugOrId: raw);
+                },
+              ),
+            ],
           ),
         ],
       ),

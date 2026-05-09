@@ -6,7 +6,7 @@ import '../../app/screen_padding.dart';
 import '../../core/network/api_client.dart';
 import '../providers/presentation/doctor_list_screen.dart';
 import '../providers/presentation/technician_list_screen.dart';
-import '../tutorials/presentation/tutorial_list_screen.dart';
+import '../knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import '../notifications/presentation/notifications_list_screen.dart';
 import '../notifications/presentation/widgets/notification_bell_icon_button.dart';
 
@@ -20,7 +20,7 @@ class HomeScreen extends ConsumerWidget {
     'AI টেকনিশিয়ান খুঁজুন',
     'আমার পশু',
     'চিকিৎসার ইতিহাস',
-    'টিউটোরিয়াল',
+    'জ্ঞানকেন্দ্র',
     'নোটিফিকেশন',
   ];
 
@@ -64,7 +64,7 @@ class HomeScreen extends ConsumerWidget {
                               context.push(TechnicianListScreen.routePath);
                               break;
                             case 5:
-                              context.push(TutorialListScreen.routePath);
+                              context.push(KnowledgeHubHomeScreen.routePath);
                               break;
                             case 6:
                               context.push(NotificationsListScreen.routePath);

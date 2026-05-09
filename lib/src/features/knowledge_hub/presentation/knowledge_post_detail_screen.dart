@@ -4,24 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
-import 'package:pranidoctor_mobile/src/features/tutorials/application/tutorials_providers.dart';
+import 'package:pranidoctor_mobile/src/features/knowledge_hub/application/knowledge_hub_providers.dart';
 
-class TutorialDetailScreen extends ConsumerWidget {
-  const TutorialDetailScreen({super.key, required this.slugOrId});
+class KnowledgePostDetailScreen extends ConsumerWidget {
+  const KnowledgePostDetailScreen({super.key, required this.slugOrId});
 
   final String slugOrId;
 
-  static const routeName = 'tutorialDetail';
+  static const routeName = 'knowledgePostDetail';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final decoded = Uri.decodeComponent(slugOrId);
-    final async = ref.watch(tutorialDetailProvider(decoded));
+    final async = ref.watch(knowledgePostDetailProvider(decoded));
     final hPad = pdScreenPadding(context).horizontal;
     final maxW = pdReadableMaxWidth(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('টিউটোরিয়াল')),
+      appBar: AppBar(title: const Text('লেখা')),
       body: async.when(
         data: (detail) {
           final scheme = Theme.of(context).colorScheme;
@@ -76,6 +76,11 @@ class TutorialDetailScreen extends ConsumerWidget {
                         ),
                         if (dateLabel != null)
                           _MetaRow(icon: Icons.event_outlined, text: dateLabel),
+                        if (detail.readTimeMinutes != null)
+                          _MetaRow(
+                            icon: Icons.schedule_outlined,
+                            text: '${detail.readTimeMinutes} মি. পড়ার সময়',
+                          ),
                         if (detail.author.displayName != null &&
                             detail.author.displayName!.trim().isNotEmpty)
                           _MetaRow(
@@ -98,19 +103,37 @@ class TutorialDetailScreen extends ConsumerWidget {
                       ),
                     ],
                     const SizedBox(height: 20),
-                    SelectableText(
-                      detail.body,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(height: 1.55),
-                    ),
+                    if (detail.body.trim().isEmpty)
+                      Text(
+                        'প্রকাশিত বিষয়বস্তু এখনো সংযুক্ত করা হয়নি বা খালি। পরে আবার চেষ্টা করুন।',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          height: 1.55,
+                        ),
+                      )
+                    else
+                      SelectableText(
+                        detail.body,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(height: 1.55),
+                      ),
                   ],
                 ),
               ),
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('তথ্য লোড হচ্ছে'),
+            ],
+          ),
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -131,7 +154,7 @@ class TutorialDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 FilledButton.tonal(
                   onPressed: () {
-                    ref.invalidate(tutorialDetailProvider(decoded));
+                    ref.invalidate(knowledgePostDetailProvider(decoded));
                   },
                   child: const Text('আবার চেষ্টা করুন'),
                 ),

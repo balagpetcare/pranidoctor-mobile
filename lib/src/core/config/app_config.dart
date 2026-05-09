@@ -21,4 +21,11 @@ abstract final class AppConfig {
     'USE_MOCK_BILLING_UI',
     defaultValue: false,
   );
+
+  /// Knowledge hub sample posts when CMS/API unavailable or for offline demo.
+  /// `flutter run --dart-define=USE_MOCK_KNOWLEDGE_API=true`
+  static const bool useMockKnowledgeApi = bool.fromEnvironment(
+    'USE_MOCK_KNOWLEDGE_API',
+    defaultValue: false,
+  );
 }

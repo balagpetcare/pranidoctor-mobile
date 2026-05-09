@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../auth/login_entry_screen.dart';
 import '../../session/application/session_notifier.dart';
+import '../../knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import 'technician_jobs_screen.dart';
 import 'technician_requests_screen.dart';
 import 'widgets/technician_ai_widgets.dart';
@@ -85,6 +86,16 @@ class TechnicianDashboardScreen extends ConsumerWidget {
               subtitle: const Text('গ্রহণ করা ও চলমান কাজের তালিকা'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(TechnicianJobsScreen.routePath),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.menu_book_outlined, color: scheme.primary),
+              title: const Text('জ্ঞানকেন্দ্র'),
+              subtitle: const Text('টিউটোরিয়াল ও শিক্ষামূলক লেখা'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(KnowledgeHubHomeScreen.routePath),
             ),
           ),
           const SizedBox(height: 28),

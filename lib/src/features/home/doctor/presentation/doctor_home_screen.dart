@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/login_entry_screen.dart';
 import '../../../session/application/session_notifier.dart';
-import '../../../tutorials/presentation/tutorial_list_screen.dart';
+import '../../../knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 
 class DoctorHomeScreen extends ConsumerWidget {
   const DoctorHomeScreen({super.key});
@@ -47,12 +47,12 @@ class DoctorHomeScreen extends ConsumerWidget {
           Card(
             child: ListTile(
               leading: Icon(Icons.menu_book_outlined, color: scheme.primary),
-              title: const Text('নলেজ হাব (টিউটোরিয়াল)'),
+              title: const Text('জ্ঞানকেন্দ্র'),
               subtitle: const Text(
                 'প্রকাশিত নির্দেশনা ও নিবন্ধ — গ্রাহকদের মতোই দেখুন',
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(TutorialListScreen.routePath),
+              onTap: () => context.push(KnowledgeHubHomeScreen.routePath),
             ),
           ),
           const SizedBox(height: 12),
