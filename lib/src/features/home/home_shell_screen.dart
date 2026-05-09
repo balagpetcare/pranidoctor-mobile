@@ -7,23 +7,41 @@ import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_hom
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
 import 'home_screen.dart';
 
-class HomeShellScreen extends ConsumerWidget {
+class HomeShellScreen extends ConsumerStatefulWidget {
   const HomeShellScreen({super.key});
 
   static const routePath = '/home';
   static const routeName = 'homeShell';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeShellScreen> createState() => _HomeShellScreenState();
+}
+
+class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
+  /// Avoid building every tab on first paint — IndexedStack still lays out all
+  /// children, which was forcing four heavy screens to initialize at once.
+  final Set<int> _activatedTabs = {0};
+
+  @override
+  Widget build(BuildContext context) {
     final index = ref.watch(homeShellTabIndexProvider);
+    _activatedTabs.add(index);
     return Scaffold(
       body: IndexedStack(
         index: index,
-        children: const [
-          HomeScreen(),
-          ServiceRequestsTabScreen(),
-          AnimalsTabScreen(),
-          ProfileHomeScreen(),
+        children: [
+          _activatedTabs.contains(0)
+              ? const HomeScreen()
+              : const SizedBox.shrink(),
+          _activatedTabs.contains(1)
+              ? const ServiceRequestsTabScreen()
+              : const SizedBox.shrink(),
+          _activatedTabs.contains(2)
+              ? const AnimalsTabScreen()
+              : const SizedBox.shrink(),
+          _activatedTabs.contains(3)
+              ? const ProfileHomeScreen()
+              : const SizedBox.shrink(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -56,3 +74,4 @@ class HomeShellScreen extends ConsumerWidget {
     );
   }
 }
+

@@ -23,11 +23,21 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  /// Large PNG decodes on the first frame block the UI isolate and can trigger
+  /// severe Choreographer frame skips + VM service disconnect during `flutter run`.
+  bool _heavyBrandDecorReady = false;
+
   @override
   void initState() {
     super.initState();
+    // Paint one cheap frame first, then decode splash / logo assets on the next.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _heavyBrandDecorReady = true);
+      });
+    });
     // Let the first frame paint before starting async navigation/storage work.
-    // Helps avoid VM-service handshake timeouts on slow emulators (skipped frames).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _goNext();
@@ -37,17 +47,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _goNext() async {
     await Future<void>.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
-    await ref.read(sessionNotifierProvider.notifier).hydrateFromStorage();
+    try {
+      await ref.read(sessionNotifierProvider.notifier).hydrateFromStorage();
+    } catch (e, st) {
+      debugPrint('hydrateFromStorage failed: $e');
+      debugPrintStack(stackTrace: st);
+    }
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final done = prefs.getBool(SplashScreen._onboardingDoneKey) ?? false;
-    final auth = ref.read(sessionNotifierProvider).isAuthenticated;
-    if (!mounted) return;
-    if (!done) {
-      context.go(OnboardingScreen.routePath);
-    } else if (auth) {
-      context.go(HomeShellScreen.routePath);
-    } else {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final done = prefs.getBool(SplashScreen._onboardingDoneKey) ?? false;
+      final auth = ref.read(sessionNotifierProvider).isAuthenticated;
+      if (!mounted) return;
+      if (!done) {
+        context.go(OnboardingScreen.routePath);
+      } else if (auth) {
+        context.go(HomeShellScreen.routePath);
+      } else {
+        context.go(LoginEntryScreen.routePath);
+      }
+    } catch (e, st) {
+      debugPrint('splash navigation failed: $e');
+      debugPrintStack(stackTrace: st);
+      if (!mounted) return;
       context.go(LoginEntryScreen.routePath);
     }
   }
@@ -60,40 +82,44 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Builder(
-            builder: (context) {
-              final mq = MediaQuery.of(context);
-              final dpr = mq.devicePixelRatio;
-              final cw = (mq.size.width * dpr).round().clamp(
-                240,
-                PraniAssetDecode.splashBgMaxWidthPx,
-              );
-              final ch = (mq.size.height * dpr).round().clamp(
-                240,
-                PraniAssetDecode.splashBgMaxHeightPx,
-              );
-              return Image.asset(
-                PraniAssets.splashFarm,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                excludeFromSemantics: true,
-                cacheWidth: cw,
-                cacheHeight: ch,
-              );
-            },
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  scheme.surface.withValues(alpha: 0.55),
-                  scheme.surface.withValues(alpha: 0.92),
-                ],
+          if (_heavyBrandDecorReady)
+            Builder(
+              builder: (context) {
+                final mq = MediaQuery.of(context);
+                final dpr = mq.devicePixelRatio;
+                final cw = (mq.size.width * dpr).round().clamp(
+                  240,
+                  PraniAssetDecode.splashBgMaxWidthPx,
+                );
+                final ch = (mq.size.height * dpr).round().clamp(
+                  240,
+                  PraniAssetDecode.splashBgMaxHeightPx,
+                );
+                return Image.asset(
+                  PraniAssets.splashFarm,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  excludeFromSemantics: true,
+                  cacheWidth: cw,
+                  cacheHeight: ch,
+                );
+              },
+            )
+          else
+            ColoredBox(color: scheme.surfaceContainerHighest),
+          if (_heavyBrandDecorReady)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    scheme.surface.withValues(alpha: 0.55),
+                    scheme.surface.withValues(alpha: 0.92),
+                  ],
+                ),
               ),
             ),
-          ),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -101,15 +127,26 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      PraniAssets.primaryLogo,
-                      height: 112,
-                      fit: BoxFit.contain,
-                      gaplessPlayback: true,
-                      semanticLabel: 'প্রাণী ডাক্তার লোগো',
-                      cacheWidth: PraniAssetDecode.logoSquarePx,
-                      cacheHeight: PraniAssetDecode.logoSquarePx,
-                    ),
+                    if (_heavyBrandDecorReady)
+                      Image.asset(
+                        PraniAssets.primaryLogo,
+                        height: 112,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        semanticLabel: 'প্রাণী ডাক্তার লোগো',
+                        cacheWidth: PraniAssetDecode.logoSquarePx,
+                        cacheHeight: PraniAssetDecode.logoSquarePx,
+                      )
+                    else
+                      SizedBox(
+                        height: 112,
+                        child: Icon(
+                          Icons.pets,
+                          size: 72,
+                          color: scheme.primary,
+                          semanticLabel: 'প্রাণী ডাক্তার',
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     Text(
                       'প্রাণী ডাক্তার',
