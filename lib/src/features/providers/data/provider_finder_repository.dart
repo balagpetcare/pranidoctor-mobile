@@ -1,8 +1,12 @@
 import 'package:dio/dio.dart';
 
+import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
+import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_fallback_data.dart';
+import 'package:pranidoctor_mobile/src/features/providers/data/provider_kind.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_models.dart';
+import 'package:pranidoctor_mobile/src/features/providers/data/provider_profile_model.dart';
 
 class ProviderApiException implements Exception {
   ProviderApiException(this.message, {this.code});
@@ -54,6 +58,17 @@ class ProviderFinderRepository {
 
   Future<({List<DoctorSummary> doctors, PaginationInfo pagination})>
   listDoctors(ProviderListQuery query) async {
+    if (AppConfig.useProviderFinderFixtures) {
+      return (
+        doctors: [ProviderFinderFallbackData.demoDoctorSummary],
+        pagination: const PaginationInfo(
+          limit: 20,
+          offset: 0,
+          total: 1,
+          hasMore: false,
+        ),
+      );
+    }
     final q = ProviderFinderRepository._coerceQuery(query);
     try {
       final res = await _client.get<dynamic>(
@@ -85,6 +100,17 @@ class ProviderFinderRepository {
 
   Future<({List<TechnicianSummary> technicians, PaginationInfo pagination})>
   listTechnicians(ProviderListQuery query) async {
+    if (AppConfig.useProviderFinderFixtures) {
+      return (
+        technicians: [ProviderFinderFallbackData.demoTechnicianSummary],
+        pagination: const PaginationInfo(
+          limit: 20,
+          offset: 0,
+          total: 1,
+          hasMore: false,
+        ),
+      );
+    }
     final q = ProviderFinderRepository._coerceQuery(query);
     try {
       final res = await _client.get<dynamic>(
@@ -115,6 +141,9 @@ class ProviderFinderRepository {
   }
 
   Future<DoctorDetail> getDoctor(String id) async {
+    if (AppConfig.useProviderFinderFixtures) {
+      return ProviderFinderFallbackData.demoDoctorDetail;
+    }
     try {
       final res = await _client.get<dynamic>(
         '/api/mobile/providers/doctors/$id',
@@ -131,6 +160,9 @@ class ProviderFinderRepository {
   }
 
   Future<TechnicianDetail> getTechnician(String id) async {
+    if (AppConfig.useProviderFinderFixtures) {
+      return ProviderFinderFallbackData.demoTechnicianDetail;
+    }
     try {
       final res = await _client.get<dynamic>(
         '/api/mobile/providers/technicians/$id',
@@ -144,6 +176,85 @@ class ProviderFinderRepository {
     } on DioException catch (e) {
       throw _mapDio(e);
     }
+  }
+
+  /// Tries `GET /api/mobile/providers/:id` (flexible payload), then role-specific
+  /// endpoints using [kind] when unified route is missing or unparsable.
+  Future<ProviderProfileDetail> getProviderProfileDetail(
+    String id,
+    ProviderKind kind,
+  ) async {
+    if (AppConfig.useProviderFinderFixtures) {
+      return ProviderFinderFallbackData.profileDetailFor(id);
+    }
+
+    try {
+      final res = await _client.get<dynamic>('/api/mobile/providers/$id');
+      final inner = _unwrap(res);
+      final parsed = _tryParseUnifiedDetail(inner);
+      if (parsed != null) return parsed;
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 404) {
+        throw _mapDio(e);
+      }
+    } on ProviderApiException {
+      rethrow;
+    }
+
+    return switch (kind) {
+      ProviderKind.doctor => ProviderProfileDetail.fromDoctorDetail(
+        await getDoctor(id),
+      ),
+      ProviderKind.aiTechnician => ProviderProfileDetail.fromTechnicianDetail(
+        await getTechnician(id),
+      ),
+    };
+  }
+
+  ProviderProfileDetail? _tryParseUnifiedDetail(Map<String, dynamic> inner) {
+    try {
+      final d = inner['doctor'];
+      if (d is Map<String, dynamic>) {
+        return ProviderProfileDetail.fromDoctorDetail(DoctorDetail.fromJson(d));
+      }
+      final t = inner['technician'];
+      if (t is Map<String, dynamic>) {
+        return ProviderProfileDetail.fromTechnicianDetail(
+          TechnicianDetail.fromJson(t),
+        );
+      }
+      final p = inner['provider'];
+      if (p is Map<String, dynamic>) {
+        final rawKind =
+            inner['providerKind'] ??
+            inner['kind'] ??
+            inner['type'] ??
+            (p['kind'] as Object?) ??
+            (p['providerType'] as Object?);
+        final k = rawKind?.toString();
+        final parsedKind = ProviderKind.tryParse(k);
+        if (parsedKind == ProviderKind.aiTechnician) {
+          return ProviderProfileDetail.fromTechnicianDetail(
+            TechnicianDetail.fromJson(p),
+          );
+        }
+        if (parsedKind == ProviderKind.doctor ||
+            p['degreeOrQualification'] != null) {
+          return ProviderProfileDetail.fromDoctorDetail(
+            DoctorDetail.fromJson(p),
+          );
+        }
+        if (p['supportedAnimalTypes'] != null) {
+          return ProviderProfileDetail.fromTechnicianDetail(
+            TechnicianDetail.fromJson(p),
+          );
+        }
+        return ProviderProfileDetail.fromDoctorDetail(DoctorDetail.fromJson(p));
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   ProviderApiException _mapDio(DioException e) {

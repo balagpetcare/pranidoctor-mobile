@@ -12,6 +12,7 @@ import '../features/home/home_shell_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/providers/presentation/doctor_detail_screen.dart';
 import '../features/providers/presentation/doctor_list_screen.dart';
+import '../features/providers/presentation/provider_finder_landing_screen.dart';
 import '../features/providers/presentation/technician_detail_screen.dart';
 import '../features/providers/presentation/technician_list_screen.dart';
 import '../features/service_requests/presentation/booking_wizard_screen.dart';
@@ -134,6 +135,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: DoctorHomeScreen.routePath,
         name: DoctorHomeScreen.routeName,
         builder: (context, state) => const DoctorHomeScreen(),
+      ),
+      GoRoute(
+        path: ProviderFinderLandingScreen.routePath,
+        name: ProviderFinderLandingScreen.routeName,
+        builder: (context, state) => const ProviderFinderLandingScreen(),
       ),
       GoRoute(
         path: DoctorListScreen.routePath,

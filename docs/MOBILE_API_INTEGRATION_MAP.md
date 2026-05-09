@@ -47,7 +47,7 @@
 
 | Method | Path | Repository | Used by |
 |--------|------|------------|---------|
-| GET | `/api/mobile/service-categories` | `ServiceCategoryRepository` — `service_category_repository.dart` | `BookingWizardScreen` |
+| GET | `/api/mobile/service-categories` | `ServiceCategoryRepository` — `service_category_repository.dart` | `BookingWizardScreen`, `ProviderFilterPanel` |
 
 ---
 
@@ -67,11 +67,12 @@
 | Method | Path | Repository | Used by |
 |--------|------|------------|---------|
 | GET | `/api/mobile/providers/doctors` | `ProviderFinderRepository` — `provider_finder_repository.dart` | `DoctorListScreen` |
-| GET | `/api/mobile/providers/doctors/:id` | same | `DoctorDetailScreen` |
+| GET | `/api/mobile/providers/doctors/:id` | same | `DoctorDetailScreen` → `ProviderDetailScreen` |
 | GET | `/api/mobile/providers/technicians` | same | `TechnicianListScreen` |
-| GET | `/api/mobile/providers/technicians/:id` | same | `TechnicianDetailScreen` |
+| GET | `/api/mobile/providers/technicians/:id` | same | `TechnicianDetailScreen` → `ProviderDetailScreen` |
+| GET | `/api/mobile/providers/:id` | same (`getProviderProfileDetail`) | `ProviderDetailScreen` — tried first; **404** falls back to role-specific `…/doctors/:id` or `…/technicians/:id` using the screen's `ProviderKind`. Unified `data` may contain `doctor`, `technician`, or `provider` plus `kind` (parser is best-effort). |
 
-**Query notes:** `ProviderListQuery` → query params; repository **coerces** unknown `areaSlug` values (only `ashulia-union-area` allowed in code today) — see `provider_finder_repository.dart`.
+**Query notes:** `ProviderListQuery` → `areaSlug`, `areaId`, `animalType`, `homeVisit`, `emergency`, `onlineConsultation`, `serviceCategoryId`, `aiTechnicianService`, `search` (from `nameSearch`), pagination. Repository **coerces** unknown `areaSlug` values (only `ashulia-union-area` allowed in code today). **Offline fixtures:** `USE_PROVIDER_FIXTURES=true` — see `provider_finder_fallback_data.dart`.
 
 ---
 

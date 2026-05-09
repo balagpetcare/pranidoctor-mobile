@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/screen_padding.dart';
 import '../../../core/constants/pd_spacing.dart';
 import '../../notifications/presentation/notifications_list_screen.dart';
-import '../../providers/presentation/technician_list_screen.dart';
+import '../../providers/presentation/provider_finder_landing_screen.dart';
 import '../../service_requests/presentation/booking_wizard_screen.dart';
 import '../../tutorials/presentation/tutorial_list_screen.dart';
 import 'widgets/customer_emergency_cta_card.dart';
@@ -80,9 +80,11 @@ class CustomerHomeScreen extends StatelessWidget {
                         CustomerServiceActionCard(
                           icon: Icons.smart_toy_outlined,
                           title: 'AI টেকনিশিয়ান',
-                          subtitle: 'খামার ও প্রান্তিক টেকনিশিয়ান খুঁজুন।',
-                          onTap: () =>
-                              context.push(TechnicianListScreen.routePath),
+                          subtitle:
+                              'ডাক্তার ও টেকনিশিয়ান খুঁজুন — এলাকা ও সেবা অনুযায়ী।',
+                          onTap: () => context.push(
+                            ProviderFinderLandingScreen.routePath,
+                          ),
                         ),
                         const SizedBox(height: PdSpacing.sm),
                         CustomerServiceActionCard(

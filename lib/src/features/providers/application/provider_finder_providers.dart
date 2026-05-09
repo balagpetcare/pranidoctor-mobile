@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_repository.dart';
+import 'package:pranidoctor_mobile/src/features/providers/data/provider_kind.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_models.dart';
+import 'package:pranidoctor_mobile/src/features/providers/data/provider_profile_model.dart';
 
 final providerFinderRepositoryProvider = Provider<ProviderFinderRepository>((
   ref,
@@ -103,16 +105,9 @@ class TechniciansListNotifier
   }
 }
 
-final doctorDetailProvider = FutureProvider.family<DoctorDetail, String>((
-  ref,
-  id,
-) async {
-  final repo = ref.watch(providerFinderRepositoryProvider);
-  return repo.getDoctor(id);
-});
-
-final technicianDetailProvider =
-    FutureProvider.family<TechnicianDetail, String>((ref, id) async {
+/// Unified detail: tries `GET /api/mobile/providers/:id`, then role-specific APIs.
+final providerProfileDetailProvider = FutureProvider.autoDispose
+    .family<ProviderProfileDetail, (String, ProviderKind)>((ref, arg) async {
       final repo = ref.watch(providerFinderRepositoryProvider);
-      return repo.getTechnician(id);
+      return repo.getProviderProfileDetail(arg.$1, arg.$2);
     });

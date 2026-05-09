@@ -10,6 +10,8 @@ class ProviderListQuery {
     this.emergency,
     this.onlineConsultation,
     this.serviceCategoryId,
+    this.aiTechnicianService,
+    this.nameSearch,
     this.limit = 20,
     this.offset = 0,
   });
@@ -21,6 +23,14 @@ class ProviderListQuery {
   final bool? emergency;
   final bool? onlineConsultation;
   final String? serviceCategoryId;
+
+  /// When true, list may be narrowed to technicians advertising AI/field tech
+  /// (sent as `aiTechnicianService` if backend supports; else client-side filter).
+  final bool? aiTechnicianService;
+
+  /// Optional name search; sent as `search` when non-empty (backend may ignore).
+  final String? nameSearch;
+
   final int limit;
   final int offset;
 
@@ -49,6 +59,13 @@ class ProviderListQuery {
     if (serviceCategoryId != null && serviceCategoryId!.isNotEmpty) {
       m['serviceCategoryId'] = serviceCategoryId!;
     }
+    if (aiTechnicianService != null) {
+      m['aiTechnicianService'] = aiTechnicianService! ? 'true' : 'false';
+    }
+    final q = nameSearch?.trim();
+    if (q != null && q.isNotEmpty) {
+      m['search'] = q;
+    }
     m['limit'] = limit.clamp(1, 50).toString();
     m['offset'] = offset.toString();
     return m;
@@ -63,6 +80,8 @@ class ProviderListQuery {
     bool? emergency,
     bool? onlineConsultation,
     String? serviceCategoryId,
+    bool? aiTechnicianService,
+    String? nameSearch,
     bool clearAreaSlug = false,
     bool clearAreaId = false,
     bool clearAnimalType = false,
@@ -70,6 +89,8 @@ class ProviderListQuery {
     bool clearEmergency = false,
     bool clearOnlineConsultation = false,
     bool clearServiceCategoryId = false,
+    bool clearAiTechnicianService = false,
+    bool clearNameSearch = false,
     bool keepOffset = false,
   }) {
     var ns = clearAreaSlug ? null : (areaSlug ?? this.areaSlug);
@@ -91,6 +112,10 @@ class ProviderListQuery {
       serviceCategoryId: clearServiceCategoryId
           ? null
           : (serviceCategoryId ?? this.serviceCategoryId),
+      aiTechnicianService: clearAiTechnicianService
+          ? null
+          : (aiTechnicianService ?? this.aiTechnicianService),
+      nameSearch: clearNameSearch ? null : (nameSearch ?? this.nameSearch),
       limit: limit,
       offset: keepOffset ? offset : 0,
     );

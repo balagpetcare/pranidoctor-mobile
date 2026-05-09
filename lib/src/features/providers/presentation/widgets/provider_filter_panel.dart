@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_model.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
+import 'package:pranidoctor_mobile/src/features/service_requests/application/service_requests_providers.dart';
 
 /// Compact filter controls for provider list APIs.
-class ProviderFilterPanel extends StatelessWidget {
+class ProviderFilterPanel extends ConsumerWidget {
   const ProviderFilterPanel({
     super.key,
     required this.query,
     required this.onQueryChanged,
     this.showOnlineConsultation = true,
+    this.showAiTechnicianServiceFilter = false,
+    this.showOnlineConsultationPlaceholderNote = false,
   });
 
   static const Set<String> _knownAreaSlugs = {'ashulia-union-area'};
@@ -17,6 +21,12 @@ class ProviderFilterPanel extends StatelessWidget {
   final ProviderListQuery query;
   final void Function(ProviderListQuery next) onQueryChanged;
   final bool showOnlineConsultation;
+
+  /// Extra filter row for technician lists (also sent as query param when set).
+  final bool showAiTechnicianServiceFilter;
+
+  /// Bengali note under filters (e.g. online consultation coming soon).
+  final bool showOnlineConsultationPlaceholderNote;
 
   static String _animalLabel(AnimalType t) {
     switch (t) {
@@ -63,12 +73,14 @@ class ProviderFilterPanel extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(serviceCategoriesProvider);
+
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: ExpansionTile(
         initiallyExpanded: false,
-        title: const Text('ফিল্টার'),
+        title: const Text('ফিল্টার ও খুঁজুন'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           _dropdown<String?>(
@@ -93,6 +105,35 @@ class ProviderFilterPanel extends StatelessWidget {
             },
           ),
           const SizedBox(height: 12),
+          categoriesAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(minHeight: 3),
+            ),
+            error: (e, st) => const Text('সেবার ধরন লোড করা যায়নি'),
+            data: (categories) {
+              return _dropdown<String?>(
+                context,
+                label: 'সেবার ধরন',
+                value: query.serviceCategoryId,
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('সব')),
+                  ...categories.map(
+                    (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                  ),
+                ],
+                onChanged: (v) {
+                  onQueryChanged(
+                    query.withFilters(
+                      serviceCategoryId: v,
+                      clearServiceCategoryId: v == null,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 12),
           _dropdown<AnimalType?>(
             context,
             label: 'পশুর ধরন',
@@ -112,7 +153,7 @@ class ProviderFilterPanel extends StatelessWidget {
           const SizedBox(height: 12),
           _dropdown<bool?>(
             context,
-            label: 'হোম ভিজিট',
+            label: 'হোম ভিজিট / মাঠ পরিদর্শন',
             value: query.homeVisit,
             items: const [
               DropdownMenuItem(value: null, child: Text('সব')),
@@ -141,6 +182,27 @@ class ProviderFilterPanel extends StatelessWidget {
               );
             },
           ),
+          if (showAiTechnicianServiceFilter) ...[
+            const SizedBox(height: 12),
+            _dropdown<bool?>(
+              context,
+              label: 'এআই টেকনিশিয়ান সেবা',
+              value: query.aiTechnicianService,
+              items: const [
+                DropdownMenuItem(value: null, child: Text('সব')),
+                DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
+                DropdownMenuItem(value: false, child: Text('না')),
+              ],
+              onChanged: (v) {
+                onQueryChanged(
+                  query.withFilters(
+                    aiTechnicianService: v,
+                    clearAiTechnicianService: v == null,
+                  ),
+                );
+              },
+            ),
+          ],
           if (showOnlineConsultation) ...[
             const SizedBox(height: 12),
             _dropdown<bool?>(
@@ -160,6 +222,15 @@ class ProviderFilterPanel extends StatelessWidget {
                   ),
                 );
               },
+            ),
+          ],
+          if (showOnlineConsultationPlaceholderNote) ...[
+            const SizedBox(height: 8),
+            Text(
+              'অনলাইন কনসালটেশন ফিল্টার টেকনিশিয়ান তালিকায় শীঘ্রই সম্পূর্ণ হবে।',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
           const SizedBox(height: 12),
