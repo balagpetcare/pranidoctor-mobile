@@ -26,7 +26,8 @@ GoogleService-Info.plist
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.iml
 
 # OS

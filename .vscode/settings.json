@@ -1,0 +1,4 @@
+{
+  "dart.flutterRunAdditionalArgs": ["--no-dds"],
+  "dart.flutterAttachAdditionalArgs": ["--no-dds"]
+}
