@@ -38,6 +38,9 @@ abstract final class PraniRadii {
   static const double md = 12;
   static const double lg = 16;
   static const double xl = 20;
+
+  /// Home 2×2 service tiles (matches [HomeLayout.serviceCardRadius]).
+  static const double homeServiceTile = 22;
 }
 
 /// Soft elevation shadows (cards, floating surfaces).
@@ -83,4 +86,9 @@ abstract final class PraniShadows {
       spreadRadius: -2,
     ),
   ];
+
+  /// Cards sitting on scaffold canvas (theme-aware shadow).
+  static List<BoxShadow> elevatedCardShadow(Brightness brightness) {
+    return brightness == Brightness.dark ? cardDark : homeCardSoft;
+  }
 }

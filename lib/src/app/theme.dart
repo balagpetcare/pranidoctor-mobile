@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../design_system/prani_tokens.dart';
 
 /// Prani Doctor — brand teal / sky / soft orange (farm & animal health, Bengali-first).
-/// Prefer `Theme.of(context).colorScheme` in widgets; spacing and radii use [PraniSpacing] / [PraniRadii].
+///
+/// P01: Surfaces and text use [ColorScheme]; spacing/radii use [PraniSpacing] / [PraniRadii]
+/// (see also `design_system/app/` for [AppSpacing] / [AppRadius] aliases).
 abstract final class AppTheme {
   static ColorScheme _lightScheme() {
     final base = ColorScheme.fromSeed(
@@ -52,7 +54,7 @@ abstract final class AppTheme {
       onTertiary: PraniColors.textDark,
       surface: const Color(0xFF1A2220),
       onSurface: const Color(0xFFF3F5F7),
-      onSurfaceVariant: const Color(0xFF9CA3AF),
+      onSurfaceVariant: const Color(0xFFB4BDC6),
       surfaceContainerLowest: const Color(0xFF131A18),
       surfaceContainerHigh: const Color(0xFF242E2C),
       surfaceContainerHighest: const Color(0xFF2F3D3A),
@@ -161,7 +163,32 @@ abstract final class AppTheme {
           );
         }),
       ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: 0.45),
+        thickness: 1,
+        space: 1,
+      ),
       textTheme: _textTheme(scheme, Brightness.light),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.45)),
+        backgroundColor: scheme.surfaceContainerHigh,
+        disabledColor: scheme.surfaceContainerLow,
+        selectedColor: scheme.primaryContainer,
+        secondarySelectedColor: scheme.primaryContainer,
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          height: 1.25,
+          color: scheme.onSurface,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+          color: scheme.onSurfaceVariant,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      ),
     );
   }
 
@@ -265,7 +292,32 @@ abstract final class AppTheme {
           );
         }),
       ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: 0.5),
+        thickness: 1,
+        space: 1,
+      ),
       textTheme: _textTheme(scheme, Brightness.dark),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.55)),
+        backgroundColor: scheme.surfaceContainerHighest,
+        disabledColor: scheme.surfaceContainerLow,
+        selectedColor: scheme.primaryContainer,
+        secondarySelectedColor: scheme.primaryContainer,
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          height: 1.25,
+          color: scheme.onSurface,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+          color: scheme.onSurfaceVariant,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      ),
     );
   }
 

@@ -17,8 +17,9 @@ class DoctorHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final base =
-        AppConfig.isDevelopmentEnv ? ref.watch(apiClientProvider).baseUrl : null;
+    final base = AppConfig.isDevelopmentEnv
+        ? ref.watch(apiClientProvider).baseUrl
+        : null;
     return Scaffold(
       appBar: AppBar(
         title: const Text('চিকিৎসক হোম'),

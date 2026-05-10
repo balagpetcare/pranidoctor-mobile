@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
+import 'package:pranidoctor_mobile/src/design_system/prani_page_insets.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_premium_card.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_profile_section_header.dart';
 import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
 import 'package:pranidoctor_mobile/src/features/home/application/home_shell_tab_provider.dart';
 import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
@@ -138,27 +141,15 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
     }
   }
 
-  static Widget _sectionTitle(BuildContext context, String title) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
-      child: Text(
-        title,
-        style: textTheme.labelLarge?.copyWith(
-          color: scheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  static List<Widget> _withDividers(List<Widget> tiles) {
+  static List<Widget> _withDividers(BuildContext context, List<Widget> tiles) {
+    final line = Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.42);
     final out = <Widget>[];
     for (var i = 0; i < tiles.length; i++) {
       out.add(tiles[i]);
       if (i < tiles.length - 1) {
-        out.add(const Divider(height: 1));
+        out.add(Divider(height: 1, thickness: 1, color: line));
       }
     }
     return out;
@@ -168,10 +159,12 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final hPad = pdScreenPadding(context).horizontal;
+    final hPad = PraniPageInsets.horizontalPadding(context);
     final maxW = pdReadableMaxWidth(context);
-    final bottomPad =
-        24.0 + MediaQuery.viewPaddingOf(context).bottom.clamp(0.0, 36.0);
+    final bottomPad = PraniPageInsets.bottomNavContentPadding(
+      context,
+      comfortGap: 28,
+    );
     final auth = ref.watch(sessionNotifierProvider);
 
     return RefreshIndicator(
@@ -222,10 +215,11 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _sectionTitle(context, 'অ্যাকাউন্ট'),
-                      Card(
+                      const SizedBox(height: PraniSpacing.lg),
+                      PraniProfileSectionHeader(title: 'অ্যাকাউন্ট'),
+                      PraniPremiumCard(
                         child: Column(
-                          children: _withDividers([
+                          children: _withDividers(context, [
                             ProfileSettingsListTile(
                               icon: Icons.person_outlined,
                               title: 'আমার প্রোফাইল',
@@ -272,11 +266,11 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                           ]),
                         ),
                       ),
-                      const SizedBox(height: PraniSpacing.sm),
-                      _sectionTitle(context, 'সেবা'),
-                      Card(
+                      const SizedBox(height: PraniSpacing.lg),
+                      PraniProfileSectionHeader(title: 'সেবা'),
+                      PraniPremiumCard(
                         child: Column(
-                          children: _withDividers([
+                          children: _withDividers(context, [
                             ProfileSettingsListTile(
                               icon: Icons.history_rounded,
                               title: 'বুকিং ইতিহাস',
@@ -306,11 +300,11 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                           ]),
                         ),
                       ),
-                      const SizedBox(height: PraniSpacing.sm),
-                      _sectionTitle(context, 'অ্যাপ'),
-                      Card(
+                      const SizedBox(height: PraniSpacing.lg),
+                      PraniProfileSectionHeader(title: 'অ্যাপ'),
+                      PraniPremiumCard(
                         child: Column(
-                          children: _withDividers([
+                          children: _withDividers(context, [
                             ProfileSettingsListTile(
                               icon: Icons.notifications_outlined,
                               title: 'নোটিফিকেশন',

@@ -33,7 +33,7 @@ class PraniAsyncEmptyCard extends StatelessWidget {
         border: Border.all(
           color: scheme.outlineVariant.withValues(alpha: 0.35),
         ),
-        boxShadow: PraniShadows.cardLight,
+        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -45,11 +45,7 @@ class PraniAsyncEmptyCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 44,
-              color: iconColor ?? scheme.primary.withValues(alpha: 0.75),
-            ),
+            Icon(icon, size: 44, color: iconColor ?? scheme.primary),
             const SizedBox(height: PraniSpacing.md),
             Text(
               title,
@@ -107,7 +103,7 @@ class PraniAsyncErrorCard extends StatelessWidget {
         color: scheme.errorContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(PraniRadii.lg),
         border: Border.all(color: scheme.error.withValues(alpha: 0.28)),
-        boxShadow: PraniShadows.homeCardSoft,
+        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -134,7 +130,7 @@ class PraniAsyncErrorCard extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.82),
+                color: scheme.onSurface.withValues(alpha: 0.88),
                 height: 1.42,
               ),
             ),

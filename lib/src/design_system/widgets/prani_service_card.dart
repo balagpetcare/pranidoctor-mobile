@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
-import 'package:pranidoctor_mobile/src/features/home/presentation/home_layout_constants.dart';
+import '../prani_color_scheme_ext.dart';
+import '../prani_tokens.dart';
 
-/// Single service tile for the home grid — fixed minimum height for alignment.
-class ServiceCard extends StatelessWidget {
-  const ServiceCard({
+/// Home service grid tile — fixed minimum height; surfaces follow [ColorScheme].
+class PraniServiceCard extends StatelessWidget {
+  const PraniServiceCard({
     super.key,
     required this.label,
     required this.icon,
@@ -18,23 +18,24 @@ class ServiceCard extends StatelessWidget {
   final Color pastel;
   final VoidCallback onTap;
 
-  static const double minTileHeight = 132;
+  static const double minTileHeight = 136;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final radius = HomeLayout.serviceCardRadius;
-    final border = scheme.outlineVariant.withValues(alpha: 0.32);
+    final radius = PraniRadii.homeServiceTile;
+    final fill = scheme.praniElevatedCard;
+    final border = scheme.outlineVariant.withValues(alpha: 0.38);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: minTileHeight),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: PraniColors.white,
+          color: fill,
           borderRadius: BorderRadius.circular(radius),
           border: Border.all(color: border),
-          boxShadow: PraniShadows.homeCardSoft,
+          boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
         ),
         child: Material(
           color: Colors.transparent,
@@ -69,7 +70,7 @@ class ServiceCard extends StatelessWidget {
                         style: textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           height: 1.38,
-                          color: scheme.onSurface,
+                          color: scheme.praniOnElevatedCard,
                         ),
                       ),
                     ),

@@ -33,7 +33,7 @@ class HomeEmptyDoctorsState extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(PraniRadii.lg),
         border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4)),
-        boxShadow: PraniShadows.homeCardSoft,
+        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(

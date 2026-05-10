@@ -14,7 +14,9 @@ class MobileApiHealth {
   final ApiClient _client;
 
   /// Returns `true` when the server responds successfully to the health route.
-  Future<bool> checkHealth({Duration timeout = const Duration(seconds: 8)}) async {
+  Future<bool> checkHealth({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
     try {
       final res = await _client
           .get<dynamic>('/api/mobile/health')

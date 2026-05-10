@@ -54,7 +54,7 @@ class DoctorPreviewCard extends StatelessWidget {
         border: Border.all(
           color: scheme.outlineVariant.withValues(alpha: 0.35),
         ),
-        boxShadow: PraniShadows.cardLight,
+        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
       ),
       child: Material(
         color: Colors.transparent,

@@ -126,7 +126,10 @@ class MobileUserRepositoryLive implements MobileUserRepository {
         code: 'NOT_FOUND',
       );
     }
-    return ProfileApiException(bnUserFacingDioNetworkMessage(e), code: 'NETWORK');
+    return ProfileApiException(
+      bnUserFacingDioNetworkMessage(e),
+      code: 'NETWORK',
+    );
   }
 
   /// Customer-facing Bengali; detailed validation stays in debug logs only.

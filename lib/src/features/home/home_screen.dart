@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_safe_page.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_section_header.dart';
 import 'package:pranidoctor_mobile/src/features/home/application/home_feed_providers.dart';
 import 'package:pranidoctor_mobile/src/features/home/application/home_shell_tab_provider.dart';
@@ -340,8 +341,7 @@ class HomeScreen extends ConsumerWidget {
       );
     }
 
-    return SafeArea(
-      bottom: false,
+    return PraniSafePage(
       child: RefreshIndicator(
         onRefresh: onPullRefresh,
         child: CustomScrollView(

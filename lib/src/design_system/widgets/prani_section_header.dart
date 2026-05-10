@@ -19,8 +19,9 @@ class PraniSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final c = titleColor ?? PraniColors.textDark;
+    final c = titleColor ?? scheme.onSurface;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,

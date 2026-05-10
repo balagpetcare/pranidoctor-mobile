@@ -149,6 +149,9 @@ class AnimalProfileRepository {
     if (code == 404) {
       return AnimalApiException('খুঁজে পাওয়া যায়নি', code: 'NOT_FOUND');
     }
-    return AnimalApiException(bnUserFacingDioNetworkMessage(e), code: 'NETWORK');
+    return AnimalApiException(
+      bnUserFacingDioNetworkMessage(e),
+      code: 'NETWORK',
+    );
   }
 }

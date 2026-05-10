@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
-import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/service_card.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_service_card.dart';
 
 typedef HomeServiceTap = void Function(int index);
 
@@ -39,9 +39,9 @@ class HomeServicesGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth;
-        final spacing = PraniSpacing.sm;
+        final spacing = PraniSpacing.md;
         final tileW = (maxW - spacing) / 2;
-        final tileH = (tileW / 0.92).clamp(ServiceCard.minTileHeight, 168.0);
+        const tileH = 142.0;
 
         return GridView.count(
           shrinkWrap: true,
@@ -52,7 +52,7 @@ class HomeServicesGrid extends StatelessWidget {
           childAspectRatio: tileW / tileH,
           children: List.generate(_items.length, (i) {
             final item = _items[i];
-            return ServiceCard(
+            return PraniServiceCard(
               label: item.label,
               icon: item.icon,
               pastel: item.tint,
