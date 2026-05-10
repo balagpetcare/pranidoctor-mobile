@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 
+import '../prani_tokens.dart';
+
 /// P01 semantic accents (success / warning) that stay readable on [ColorScheme.surface].
 ///
-/// **Danger:** use [ColorScheme.error] and [ColorScheme.errorContainer] from theme.
+/// **Danger:** use [ColorScheme.error] from theme (mapped from [PraniColors.danger] in light).
 abstract final class AppSemanticColors {
   static Color success(ColorScheme scheme) =>
       scheme.brightness == Brightness.dark
-      ? const Color(0xFF34D399)
-      : const Color(0xFF059669);
+      ? PraniColors.successBright
+      : PraniColors.success;
 
   static Color onSuccess(ColorScheme scheme) =>
       scheme.brightness == Brightness.dark
       ? const Color(0xFF052E1A)
-      : Colors.white;
+      : PraniColors.white;
 
   static Color warningForeground(ColorScheme scheme) =>
       scheme.brightness == Brightness.dark
-      ? const Color(0xFFFBBF24)
-      : const Color(0xFFB45309);
+      ? PraniColors.warningBright
+      : PraniColors.warning;
 
   static Color warningBackground(ColorScheme scheme) =>
       scheme.brightness == Brightness.dark

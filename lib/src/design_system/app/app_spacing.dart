@@ -11,4 +11,6 @@ abstract final class AppSpacing {
   static const double xxl = PraniSpacing.xxl;
   static const double xxxl = PraniSpacing.xxxl;
   static const double section = PraniSpacing.section;
+  static const double pageHorizontal = PraniSpacing.pageHorizontal;
+  static const double pageVertical = PraniSpacing.pageVertical;
 }
