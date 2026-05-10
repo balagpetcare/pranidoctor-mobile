@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/core/network/network_messages.dart';
-import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_async_list_status.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_scaffold.dart';
 import 'package:pranidoctor_mobile/src/app/user_visible_async_error.dart';
 import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';
@@ -63,8 +64,9 @@ class DoctorListScreen extends ConsumerWidget {
       await notifier.refresh();
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('ডাক্তার খুঁজুন')),
+    return PraniScaffold(
+      title: 'ডাক্তার খুঁজুন',
+      showBackButton: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -107,18 +109,10 @@ class DoctorListScreen extends ConsumerWidget {
                         constraints: BoxConstraints(maxWidth: maxW),
                         child: Column(
                           children: [
-                            PraniAsyncLoadingCard(
+                            PraniLoadingState(
                               height: (MediaQuery.sizeOf(context).height * 0.2)
                                   .clamp(132.0, 196.0),
-                            ),
-                            const SizedBox(height: PraniSpacing.md),
-                            Text(
-                              'ডাক্তার তালিকা লোড হচ্ছে…',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
+                              message: 'ডাক্তার তালিকা লোড হচ্ছে…',
                             ),
                           ],
                         ),

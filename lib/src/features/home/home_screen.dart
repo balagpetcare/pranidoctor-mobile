@@ -229,6 +229,7 @@ class HomeScreen extends ConsumerWidget {
           SizedBox(height: HomeLayout.gapSearchToServicesHeader),
           PraniSectionHeader(
             title: 'আমাদের সেবা',
+            subtitle: 'দ্রুত শর্টকাট ও জনপ্রিয় অপশন',
             actionLabel: 'সব দেখুন',
             onAction: () => _openDoctorListAll(context, ref),
           ),

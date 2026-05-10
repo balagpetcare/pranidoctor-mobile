@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_filter_card.dart';
 import 'package:pranidoctor_mobile/src/features/animals/data/animal_profile_model.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
 
@@ -71,7 +72,7 @@ class ProviderFilterPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(label, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 4),
+        const SizedBox(height: PraniSpacing.xxs),
         InputDecorator(
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
@@ -94,163 +95,109 @@ class ProviderFilterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final hasFilters = query.hasNonDefaultDoctorFilters;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(horizontalPadding, 6, horizontalPadding, 0),
-      child: Material(
-        color: scheme.surfaceContainerLow,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PraniRadii.lg),
-          side: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.45),
-          ),
+    return PraniFilterCard(
+      title: 'ফিল্টার',
+      summary: _filterSummary(query),
+      horizontalPadding: horizontalPadding,
+      onReset: hasFilters
+          ? () => onQueryChanged(ProviderListQuery.initial)
+          : null,
+      resetEnabled: hasFilters,
+      children: [
+        _dropdownField<String?>(
+          context,
+          label: 'এলাকা',
+          value: ProviderFilterPanel._safeAreaSlug(query.areaSlug),
+          items: const [
+            DropdownMenuItem(value: null, child: Text('সব এলাকা')),
+            DropdownMenuItem(
+              value: 'ashulia-union-area',
+              child: Text('আশুলিয়া ইউনিয়ন'),
+            ),
+          ],
+          onChanged: (v) {
+            onQueryChanged(
+              query.withFilters(
+                areaSlug: v,
+                clearAreaSlug: v == null,
+                clearAreaId: true,
+              ),
+            );
+          },
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            maintainState: true,
-            initiallyExpanded: false,
-            tilePadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 4,
+        const SizedBox(height: PraniSpacing.sm),
+        _dropdownField<AnimalType?>(
+          context,
+          label: 'পশুর ধরন',
+          value: query.animalType,
+          items: [
+            const DropdownMenuItem(value: null, child: Text('সব')),
+            ...AnimalType.values.map(
+              (t) => DropdownMenuItem(value: t, child: Text(_animalLabel(t))),
             ),
-            childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            title: Text(
-              'ফিল্টার',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            subtitle: Text(
-              _filterSummary(query),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-            children: [
-              _dropdownField<String?>(
-                context,
-                label: 'এলাকা',
-                value: ProviderFilterPanel._safeAreaSlug(query.areaSlug),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('সব এলাকা')),
-                  DropdownMenuItem(
-                    value: 'ashulia-union-area',
-                    child: Text('আশুলিয়া ইউনিয়ন'),
-                  ),
-                ],
-                onChanged: (v) {
-                  onQueryChanged(
-                    query.withFilters(
-                      areaSlug: v,
-                      clearAreaSlug: v == null,
-                      clearAreaId: true,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _dropdownField<AnimalType?>(
-                context,
-                label: 'পশুর ধরন',
-                value: query.animalType,
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('সব')),
-                  ...AnimalType.values.map(
-                    (t) => DropdownMenuItem(
-                      value: t,
-                      child: Text(_animalLabel(t)),
-                    ),
-                  ),
-                ],
-                onChanged: (v) {
-                  onQueryChanged(
-                    query.withFilters(
-                      animalType: v,
-                      clearAnimalType: v == null,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _dropdownField<bool?>(
-                context,
-                label: 'হোম ভিজিট',
-                value: query.homeVisit,
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('সব')),
-                  DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
-                  DropdownMenuItem(value: false, child: Text('না')),
-                ],
-                onChanged: (v) {
-                  onQueryChanged(
-                    query.withFilters(homeVisit: v, clearHomeVisit: v == null),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              _dropdownField<bool?>(
-                context,
-                label: 'জরুরি সেবা',
-                value: query.emergency,
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('সব')),
-                  DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
-                  DropdownMenuItem(value: false, child: Text('না')),
-                ],
-                onChanged: (v) {
-                  onQueryChanged(
-                    query.withFilters(emergency: v, clearEmergency: v == null),
-                  );
-                },
-              ),
-              if (showOnlineConsultation) ...[
-                const SizedBox(height: 10),
-                _dropdownField<bool?>(
-                  context,
-                  label: 'অনলাইন কনসালটেশন',
-                  value: query.onlineConsultation,
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('সব')),
-                    DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
-                    DropdownMenuItem(value: false, child: Text('না')),
-                  ],
-                  onChanged: (v) {
-                    onQueryChanged(
-                      query.withFilters(
-                        onlineConsultation: v,
-                        clearOnlineConsultation: v == null,
-                      ),
-                    );
-                  },
-                ),
-              ],
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: hasFilters
-                      ? () {
-                          onQueryChanged(ProviderListQuery.initial);
-                        }
-                      : null,
-                  icon: const Icon(Icons.clear_all, size: 20),
-                  label: const Text('ফিল্টার মুছুন'),
-                ),
-              ),
+          ],
+          onChanged: (v) {
+            onQueryChanged(
+              query.withFilters(animalType: v, clearAnimalType: v == null),
+            );
+          },
+        ),
+        const SizedBox(height: PraniSpacing.sm),
+        _dropdownField<bool?>(
+          context,
+          label: 'হোম ভিজিট',
+          value: query.homeVisit,
+          items: const [
+            DropdownMenuItem(value: null, child: Text('সব')),
+            DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
+            DropdownMenuItem(value: false, child: Text('না')),
+          ],
+          onChanged: (v) {
+            onQueryChanged(
+              query.withFilters(homeVisit: v, clearHomeVisit: v == null),
+            );
+          },
+        ),
+        const SizedBox(height: PraniSpacing.sm),
+        _dropdownField<bool?>(
+          context,
+          label: 'জরুরি সেবা',
+          value: query.emergency,
+          items: const [
+            DropdownMenuItem(value: null, child: Text('সব')),
+            DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
+            DropdownMenuItem(value: false, child: Text('না')),
+          ],
+          onChanged: (v) {
+            onQueryChanged(
+              query.withFilters(emergency: v, clearEmergency: v == null),
+            );
+          },
+        ),
+        if (showOnlineConsultation) ...[
+          const SizedBox(height: PraniSpacing.sm),
+          _dropdownField<bool?>(
+            context,
+            label: 'অনলাইন কনসালটেশন',
+            value: query.onlineConsultation,
+            items: const [
+              DropdownMenuItem(value: null, child: Text('সব')),
+              DropdownMenuItem(value: true, child: Text('হ্যাঁ')),
+              DropdownMenuItem(value: false, child: Text('না')),
             ],
+            onChanged: (v) {
+              onQueryChanged(
+                query.withFilters(
+                  onlineConsultation: v,
+                  clearOnlineConsultation: v == null,
+                ),
+              );
+            },
           ),
-        ),
-      ),
+        ],
+      ],
     );
   }
 }

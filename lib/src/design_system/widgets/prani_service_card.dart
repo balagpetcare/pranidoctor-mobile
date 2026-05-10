@@ -11,12 +11,16 @@ class PraniServiceCard extends StatelessWidget {
     required this.icon,
     required this.pastel,
     required this.onTap,
+    this.subtitle,
+    this.badge,
   });
 
   final String label;
   final IconData icon;
   final Color pastel;
   final VoidCallback onTap;
+  final String? subtitle;
+  final String? badge;
 
   static const double minTileHeight = 136;
 
@@ -48,30 +52,67 @@ class PraniServiceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: pastel,
-                      borderRadius: BorderRadius.circular(PraniRadii.md),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(PraniSpacing.sm),
-                      child: Icon(icon, color: scheme.primary, size: 26),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: pastel,
+                            borderRadius: BorderRadius.circular(PraniRadii.md),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(PraniSpacing.sm),
+                            child: Icon(icon, color: scheme.primary, size: 26),
+                          ),
+                        ),
+                      ),
+                      if (badge != null && badge!.trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: PraniSpacing.xs),
+                          child: Chip(
+                            visualDensity: VisualDensity.compact,
+                            label: Text(badge!, style: textTheme.labelSmall),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: PraniSpacing.md),
                   Expanded(
                     child: Align(
                       alignment: Alignment.topLeft,
-                      child: Text(
-                        label,
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: true,
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          height: 1.38,
-                          color: scheme.praniOnElevatedCard,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            label,
+                            maxLines: subtitle == null ? 4 : 2,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              height: 1.38,
+                              color: scheme.praniOnElevatedCard,
+                            ),
+                          ),
+                          if (subtitle != null &&
+                              subtitle!.trim().isNotEmpty) ...[
+                            const SizedBox(height: PraniSpacing.xxs),
+                            Text(
+                              subtitle!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),

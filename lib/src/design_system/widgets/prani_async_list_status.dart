@@ -1,8 +1,55 @@
 import 'package:flutter/material.dart';
 
-import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'prani_empty_state.dart';
+import 'prani_error_state.dart';
+import 'prani_loading_state.dart';
 
-/// Premium empty state for provider lists / home strips.
+/// Routes async list phases to shared loading / empty / error / ready widgets.
+enum PraniAsyncListPhase { loading, empty, error, ready }
+
+class PraniAsyncListStatus extends StatelessWidget {
+  const PraniAsyncListStatus({
+    super.key,
+    required this.phase,
+    required this.ready,
+    this.loading,
+    this.empty,
+    this.error,
+  });
+
+  final PraniAsyncListPhase phase;
+  final Widget ready;
+  final Widget? loading;
+  final Widget? empty;
+  final Widget? error;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (phase) {
+      case PraniAsyncListPhase.loading:
+        return loading ??
+            const PraniLoadingState(message: 'লোড হচ্ছে…', compact: false);
+      case PraniAsyncListPhase.empty:
+        return empty ??
+            PraniEmptyState(
+              title: 'কিছুই নেই',
+              message: 'এখনও কোনো ফল নেই। পরে আবার চেষ্টা করুন।',
+              boxed: false,
+            );
+      case PraniAsyncListPhase.error:
+        return error ??
+            PraniErrorState(
+              title: 'লোড করা যায়নি',
+              message: 'একটি সমস্যা হয়েছে। পরে আবার চেষ্টা করুন।',
+              compact: true,
+            );
+      case PraniAsyncListPhase.ready:
+        return ready;
+    }
+  }
+}
+
+/// Premium empty state for provider lists / home strips — boxed [PraniEmptyState].
 class PraniAsyncEmptyCard extends StatelessWidget {
   const PraniAsyncEmptyCard({
     super.key,
@@ -23,60 +70,19 @@ class PraniAsyncEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(PraniRadii.lg),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.35),
-        ),
-        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          PraniSpacing.xl,
-          PraniSpacing.lg,
-          PraniSpacing.xl,
-          PraniSpacing.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 44, color: iconColor ?? scheme.primary),
-            const SizedBox(height: PraniSpacing.md),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: PraniSpacing.xs),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                height: 1.42,
-              ),
-            ),
-            const SizedBox(height: PraniSpacing.md),
-            FilledButton.tonalIcon(
-              onPressed: onAction,
-              icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: Text(actionLabel),
-            ),
-          ],
-        ),
-      ),
+    return PraniEmptyState(
+      title: title,
+      message: subtitle,
+      icon: icon,
+      iconColor: iconColor,
+      actionLabel: actionLabel,
+      onAction: onAction,
+      boxed: true,
     );
   }
 }
 
-/// Premium error state — visually distinct from empty (semantic error color).
+/// Premium error state — boxed [PraniErrorState] with retry.
 class PraniAsyncErrorCard extends StatelessWidget {
   const PraniAsyncErrorCard({
     super.key,
@@ -95,65 +101,14 @@ class PraniAsyncErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.errorContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(PraniRadii.lg),
-        border: Border.all(color: scheme.error.withValues(alpha: 0.28)),
-        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          PraniSpacing.xl,
-          PraniSpacing.lg,
-          PraniSpacing.xl,
-          PraniSpacing.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.cloud_off_rounded, color: scheme.error, size: 42),
-            const SizedBox(height: PraniSpacing.sm),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: PraniSpacing.xs),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.88),
-                height: 1.42,
-              ),
-            ),
-            if (detail != null && detail!.trim().isNotEmpty) ...[
-              const SizedBox(height: PraniSpacing.sm),
-              Text(
-                detail!.trim(),
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.38,
-                ),
-              ),
-            ],
-            const SizedBox(height: PraniSpacing.md),
-            FilledButton.icon(
-              onPressed: onAction,
-              icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: Text(actionLabel),
-            ),
-          ],
-        ),
-      ),
+    return PraniErrorState(
+      title: title,
+      message: subtitle,
+      retryLabel: actionLabel,
+      onRetry: onAction,
+      detail: detail,
+      boxed: true,
+      compact: false,
     );
   }
 }
@@ -166,29 +121,6 @@ class PraniAsyncLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return SizedBox(
-      height: height,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(PraniRadii.lg),
-          border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Center(
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: scheme.primary,
-            ),
-          ),
-        ),
-      ),
-    );
+    return PraniLoadingState(height: height);
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_error_state.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/app/user_visible_async_error.dart';
 import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
@@ -77,7 +79,7 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: Center(
-                  child: CircularProgressIndicator(color: scheme.primary),
+                  child: PraniLoadingState(message: 'অনুরোধগুলো লোড হচ্ছে…'),
                 ),
               ),
             ],
@@ -96,39 +98,15 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
                     child: Center(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: maxW),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.cloud_off_outlined,
-                              size: 44,
-                              color: scheme.error,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'লোড করা যায়নি',
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              userVisibleAsyncErrorBn(e),
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                height: 1.45,
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            FilledButton.icon(
-                              onPressed: () => ref
-                                  .read(serviceRequestsListProvider.notifier)
-                                  .refresh(),
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('আবার চেষ্টা করুন'),
-                            ),
-                          ],
+                        child: PraniErrorState(
+                          title: 'লোড করা যায়নি',
+                          message: userVisibleAsyncErrorBn(e),
+                          retryLabel: 'আবার চেষ্টা করুন',
+                          onRetry: () => ref
+                              .read(serviceRequestsListProvider.notifier)
+                              .refresh(),
+                          detail: '$e',
+                          compact: false,
                         ),
                       ),
                     ),

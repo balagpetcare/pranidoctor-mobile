@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../prani_tokens.dart';
+import 'prani_buttons.dart';
 
-/// Primary call-to-action — full-width friendly, 48dp touch height.
+/// Primary call-to-action — delegates to [PraniPrimaryButton].
 class PraniPrimaryCtaButton extends StatelessWidget {
   const PraniPrimaryCtaButton({
     super.key,
@@ -17,26 +17,11 @@ class PraniPrimaryCtaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Text(label);
-    final style = FilledButton.styleFrom(
-      minimumSize: const Size(double.infinity, 50),
-      padding: const EdgeInsets.symmetric(
-        horizontal: PraniSpacing.xl,
-        vertical: PraniSpacing.md,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(PraniRadii.md),
-      ),
+    return PraniPrimaryButton(
+      label: label,
+      onPressed: onPressed,
+      icon: icon,
+      fullWidth: true,
     );
-
-    if (icon != null) {
-      return FilledButton.icon(
-        style: style,
-        onPressed: onPressed,
-        icon: Icon(icon, size: 22),
-        label: child,
-      );
-    }
-    return FilledButton(style: style, onPressed: onPressed, child: child);
   }
 }

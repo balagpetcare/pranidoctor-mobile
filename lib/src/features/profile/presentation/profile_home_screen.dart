@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_page_insets.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_premium_card.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_profile_section_header.dart';
 import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
@@ -77,7 +78,10 @@ class ProfileHomeScreen extends ConsumerWidget {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: CircularProgressIndicator(color: scheme.primary),
+                child: PraniLoadingState(
+                  message: 'প্রোফাইল লোড হচ্ছে…',
+                  compact: false,
+                ),
               ),
             ),
           ],

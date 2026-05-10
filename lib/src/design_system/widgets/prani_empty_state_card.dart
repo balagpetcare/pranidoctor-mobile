@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../prani_color_scheme_ext.dart';
-import '../prani_tokens.dart';
+import 'prani_empty_state.dart';
 
 /// Generic empty / zero-result state (lists, tabs, secondary surfaces).
+///
+/// Thin wrapper over [PraniEmptyState] with elevation strip styling.
 class PraniEmptyStateCard extends StatelessWidget {
   const PraniEmptyStateCard({
     super.key,
@@ -20,55 +21,12 @@ class PraniEmptyStateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.praniElevatedCard,
-        borderRadius: BorderRadius.circular(PraniRadii.lg),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.38),
-        ),
-        boxShadow: PraniShadows.elevatedCardShadow(scheme.brightness),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          PraniSpacing.xl,
-          PraniSpacing.xl,
-          PraniSpacing.xl,
-          PraniSpacing.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 46, color: scheme.primary),
-            const SizedBox(height: PraniSpacing.md),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.praniOnElevatedCard,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: PraniSpacing.xs),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                height: 1.45,
-              ),
-            ),
-            if (action != null) ...[
-              const SizedBox(height: PraniSpacing.lg),
-              action!,
-            ],
-          ],
-        ),
-      ),
+    return PraniEmptyState(
+      title: title,
+      message: subtitle,
+      icon: icon,
+      customAction: action,
+      boxed: true,
     );
   }
 }
