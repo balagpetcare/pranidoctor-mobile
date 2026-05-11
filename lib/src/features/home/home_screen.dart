@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_info_card.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_safe_page.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_section_header.dart';
 import 'package:pranidoctor_mobile/src/features/home/application/home_feed_providers.dart';
@@ -15,6 +16,8 @@ import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_h
 import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_search_card.dart';
 import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_services_grid.dart';
 import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_top_bar.dart';
+import 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/ai_service_home_entry_card.dart';
+import 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/ai_technician_finder_screen.dart';
 import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/nearby_doctors_section.dart';
 import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
@@ -23,13 +26,21 @@ import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.d
 import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';
 import 'package:pranidoctor_mobile/src/features/providers/presentation/doctor_list_screen.dart';
-import 'package:pranidoctor_mobile/src/features/providers/presentation/technician_list_screen.dart';
+import 'package:pranidoctor_mobile/src/features/auth/application/customer_auth_prompt.dart';
+import 'package:pranidoctor_mobile/src/features/locations/application/guest_location_preference.dart';
+import 'package:pranidoctor_mobile/src/features/locations/presentation/guest_location_selection_sheet.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/booking_wizard_screen.dart';
+import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
 
 /// Customer home — marketing layout wired to `/api/mobile/*` where available.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   static const _subtitle =
       'আজ আপনার পোষা/গৃহপালিত প্রাণীর জন্য আমরা কীভাবে সাহায্য করতে পারি?';
 
@@ -162,8 +173,37 @@ class HomeScreen extends ConsumerWidget {
     return RoundedRectangleBorder(borderRadius: BorderRadius.circular(20));
   }
 
+  bool _offeredLocationPrompt = false;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onHomeEntered());
+  }
+
+  Future<void> _onHomeEntered() async {
+    final guest = await ref.read(guestLocationPreferenceProvider.future);
+    if (!mounted) return;
+    ref
+        .read(guestLocationPreferenceProvider.notifier)
+        .applySavedLocationToProviderQueries();
+    if (!guest.promptCompleted && !_offeredLocationPrompt) {
+      _offeredLocationPrompt = true;
+      await showGuestLocationSelectionSheet(context, showSkip: true);
+      if (!mounted) return;
+      final updated = ref
+          .read(guestLocationPreferenceProvider)
+          .maybeWhen(data: (v) => v, orElse: () => null);
+      if (updated != null && !updated.promptCompleted) {
+        await ref
+            .read(guestLocationPreferenceProvider.notifier)
+            .dismissPromptWithoutSaving();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final hPad = HomeLayout.horizontalPadding(context);
     final userAsync = ref.watch(mobileUserProvider);
     final categories = ref
@@ -182,6 +222,12 @@ class HomeScreen extends ConsumerWidget {
       error: (_, _) => 'হ্যালো! 👋',
     );
 
+    final guestLoc = ref.watch(guestLocationPreferenceProvider);
+    final showLocationBanner = guestLoc.maybeWhen(
+      data: (g) => g.promptCompleted && !g.hasSavedSelection,
+      orElse: () => false,
+    );
+
     Future<void> onPullRefresh() async {
       ref.invalidate(mobileUserProvider);
       ref.invalidate(homeServiceCategoriesProvider);
@@ -198,18 +244,43 @@ class HomeScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           HomeTopBar(
-            onOpenNotifications: () {
+            onLocationTap: () =>
+                showGuestLocationSelectionSheet(context, showSkip: true),
+            onOpenNotifications: () async {
+              if (!ref.read(sessionNotifierProvider).isAuthenticated) {
+                await showCustomerAuthRequiredSheet(context);
+                return;
+              }
               ref.read(homeShellTabIndexProvider.notifier).select(3);
             },
-            onQuickBooking: () =>
-                _safePushNamed(context, BookingWizardScreen.routeName),
+            onQuickBooking: () async {
+              if (!ref.read(sessionNotifierProvider).isAuthenticated) {
+                await showCustomerAuthRequiredSheet(context);
+                return;
+              }
+              _safePushNamed(context, BookingWizardScreen.routeName);
+            },
           ),
+          if (showLocationBanner) ...[
+            const SizedBox(height: PraniSpacing.sm),
+            PraniInfoCard(
+              title: 'আপনার এলাকার সঠিক সেবা দেখতে লোকেশন নির্বাচন করুন',
+              leadingIcon: const Icon(Icons.info_outline_rounded),
+              trailing: TextButton(
+                onPressed: () =>
+                    showGuestLocationSelectionSheet(context, showSkip: true),
+                child: const Text('লোকেশন সেট করুন'),
+              ),
+            ),
+          ],
           userAsync.when(
             loading: () => SizedBox(height: HomeLayout.gapHeroToSearch),
             data: (_) => SizedBox(height: HomeLayout.gapHeroToSearch),
             error: (e, _) => SizedBox(height: HomeLayout.gapHeroToSearch),
           ),
           HomeHeroCard(greetingLine: greetingLine, subtitle: _subtitle),
+          SizedBox(height: HomeLayout.gapHeroToSearch),
+          const AiServiceHomeEntryCard(),
           SizedBox(height: HomeLayout.gapHeroToSearch),
           HomeSearchCard(
             onSearchTap: () {
@@ -284,8 +355,10 @@ class HomeScreen extends ConsumerWidget {
                     horizontal: PraniSpacing.md,
                     vertical: PraniSpacing.xs,
                   ),
-                  onPressed: () =>
-                      _safePushNamed(context, TechnicianListScreen.routeName),
+                  onPressed: () => _safePushNamed(
+                    context,
+                    AiTechnicianFinderScreen.routeName,
+                  ),
                 ),
                 const SizedBox(width: PraniSpacing.sm),
                 ActionChip(

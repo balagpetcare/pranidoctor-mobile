@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/features/locations/application/guest_location_preference.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/presentation/widgets/notification_bell_icon_button.dart';
 import 'package:pranidoctor_mobile/src/features/profile/application/profile_providers.dart';
 import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/area_setting_screen.dart';
 
 /// Location row + notifications + optional quick booking entry.
 class HomeTopBar extends ConsumerWidget {
@@ -14,32 +13,57 @@ class HomeTopBar extends ConsumerWidget {
     super.key,
     required this.onOpenNotifications,
     required this.onQuickBooking,
+    required this.onLocationTap,
   });
 
   final VoidCallback onOpenNotifications;
   final VoidCallback onQuickBooking;
+  final VoidCallback onLocationTap;
 
-  static const String _defaultLocation = 'ঢাকা, বাংলাদেশ';
+  /// Shown when neither guest nor profile [area] is set — not a real address.
+  static const String _neutralLocationHintBn = 'লোকেশন সেট করুন';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final userAsync = ref.watch(mobileUserProvider);
+    final guestAsync = ref.watch(guestLocationPreferenceProvider);
 
-    final location = userAsync.maybeWhen(
-      data: (u) {
-        final a = u.area?.trim();
-        if (a != null &&
-            a.isNotEmpty &&
-            a != 'এলাকা সেট করা হয়নি' &&
-            a != MobileUser.kPlaceholderAreaBn) {
-          return a;
+    final location = guestAsync.maybeWhen(
+      data: (g) {
+        if (g.hasSavedSelection) {
+          final c = g.compactLocationLabelBn.trim();
+          return c.isEmpty ? 'এলাকা নির্বাচিত' : c;
         }
-        return _defaultLocation;
+        return null;
       },
-      orElse: () => _defaultLocation,
+      orElse: () => null,
     );
+
+    final resolvedLocation =
+        location ??
+        userAsync.maybeWhen(
+          data: (u) {
+            final a = u.area?.trim();
+            if (a != null &&
+                a.isNotEmpty &&
+                a != 'এলাকা সেট করা হয়নি' &&
+                a != MobileUser.kPlaceholderAreaBn) {
+              return a;
+            }
+            return null;
+          },
+          orElse: () => null,
+        ) ??
+        _neutralLocationHintBn;
+
+    final hintGuest = guestAsync.maybeWhen(
+      data: (g) => g.promptCompleted && !g.hasSavedSelection,
+      orElse: () => false,
+    );
+
+    final chipTitle = hintGuest ? 'লোকেশন সেট করুন' : resolvedLocation;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -64,11 +88,7 @@ class HomeTopBar extends ConsumerWidget {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 borderRadius: BorderRadius.circular(PraniRadii.md),
-                onTap: () {
-                  try {
-                    context.push(AreaSettingScreen.routePath);
-                  } catch (_) {}
-                },
+                onTap: onLocationTap,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: PraniSpacing.sm,
@@ -84,7 +104,7 @@ class HomeTopBar extends ConsumerWidget {
                       const SizedBox(width: PraniSpacing.xs),
                       Expanded(
                         child: Text(
-                          location,
+                          chipTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.titleSmall?.copyWith(

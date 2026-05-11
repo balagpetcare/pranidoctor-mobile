@@ -74,7 +74,7 @@ class NearbyDoctorsSection extends ConsumerWidget {
         async.when(
           loading: () => const PraniAsyncLoadingCard(height: 156),
           error: (_, _) => PraniAsyncErrorCard(
-            title: 'ডাক্তার তালিকা লোড করা যায়নি',
+            title: 'ডাক্তার তালিকা লোড করা যায়নি।',
             subtitle: NetworkMessages.bnServerUnreachable,
             actionLabel: 'আবার চেষ্টা করুন',
             onAction: () => ref.read(doctorsListProvider.notifier).refresh(),

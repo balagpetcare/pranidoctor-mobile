@@ -17,13 +17,15 @@ import 'package:pranidoctor_mobile/src/features/profile/application/profile_prov
 import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/about_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/app_settings_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/area_setting_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/edit_profile_location_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/edit_profile_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/help_support_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/logout_confirm_dialog.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_header_card.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_settings_list_tile.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/support_contact_card.dart';
+import 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/ai_my_requests_screen.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_application_entry_screen.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/animal_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
 
@@ -66,43 +68,42 @@ class ProfileHomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
-      appBar: AppBar(
-        title: const Text('প্রোফাইল'),
-        backgroundColor: scheme.surface,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: asyncUser.when(
-        loading: () => CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: PraniLoadingState(
-                  message: 'প্রোফাইল লোড হচ্ছে…',
-                  compact: false,
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: asyncUser.when(
+          loading: () => CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: PraniLoadingState(
+                    message: 'প্রোফাইল লোড হচ্ছে…',
+                    compact: false,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        error: (e, stack) {
-          assert(() {
-            debugPrint('mobileUserProvider unexpected error: $e\n$stack');
-            return true;
-          }());
-          return _ProfileScrollBody(
-            user: MobileUser.guestFallback(
-              MobileProfileLoadStatus.fallbackUnavailable,
-            ),
-            forceInfoBanner: true,
+            ],
+          ),
+          error: (e, stack) {
+            assert(() {
+              debugPrint('mobileUserProvider unexpected error: $e\n$stack');
+              return true;
+            }());
+            return _ProfileScrollBody(
+              user: MobileUser.guestFallback(
+                MobileProfileLoadStatus.fallbackUnavailable,
+              ),
+              forceInfoBanner: true,
+              onRefresh: onRefresh,
+            );
+          },
+          data: (user) => _ProfileScrollBody(
+            user: user,
+            forceInfoBanner: false,
             onRefresh: onRefresh,
-          );
-        },
-        data: (user) => _ProfileScrollBody(
-          user: user,
-          forceInfoBanner: false,
-          onRefresh: onRefresh,
+          ),
         ),
       ),
     );
@@ -243,12 +244,29 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                               onTap: () async {
                                 await ProfileHomeScreen._safePush(
                                   context,
-                                  AreaSettingScreen.routePath,
+                                  EditProfileLocationScreen.routePath,
                                 );
                                 if (context.mounted) {
                                   ref.invalidate(mobileUserProvider);
                                 }
                               },
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.biotech_outlined,
+                              title: 'এআই টেকনিশিয়ান',
+                              subtitle: 'আবেদন, অবস্থা ও ড্যাশবোর্ড',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                AiTechnicianApplicationEntryScreen.routePath,
+                              ),
+                            ),
+                            ProfileSettingsListTile(
+                              icon: Icons.list_alt_outlined,
+                              title: 'আমার এআই অনুরোধ',
+                              onTap: () => ProfileHomeScreen._safePush(
+                                context,
+                                AiMyServiceRequestsScreen.routePath,
+                              ),
                             ),
                             ProfileSettingsListTile(
                               icon: Icons.pets_outlined,

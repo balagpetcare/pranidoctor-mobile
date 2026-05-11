@@ -1,7 +1,5 @@
 import 'package:dio/dio.dart';
 
-import 'network_messages.dart';
-
 /// True when [e] indicates no usable HTTP response (offline, timeout, TLS, etc.).
 bool isDioConnectionUnreachable(DioException e) {
   switch (e.type) {
@@ -17,14 +15,4 @@ bool isDioConnectionUnreachable(DioException e) {
     case DioExceptionType.unknown:
       return e.response == null;
   }
-}
-
-/// Short fallback when there is a [DioException] but no JSON error envelope.
-String bnUserFacingDioNetworkMessage(DioException e) {
-  if (isDioConnectionUnreachable(e)) {
-    return NetworkMessages.bnServerUnreachable;
-  }
-  final m = e.message;
-  if (m != null && m.isNotEmpty) return m;
-  return 'সংযোগ ত্রুটি';
 }

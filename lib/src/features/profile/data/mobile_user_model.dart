@@ -20,6 +20,14 @@ class MobileUser {
     this.area,
     this.role,
     this.profilePhotoUrl,
+    this.coverPhotoUrl,
+    this.locationConfigured,
+    this.divisionId,
+    this.districtId,
+    this.upazilaId,
+    this.unionId,
+    this.villageId,
+    this.villageName,
     this.loadStatus = MobileProfileLoadStatus.loaded,
   });
 
@@ -32,6 +40,18 @@ class MobileUser {
   /// API string e.g. `customer`, `doctor`, `technician`, `guest`.
   final String? role;
   final String? profilePhotoUrl;
+  final String? coverPhotoUrl;
+
+  /// Server hint that structured location is complete; `null` if omitted by API.
+  final bool? locationConfigured;
+
+  /// Administrative location ids when the backend returns them (flat or nested).
+  final String? divisionId;
+  final String? districtId;
+  final String? upazilaId;
+  final String? unionId;
+  final String? villageId;
+  final String? villageName;
 
   /// Whether `/api/mobile/me` returned a normal profile body.
   final MobileProfileLoadStatus loadStatus;
@@ -39,18 +59,44 @@ class MobileUser {
   static const String kPlaceholderPhoneBn = 'মোবাইল নম্বর যোগ করুন';
   static const String kPlaceholderAreaBn = 'এলাকা সেট করুন';
 
+  /// `true` when [area] is non-empty, not a known placeholder, and not a demo/fake label.
+  static bool areaLooksLikeRealUserLocation(String? area) {
+    final t = area?.trim() ?? '';
+    if (t.isEmpty) return false;
+    if (t == kPlaceholderAreaBn || t == 'এলাকা সেট করা হয়নি') return false;
+    if (t.contains('ডেমো')) return false;
+    final lower = t.toLowerCase();
+    if (lower.contains('demo')) return false;
+    if (lower.contains('sample')) return false;
+    if (lower.contains('fake')) return false;
+    if (lower.contains('placeholder')) return false;
+    return true;
+  }
+
   /// `true` when the server returned a full profile payload.
   bool get isRemoteProfile => loadStatus == MobileProfileLoadStatus.loaded;
+
+  /// Uses [locationConfigured] when the server sends it; otherwise structured
+  /// ids or the same heuristic as [areaLooksLikeRealUserLocation].
+  bool get isLocationConfigured {
+    if (locationConfigured != null) return locationConfigured!;
+    if (_hasStructuredLocationIds) return true;
+    return areaLooksLikeRealUserLocation(area);
+  }
+
+  bool get _hasStructuredLocationIds {
+    final d = districtId?.trim() ?? '';
+    final u = upazilaId?.trim() ?? '';
+    final n = unionId?.trim() ?? '';
+    return d.isNotEmpty && u.isNotEmpty && n.isNotEmpty;
+  }
 
   /// How many of (phone, area) still need user input (guest or incomplete).
   int get missingProfileFieldsCount {
     var n = 0;
     final ph = phone.trim();
     if (ph.isEmpty || ph == '—' || ph == kPlaceholderPhoneBn) n++;
-    final ar = area?.trim() ?? '';
-    if (ar.isEmpty || ar == kPlaceholderAreaBn || ar == 'এলাকা সেট করা হয়নি') {
-      n++;
-    }
+    if (!isLocationConfigured) n++;
     return n;
   }
 
@@ -61,6 +107,7 @@ class MobileUser {
       phone: kPlaceholderPhoneBn,
       area: kPlaceholderAreaBn,
       role: 'guest',
+      locationConfigured: null,
       loadStatus: status,
     );
   }
@@ -72,12 +119,15 @@ class MobileUser {
   factory MobileUser.fromJson(Map<String, dynamic> json) {
     final name = _string(json, const ['name', 'fullName', 'displayName']) ?? '';
     final phone = _string(json, const ['phone', 'phoneNumber', 'mobile']) ?? '';
+    final loc = _locationNestedMap(json);
     return MobileUser(
       id: _string(json, const ['id', 'userId']),
       name: name.isEmpty ? 'ব্যবহারকারী' : name,
       phone: phone.isEmpty ? '—' : phone,
       email: _string(json, const ['email']),
-      area: _string(json, const ['area', 'areaLabel', 'address', 'location']),
+      area:
+          _string(json, const ['area', 'areaLabel', 'address', 'location']) ??
+          _stringFrom(loc, const ['area', 'areaLabel', 'label']),
       role: _string(json, const ['role', 'userRole']),
       profilePhotoUrl: _string(json, const [
         'profilePhotoUrl',
@@ -85,9 +135,73 @@ class MobileUser {
         'photoUrl',
         'imageUrl',
       ]),
+      coverPhotoUrl: _string(json, const [
+        'coverPhotoUrl',
+        'coverImageUrl',
+        'backgroundPhotoUrl',
+        'bannerUrl',
+      ]),
+      locationConfigured:
+          _boolOrNull(json, const [
+            'locationConfigured',
+            'locationSet',
+            'hasConfiguredLocation',
+            'isLocationConfigured',
+          ]) ??
+          _boolOrNull(loc, const [
+            'locationConfigured',
+            'locationSet',
+            'hasConfiguredLocation',
+          ]),
+      divisionId:
+          _string(json, const ['divisionId']) ??
+          _stringFrom(loc, const ['divisionId']),
+      districtId:
+          _string(json, const ['districtId']) ??
+          _stringFrom(loc, const ['districtId']),
+      upazilaId:
+          _string(json, const ['upazilaId']) ??
+          _stringFrom(loc, const ['upazilaId']),
+      unionId:
+          _string(json, const ['unionId']) ??
+          _stringFrom(loc, const ['unionId']),
+      villageId:
+          _string(json, const ['villageId']) ??
+          _stringFrom(loc, const ['villageId']),
+      villageName:
+          _string(json, const ['villageName']) ??
+          _stringFrom(loc, const ['villageName', 'villageLabel']),
       loadStatus: MobileProfileLoadStatus.loaded,
     );
   }
+}
+
+Map<String, dynamic>? _locationNestedMap(Map<String, dynamic> json) {
+  for (final key in const ['addressJson', 'address', 'location']) {
+    final v = json[key];
+    if (v is Map<String, dynamic>) return v;
+  }
+  return null;
+}
+
+bool? _boolOrNull(Map<String, dynamic>? json, List<String> keys) {
+  if (json == null) return null;
+  for (final k in keys) {
+    final v = json[k];
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    if (v is String) {
+      final s = v.trim().toLowerCase();
+      if (s == 'true' || s == '1' || s == 'yes') return true;
+      if (s == 'false' || s == '0' || s == 'no') return false;
+    }
+  }
+  return null;
+}
+
+String? _stringFrom(Map<String, dynamic>? json, List<String> keys) {
+  if (json == null) return null;
+  return _string(json, keys);
 }
 
 String? _string(Map<String, dynamic> json, List<String> keys) {

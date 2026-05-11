@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
-import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_user_message.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/data/notification_model.dart';
 
 class NotificationApiException implements Exception {
@@ -123,9 +123,6 @@ class NotificationRepository {
     if (code == 404) {
       return NotificationApiException('খুঁজে পাওয়া যায়নি', code: 'NOT_FOUND');
     }
-    return NotificationApiException(
-      bnUserFacingDioNetworkMessage(e),
-      code: 'NETWORK',
-    );
+    return NotificationApiException(userFacingDioMessageBn(e), code: 'NETWORK');
   }
 }

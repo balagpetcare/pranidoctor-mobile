@@ -127,6 +127,12 @@ abstract final class PraniTextStyles {
         fontFamilyFallback: kFontFallback,
       );
 
+  /// Hero / marketing titles on landing screens (~24–26 logical px).
+  static TextStyle pageTitleProminent(ColorScheme scheme, TextTheme t) => title(
+    scheme,
+    t,
+  ).copyWith(fontSize: 24, fontWeight: FontWeight.w700, height: 1.3);
+
   /// Section headers.
   static TextStyle heading(ColorScheme scheme, TextTheme t) =>
       (t.titleMedium ?? const TextStyle()).copyWith(
@@ -135,6 +141,17 @@ abstract final class PraniTextStyles {
         color: scheme.onSurface,
         fontFamilyFallback: kFontFallback,
       );
+
+  /// Primary section title on scroll pages (~18–20 px).
+  static TextStyle sectionTitleProminent(ColorScheme scheme, TextTheme t) =>
+      heading(scheme, t).copyWith(fontSize: 19, height: 1.28);
+
+  /// Card titles inside [PraniFormCard] / lists (~16–17 px).
+  static TextStyle cardTitleProminent(ColorScheme scheme, TextTheme t) =>
+      subheading(
+        scheme,
+        t,
+      ).copyWith(fontSize: 17, fontWeight: FontWeight.w700, height: 1.28);
 
   static TextStyle subheading(ColorScheme scheme, TextTheme t) =>
       (t.titleSmall ?? const TextStyle()).copyWith(
@@ -182,7 +199,7 @@ abstract final class PraniTextStyles {
   static TextStyle caption(ColorScheme scheme, TextTheme t) =>
       (t.bodySmall ?? const TextStyle()).copyWith(
         height: 1.38,
-        fontSize: 12,
+        fontSize: 13,
         color: scheme.onSurfaceVariant,
         fontFamilyFallback: kFontFallback,
       );
@@ -201,6 +218,19 @@ abstract final class PraniTextStyles {
         height: 1.45,
         fontSize: 16,
         color: scheme.onSurface,
+        fontFamilyFallback: kFontFallback,
+      );
+
+  /// Outlined field floating labels — BN-friendly size.
+  static TextStyle formLabel(ColorScheme scheme, TextTheme t) =>
+      label(scheme, t).copyWith(fontSize: 15, height: 1.38);
+
+  /// Helper / secondary lines under labels (not [caption] — avoids tiny BN).
+  static TextStyle formHelper(ColorScheme scheme, TextTheme t) =>
+      bodySmall(scheme, t).copyWith(
+        fontSize: 13.5,
+        height: 1.42,
+        color: scheme.onSurfaceVariant,
         fontFamilyFallback: kFontFallback,
       );
 

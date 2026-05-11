@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
-import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_user_message.dart';
+import 'package:pranidoctor_mobile/src/core/network/mobile_api_envelope.dart';
+import 'package:pranidoctor_mobile/src/features/profile/data/mobile_profile_api_contract.dart';
 import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
 import 'package:pranidoctor_mobile/src/features/profile/data/profile_api_exception.dart';
 
@@ -10,14 +12,24 @@ abstract class MobileUserRepository {
   Future<MobileUser> fetchMe();
 
   Future<MobileUser> patchMe(MobileUserPatch patch);
+
+  /// Name and/or email only (never phone). Uses split or legacy path per flags.
+  Future<MobileUser> updateBasicProfile({String? name, String? email});
+
+  /// Structured location + optional [area] label.
+  Future<MobileUser> updateLocation(MobileUserLocationUpdate update);
+
+  /// Multipart `file` field — see [MobileProfileApiPaths.postProfilePhoto].
+  Future<MobileProfilePhotoUploadResult> uploadProfilePhoto(String filePath);
+
+  /// Multipart `file` field — see [MobileProfileApiPaths.postCoverPhoto].
+  Future<MobileProfilePhotoUploadResult> uploadCoverPhoto(String filePath);
 }
 
 class MobileUserRepositoryLive implements MobileUserRepository {
   MobileUserRepositoryLive(this._client);
 
   final ApiClient _client;
-
-  static const String _path = '/api/mobile/me';
 
   Map<String, dynamic> _unwrap(Response<dynamic> response) {
     final data = response.data;
@@ -44,10 +56,21 @@ class MobileUserRepositoryLive implements MobileUserRepository {
   @override
   Future<MobileUser> fetchMe() async {
     try {
-      final res = await _client.get<dynamic>(_path);
+      final res = await _client.get<dynamic>(MobileProfileApiPaths.getMe);
+      assert(() {
+        debugPrint('[PraniDoctor][auth] GET /me HTTP ${res.statusCode ?? '?'}');
+        return true;
+      }());
       final inner = _unwrap(res);
       return MobileUser.fromJson(inner);
     } on DioException catch (e, st) {
+      assert(() {
+        debugPrint(
+          '[PraniDoctor][auth] GET /me DioException '
+          'status=${e.response?.statusCode}',
+        );
+        return true;
+      }());
       assert(() {
         debugPrint('MobileUserRepository.fetchMe DioException: $e\n$st');
         return true;
@@ -78,13 +101,154 @@ class MobileUserRepositoryLive implements MobileUserRepository {
       throw ProfileApiException('কোনো পরিবর্তন নেই।');
     }
     try {
-      final res = await _client.patch<dynamic>(_path, data: patch.toJson());
+      final res = await _client.patch<dynamic>(
+        MobileProfileApiPaths.patchMeLegacy,
+        data: patch.toJson(),
+      );
       _unwrap(res);
       return fetchMe();
     } on DioException catch (e) {
       throw _mapDio(e);
     } on ProfileApiException {
       rethrow;
+    }
+  }
+
+  @override
+  Future<MobileUser> updateBasicProfile({String? name, String? email}) async {
+    final body = <String, dynamic>{};
+    if (name != null && name.trim().isNotEmpty) {
+      body['name'] = name.trim();
+    }
+    if (email != null && email.trim().isNotEmpty) {
+      body['email'] = email.trim();
+    }
+    if (body.isEmpty) {
+      throw ProfileApiException('কোনো পরিবর্তন নেই।');
+    }
+    final path = kMobileProfileUseSplitProfileLocationPatch
+        ? MobileProfileApiPaths.patchProfile
+        : MobileProfileApiPaths.patchMeLegacy;
+    try {
+      final res = await _client.patch<dynamic>(path, data: body);
+      _unwrap(res);
+      return fetchMe();
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    } on ProfileApiException {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<MobileUser> updateLocation(MobileUserLocationUpdate update) async {
+    if (update.isEmpty) {
+      throw ProfileApiException('কোনো পরিবর্তন নেই।');
+    }
+    final path = kMobileProfileUseSplitProfileLocationPatch
+        ? MobileProfileApiPaths.patchLocation
+        : MobileProfileApiPaths.patchMeLegacy;
+    final body = kMobileProfileUseSplitProfileLocationPatch
+        ? update.toJsonSplit()
+        : update.toJsonLegacy();
+    if (body.isEmpty) {
+      throw ProfileApiException('কোনো পরিবর্তন নেই।');
+    }
+    try {
+      final res = await _client.patch<dynamic>(path, data: body);
+      _unwrap(res);
+      return fetchMe();
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    } on ProfileApiException {
+      rethrow;
+    }
+  }
+
+  static String _basename(String path) {
+    final norm = path.replaceAll('\\', '/');
+    final i = norm.lastIndexOf('/');
+    return i >= 0 ? norm.substring(i + 1) : norm;
+  }
+
+  @override
+  Future<MobileProfilePhotoUploadResult> uploadProfilePhoto(
+    String filePath,
+  ) async {
+    return _uploadPhoto(
+      filePath,
+      MobileProfileApiPaths.postProfilePhoto,
+      'প্রোফাইল ছবি',
+    );
+  }
+
+  @override
+  Future<MobileProfilePhotoUploadResult> uploadCoverPhoto(
+    String filePath,
+  ) async {
+    return _uploadPhoto(
+      filePath,
+      MobileProfileApiPaths.postCoverPhoto,
+      'কভার ছবি',
+    );
+  }
+
+  Future<MobileProfilePhotoUploadResult> _uploadPhoto(
+    String filePath,
+    String path,
+    String labelBn,
+  ) async {
+    if (kIsWeb) {
+      return MobileProfilePhotoUploadResult.failed(
+        'ছবি আপলোড এই প্ল্যাটফর্মে উপলব্ধ নয়।',
+      );
+    }
+    if (!kMobileProfilePhotoPostEndpointsEnabled) {
+      return MobileProfilePhotoUploadResult.notDeployed();
+    }
+    try {
+      final form = FormData.fromMap(<String, dynamic>{
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: _basename(filePath),
+        ),
+      });
+      final res = await _client.dio.post<dynamic>(
+        path,
+        data: form,
+        options: Options(
+          headers: <String, dynamic>{Headers.acceptHeader: 'application/json'},
+        ),
+      );
+      unwrapOkDataMap(res.data);
+      return MobileProfilePhotoUploadResult.success;
+    } on MobileApiEnvelopeException catch (e) {
+      return MobileProfilePhotoUploadResult.failed(
+        e.message.trim().isNotEmpty ? e.message : '$labelBn আপলোড ব্যর্থ।',
+      );
+    } on DioException catch (e, st) {
+      assert(() {
+        debugPrint('MobileUserRepository photo upload: $e\n$st');
+        return true;
+      }());
+      final code = e.response?.statusCode;
+      if (code == 404 || code == 405) {
+        return MobileProfilePhotoUploadResult.notDeployed(
+          messageBn:
+              'সার্ভারে $labelBn আপলোড এন্ডপয়েন্ট এখনো চালু নয়। পরে আবার চেষ্টা করুন।',
+        );
+      }
+      if (code == 413) {
+        return MobileProfilePhotoUploadResult.failed(
+          'ফাইলের আকার অনুমোদিত সীমার চেয়ে বড়।',
+        );
+      }
+      if (code == 415) {
+        return MobileProfilePhotoUploadResult.failed(
+          'এই ধরনের ছবি গ্রহণ করা হয় না।',
+        );
+      }
+      return MobileProfilePhotoUploadResult.failed(userFacingDioMessageBn(e));
     }
   }
 
@@ -126,10 +290,7 @@ class MobileUserRepositoryLive implements MobileUserRepository {
         code: 'NOT_FOUND',
       );
     }
-    return ProfileApiException(
-      bnUserFacingDioNetworkMessage(e),
-      code: 'NETWORK',
-    );
+    return ProfileApiException(userFacingDioMessageBn(e), code: 'NETWORK');
   }
 
   /// Customer-facing Bengali; detailed validation stays in debug logs only.

@@ -12,9 +12,10 @@ void main() {
     () {
       WidgetsFlutterBinding.ensureInitialized();
 
-      if (AppConfig.isDevelopmentEnv) {
+      if (kDebugMode || AppConfig.isDevelopmentEnv) {
         debugPrint(
-          '[PraniDoctor] API_BASE_URL=${AppConfig.resolvedApiBaseUrl} APP_ENV=${AppConfig.appEnv}',
+          '[PraniDoctor] resolvedApiBaseUrl=${AppConfig.resolvedApiBaseUrl} '
+          'APP_ENV=${AppConfig.appEnv} ENABLE_DEV_OTP=${AppConfig.enableDevOtp}',
         );
       }
 

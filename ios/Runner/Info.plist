@@ -64,6 +64,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>প্রোফাইল ও কভার ছবি তোলার জন্য ক্যামেরা প্রয়োজন।</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>প্রোফাইল ও কভার ছবি বাছাই করতে গ্যালারি অ্যাক্সেস প্রয়োজন।</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

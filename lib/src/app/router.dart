@@ -15,7 +15,8 @@ import '../features/providers/presentation/doctor_list_screen.dart';
 import '../features/providers/presentation/technician_detail_screen.dart';
 import '../features/providers/presentation/technician_list_screen.dart';
 import '../features/service_requests/presentation/booking_wizard_screen.dart';
-import '../features/service_requests/presentation/service_requests_tab_screen.dart';
+import '../features/service_requests/presentation/service_requests_tab_screen.dart'
+    show ServiceRequestDetailScreen;
 import '../features/splash/splash_screen.dart';
 import '../features/knowledge_hub/presentation/knowledge_categories_screen.dart';
 import '../features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
@@ -25,7 +26,33 @@ import '../features/notifications/presentation/notifications_list_screen.dart';
 import '../features/profile/presentation/about_screen.dart';
 import '../features/profile/presentation/app_settings_screen.dart';
 import '../features/profile/presentation/area_setting_screen.dart';
+import '../features/profile/presentation/edit_profile_account_screen.dart';
+import '../features/profile/presentation/edit_profile_basic_screen.dart';
+import '../features/profile/presentation/edit_profile_contact_screen.dart';
+import '../features/profile/presentation/edit_profile_documents_screen.dart';
+import '../features/profile/presentation/edit_profile_location_screen.dart';
+import '../features/profile/presentation/edit_profile_photos_screen.dart';
 import '../features/profile/presentation/edit_profile_screen.dart';
+import '../features/ai_technician_application/data/ai_technician_models.dart';
+import '../features/ai_technician_application/presentation/ai_technician_application_entry_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_application_form_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_service_area_selection_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_application_status_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_dashboard_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_intro_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_request_complete_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_request_detail_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_requests_list_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_service_form_screen.dart';
+import '../features/ai_technician_application/presentation/ai_technician_services_list_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_digital_service_record_view_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_farmer_my_request_detail_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_farmer_request_complaint_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_farmer_request_review_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_my_requests_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_service_request_form_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_technician_finder_screen.dart';
+import '../features/ai_farmer_services/presentation/ai_technician_public_profile_screen.dart';
 import '../features/profile/presentation/help_support_screen.dart';
 import '../features/session/application/session_notifier.dart';
 import '../features/technician_ai/presentation/technician_ai_record_form_screen.dart';
@@ -39,6 +66,20 @@ bool _isPublicCustomerPath(String path) {
   return path == SplashScreen.routePath ||
       path == OnboardingScreen.routePath ||
       path == LoginEntryScreen.routePath;
+}
+
+/// Routes browsable without customer OTP (guest / marketing).
+bool _isGuestAccessibleCustomerRoute(String path) {
+  if (path == HomeShellScreen.routePath) return true;
+  if (path.startsWith('/providers/')) return true;
+  if (path.startsWith('/knowledge')) return true;
+  // AI technician finder + public profiles only (`/ai-services/request*` stays protected).
+  if (path.startsWith('/ai-services/technicians')) return true;
+  if (path == HelpSupportScreen.routePath || path == AboutScreen.routePath) {
+    return true;
+  }
+  if (path == AiTechnicianApplicationEntryScreen.routePath) return true;
+  return false;
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -69,6 +110,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (_isPublicCustomerPath(loc)) return null;
       if (loc.startsWith('/doctor')) return null;
       if (loc.startsWith('/technician')) return null;
+      if (_isGuestAccessibleCustomerRoute(loc)) return null;
       if (!auth.isAuthenticated) return LoginEntryScreen.routePath;
       return null;
     },
@@ -188,6 +230,185 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: EditProfileScreen.routePath,
         name: EditProfileScreen.routeName,
         builder: (context, state) => const EditProfileScreen(),
+        routes: [
+          GoRoute(
+            path: 'photos',
+            name: EditProfilePhotosScreen.routeName,
+            builder: (context, state) => const EditProfilePhotosScreen(),
+          ),
+          GoRoute(
+            path: 'basic',
+            name: EditProfileBasicScreen.routeName,
+            builder: (context, state) => const EditProfileBasicScreen(),
+          ),
+          GoRoute(
+            path: 'contact',
+            name: EditProfileContactScreen.routeName,
+            builder: (context, state) => const EditProfileContactScreen(),
+          ),
+          GoRoute(
+            path: 'location',
+            name: EditProfileLocationScreen.routeName,
+            builder: (context, state) => const EditProfileLocationScreen(),
+          ),
+          GoRoute(
+            path: 'documents',
+            name: EditProfileDocumentsScreen.routeName,
+            builder: (context, state) => const EditProfileDocumentsScreen(),
+          ),
+          GoRoute(
+            path: 'account',
+            name: EditProfileAccountScreen.routeName,
+            builder: (context, state) => const EditProfileAccountScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AiTechnicianApplicationEntryScreen.routePath,
+        name: AiTechnicianApplicationEntryScreen.routeName,
+        builder: (context, state) => const AiTechnicianApplicationEntryScreen(),
+      ),
+      GoRoute(
+        path: AiTechnicianIntroScreen.routePath,
+        name: AiTechnicianIntroScreen.routeName,
+        builder: (context, state) => const AiTechnicianIntroScreen(),
+      ),
+      GoRoute(
+        path: AiTechnicianApplicationFormScreen.routePath,
+        name: AiTechnicianApplicationFormScreen.routeName,
+        builder: (context, state) => AiTechnicianApplicationFormScreen(
+          initialStep: state.extra is int ? state.extra as int : null,
+        ),
+      ),
+      GoRoute(
+        path: AiTechnicianServiceAreaSelectionScreen.routePath,
+        name: AiTechnicianServiceAreaSelectionScreen.routeName,
+        builder: (context, state) {
+          final extra = state.extra;
+          List<AiTechnicianDivisionArea>? initial;
+          if (extra is List<AiTechnicianDivisionArea>) {
+            initial = List<AiTechnicianDivisionArea>.from(extra);
+          }
+          return AiTechnicianServiceAreaSelectionScreen(initialAreas: initial);
+        },
+      ),
+      GoRoute(
+        path: AiTechnicianApplicationStatusScreen.routePath,
+        name: AiTechnicianApplicationStatusScreen.routeName,
+        builder: (context, state) =>
+            const AiTechnicianApplicationStatusScreen(),
+      ),
+      GoRoute(
+        path: AiTechnicianDashboardScreen.routePath,
+        name: AiTechnicianDashboardScreen.routeName,
+        builder: (context, state) => const AiTechnicianDashboardScreen(),
+      ),
+      GoRoute(
+        path: AiTechnicianRequestsListScreen.routePath,
+        name: AiTechnicianRequestsListScreen.routeName,
+        builder: (context, state) => const AiTechnicianRequestsListScreen(),
+        routes: [
+          GoRoute(
+            path: ':requestId',
+            builder: (context, state) {
+              final id = state.pathParameters['requestId']!;
+              return AiTechnicianRequestDetailScreen(requestId: id);
+            },
+            routes: [
+              GoRoute(
+                path: 'complete',
+                builder: (context, state) {
+                  final id = state.pathParameters['requestId']!;
+                  return AiTechnicianRequestCompleteScreen(requestId: id);
+                },
+              ),
+              GoRoute(
+                path: 'record',
+                builder: (context, state) {
+                  final id = state.pathParameters['requestId']!;
+                  return AiDigitalServiceRecordViewScreen(requestId: id);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AiTechnicianServicesListScreen.routePath,
+        name: AiTechnicianServicesListScreen.routeName,
+        builder: (context, state) => const AiTechnicianServicesListScreen(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            name: AiTechnicianServiceFormScreen.routeNameNew,
+            builder: (context, state) => const AiTechnicianServiceFormScreen(),
+          ),
+          GoRoute(
+            path: ':serviceId/edit',
+            name: AiTechnicianServiceFormScreen.routeNameEdit,
+            builder: (context, state) {
+              final id = state.pathParameters['serviceId']!;
+              return AiTechnicianServiceFormScreen(serviceId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AiTechnicianFinderScreen.routePath,
+        name: AiTechnicianFinderScreen.routeName,
+        builder: (context, state) => const AiTechnicianFinderScreen(),
+        routes: [
+          GoRoute(
+            path: ':technicianId',
+            name: AiTechnicianPublicProfileScreen.routeName,
+            builder: (context, state) {
+              final id = state.pathParameters['technicianId']!;
+              return AiTechnicianPublicProfileScreen(technicianId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AiServiceRequestFormScreen.routePath,
+        name: AiServiceRequestFormScreen.routeName,
+        builder: (context, state) => const AiServiceRequestFormScreen(),
+      ),
+      GoRoute(
+        path: AiMyServiceRequestsScreen.routePath,
+        name: AiMyServiceRequestsScreen.routeName,
+        builder: (context, state) => const AiMyServiceRequestsScreen(),
+        routes: [
+          GoRoute(
+            path: ':requestId',
+            builder: (context, state) {
+              final id = state.pathParameters['requestId']!;
+              return AiFarmerMyRequestDetailScreen(requestId: id);
+            },
+            routes: [
+              GoRoute(
+                path: 'record',
+                builder: (context, state) {
+                  final id = state.pathParameters['requestId']!;
+                  return AiDigitalServiceRecordViewScreen(requestId: id);
+                },
+              ),
+              GoRoute(
+                path: 'review',
+                builder: (context, state) {
+                  final id = state.pathParameters['requestId']!;
+                  return AiFarmerRequestReviewScreen(requestId: id);
+                },
+              ),
+              GoRoute(
+                path: 'complaint',
+                builder: (context, state) {
+                  final id = state.pathParameters['requestId']!;
+                  return AiFarmerRequestComplaintScreen(requestId: id);
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AreaSettingScreen.routePath,

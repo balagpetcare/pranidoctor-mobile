@@ -98,8 +98,8 @@ abstract final class AppTheme {
         filled: true,
         fillColor: scheme.surfaceContainerLow,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: PraniSpacing.xl,
-          vertical: PraniSpacing.lg,
+          horizontal: 16,
+          vertical: 18,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(PraniRadius.md),
@@ -112,7 +112,10 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(PraniRadius.md),
           borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
-        labelStyle: PraniTextStyles.label(scheme, textTheme),
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+        labelStyle: PraniTextStyles.formLabel(scheme, textTheme),
+        floatingLabelStyle: PraniTextStyles.formLabel(scheme, textTheme),
+        helperStyle: PraniTextStyles.formHelper(scheme, textTheme),
         hintStyle: PraniTextStyles.bodyMuted(scheme, textTheme),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -296,8 +299,8 @@ abstract final class AppTheme {
         filled: true,
         fillColor: scheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: PraniSpacing.xl,
-          vertical: PraniSpacing.lg,
+          horizontal: 16,
+          vertical: 18,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(PraniRadius.md),
@@ -310,7 +313,10 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(PraniRadius.md),
           borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
-        labelStyle: PraniTextStyles.label(scheme, textTheme),
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+        labelStyle: PraniTextStyles.formLabel(scheme, textTheme),
+        floatingLabelStyle: PraniTextStyles.formLabel(scheme, textTheme),
+        helperStyle: PraniTextStyles.formHelper(scheme, textTheme),
         hintStyle: PraniTextStyles.bodyMuted(scheme, textTheme),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

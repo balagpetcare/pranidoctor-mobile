@@ -1,21 +1,28 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/screen_padding.dart';
-import '../../design_system/prani_tokens.dart';
 import '../../core/assets/prani_assets.dart';
 import '../../core/config/app_config.dart';
+import '../../design_system/prani_tokens.dart';
+import '../../design_system/widgets/prani_buttons.dart';
+import '../../design_system/widgets/prani_form_fields.dart';
+import '../../design_system/widgets/prani_info_card.dart';
+import '../../design_system/widgets/prani_section_header.dart';
+import 'application/post_customer_login_navigation.dart';
 import '../session/application/session_notifier.dart';
-import '../home/home_shell_screen.dart';
 import 'data/mobile_otp_auth_repository.dart';
-import 'doctor/presentation/doctor_login_screen.dart';
-import 'technician/presentation/technician_login_screen.dart';
 
 enum _LoginBusy { none, send, verify }
 
-/// Customer login via SMS OTP (`/api/mobile/auth/otp/*`).
+enum _LoginMode { otp, password }
+
+enum _AuthPageTab { login, register }
+
+/// Customer auth: SMS OTP, password UI (API pending), registration UI (API pending), social stubs.
 class LoginEntryScreen extends ConsumerStatefulWidget {
   const LoginEntryScreen({super.key});
 
@@ -29,8 +36,25 @@ class LoginEntryScreen extends ConsumerStatefulWidget {
 class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
+  final _identifierController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  final _regNameController = TextEditingController();
+  final _regPhoneController = TextEditingController();
+  final _regEmailController = TextEditingController();
+  final _regPasswordController = TextEditingController();
+  final _regConfirmPasswordController = TextEditingController();
+
+  _AuthPageTab _authPageTab = _AuthPageTab.login;
+  _LoginMode _loginMode = _LoginMode.otp;
   bool _otpSent = false;
   _LoginBusy _loginBusy = _LoginBusy.none;
+  bool _obscurePassword = true;
+  bool _obscureRegPassword = true;
+  bool _obscureRegConfirmPassword = true;
+
+  /// Last successful send channel (inline helper, not a scary SnackBar).
+  OtpSendChannel? _otpSendHint;
 
   bool get _busy => _loginBusy != _LoginBusy.none;
 
@@ -38,12 +62,22 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   String? _otpTargetPhone;
 
   static final _bdMobile = RegExp(r'^01\d{9}$');
+  static final _emailLoose = RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  );
 
   @override
   void initState() {
     super.initState();
     _phoneController.addListener(_onPhoneEdited);
     _otpController.addListener(() => setState(() {}));
+    _identifierController.addListener(() => setState(() {}));
+    _passwordController.addListener(() => setState(() {}));
+    _regNameController.addListener(() => setState(() {}));
+    _regPhoneController.addListener(() => setState(() {}));
+    _regEmailController.addListener(() => setState(() {}));
+    _regPasswordController.addListener(() => setState(() {}));
+    _regConfirmPasswordController.addListener(() => setState(() {}));
   }
 
   void _onPhoneEdited() {
@@ -55,8 +89,19 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       _otpController.clear();
       _otpSent = false;
       _otpTargetPhone = null;
+      _otpSendHint = null;
     }
     setState(() {});
+  }
+
+  void _onLoginModeChanged(_LoginMode mode) {
+    if (mode == _loginMode || _busy) return;
+    setState(() => _loginMode = mode);
+  }
+
+  void _onAuthPageTabChanged(_AuthPageTab tab) {
+    if (tab == _authPageTab || _busy) return;
+    setState(() => _authPageTab = tab);
   }
 
   /// Digits-only Bangladesh mobile as `01XXXXXXXXX` when valid input is present.
@@ -76,11 +121,48 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
 
   bool get _otpComplete => _otpController.text.length == 6;
 
+  bool get _passwordFormReady {
+    final id = _identifierController.text.trim();
+    final pw = _passwordController.text;
+    return id.isNotEmpty && pw.isNotEmpty;
+  }
+
+  bool get _regNameValid => _regNameController.text.trim().isNotEmpty;
+
+  bool get _regPhoneValid =>
+      _bdMobile.hasMatch(_normalizedBdMobile(_regPhoneController.text));
+
+  bool get _regEmailValid {
+    final e = _regEmailController.text.trim();
+    if (e.isEmpty) return true;
+    return _emailLoose.hasMatch(e);
+  }
+
+  bool get _regPasswordValid => _regPasswordController.text.length >= 6;
+
+  bool get _regConfirmValid =>
+      _regConfirmPasswordController.text == _regPasswordController.text &&
+      _regPasswordController.text.isNotEmpty;
+
+  bool get _registerFormValid =>
+      _regNameValid &&
+      _regPhoneValid &&
+      _regEmailValid &&
+      _regPasswordValid &&
+      _regConfirmValid;
+
   @override
   void dispose() {
     _phoneController.removeListener(_onPhoneEdited);
     _phoneController.dispose();
     _otpController.dispose();
+    _identifierController.dispose();
+    _passwordController.dispose();
+    _regNameController.dispose();
+    _regPhoneController.dispose();
+    _regEmailController.dispose();
+    _regPasswordController.dispose();
+    _regConfirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -93,7 +175,10 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       );
       return;
     }
-    setState(() => _loginBusy = _LoginBusy.send);
+    setState(() {
+      _loginBusy = _LoginBusy.send;
+      _otpSendHint = null;
+    });
     try {
       final channel = await ref
           .read(mobileOtpAuthRepositoryProvider)
@@ -102,19 +187,13 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       setState(() {
         _otpSent = true;
         _otpTargetPhone = phone;
+        _otpSendHint = channel;
       });
-      if (channel == OtpSendChannel.devTerminalFallback) {
-        _snack(
-          'ডেভেলপমেন্ট মোডে টেস্ট OTP তৈরি করা হয়েছে। টার্মিনাল/ডিবাগ কনসোল দেখুন।',
-        );
-      } else {
-        _snack('যাচাইকরণ কোড SMS এ পাঠানো হয়েছে।');
-      }
     } on OtpAuthException catch (e) {
       if (mounted) _snack(e.message);
     } catch (_) {
       if (mounted) {
-        _snack('কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+        _snack('আবার চেষ্টা করুন');
       }
     } finally {
       if (mounted) setState(() => _loginBusy = _LoginBusy.none);
@@ -138,23 +217,62 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
           .verifyOtp(phone, code);
       await ref.read(sessionNotifierProvider.notifier).signInCustomer(token);
       if (!mounted) return;
-      context.go(HomeShellScreen.routePath);
+      final uri = GoRouterState.of(context).uri;
+      navigateAfterCustomerLogin(
+        ref,
+        context,
+        tab: uri.queryParameters['tab'],
+        nextPath: uri.queryParameters['next'],
+      );
     } on OtpAuthException catch (e) {
       if (mounted) _snack(e.message);
     } catch (_) {
       if (mounted) {
-        _snack('প্রবেশ সম্ভব হয়নি। আবার চেষ্টা করুন।');
+        _snack('আবার চেষ্টা করুন');
       }
     } finally {
       if (mounted) setState(() => _loginBusy = _LoginBusy.none);
     }
   }
 
+  /// Customer password login (mobile or email).
+  ///
+  /// TODO: Connect password login API when backend endpoint is finalized.
+  void _submitPasswordLogin() {
+    if (!_passwordFormReady || _busy) return;
+    _snack('পাসওয়ার্ড লগইন এখনো চালু হয়নি। শীঘ্রই যুক্ত করা হবে।');
+  }
+
+  /// New customer registration.
+  ///
+  /// TODO: Connect user registration API when backend endpoint is finalized.
+  /// On success: if backend returns phone to verify, call existing OTP request and switch to Login → OTP.
+  void _submitRegister() {
+    if (!_registerFormValid || _busy) return;
+    if (!_regEmailValid) {
+      _snack('ইমেইল ঠিকানাটি সঠিক ফরম্যাটে লিখুন।');
+      return;
+    }
+    _snack('অ্যাকাউন্ট তৈরির সেবা এখনো চালু হয়নি। শীঘ্রই যুক্ত করা হবে।');
+  }
+
+  void _onSocialSoonTap() {
+    _snack('এই ফিচারটি শীঘ্রই আসছে');
+  }
+
   void _snack(String message) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final padBottom = MediaQuery.paddingOf(context).bottom;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        margin: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          12 + padBottom + (bottomInset * 0.35).clamp(0.0, 120.0),
+        ),
         content: Text(message),
       ),
     );
@@ -164,11 +282,13 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     BuildContext context, {
     required String label,
     required String hint,
+    Widget? suffixIcon,
   }) {
     final scheme = Theme.of(context).colorScheme;
     return InputDecoration(
       labelText: label,
       hintText: hint,
+      suffixIcon: suffixIcon,
       filled: true,
       fillColor: scheme.surface,
       enabledBorder: OutlineInputBorder(
@@ -186,28 +306,15 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     );
   }
 
-  Widget _primaryButtonChild({
-    required String label,
-    required bool showLoading,
-  }) {
-    if (!showLoading) return Text(label);
-    final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 22,
-      width: 22,
-      child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary),
-    );
-  }
-
   Widget _loginHero(BuildContext context, double keyboardInset) {
     final mq = MediaQuery.of(context);
     final dpr = mq.devicePixelRatio;
     final w = mq.size.width;
     final heroH = keyboardInset > 8
-        ? (mq.size.height * 0.13).clamp(96.0, 124.0)
-        : (w / 2.08).clamp(172.0, 232.0);
+        ? (mq.size.height * 0.09).clamp(64.0, 88.0)
+        : (w / 2.85).clamp(96.0, 140.0);
     final decodeW = (w * dpr).round().clamp(120, PraniAssetDecode.heroMaxPx);
-    final decodeH = (heroH * dpr).round().clamp(80, PraniAssetDecode.heroMaxPx);
+    final decodeH = (heroH * dpr).round().clamp(72, PraniAssetDecode.heroMaxPx);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -250,132 +357,552 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     );
   }
 
-  Widget _providerEntryCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
+  Widget _authPageTabSwitch(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surface,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.9)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer.withValues(alpha: 0.65),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Icon(icon, size: 26, color: scheme.primary),
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget chip(_AuthPageTab tab, String label) {
+      final selected = _authPageTab == tab;
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _busy ? null : () => _onAuthPageTabChanged(tab),
+            borderRadius: BorderRadius.circular(PraniRadii.md - 2),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(vertical: PraniSpacing.md),
+              decoration: BoxDecoration(
+                color: selected ? scheme.primaryContainer : Colors.transparent,
+                borderRadius: BorderRadius.circular(PraniRadii.md - 2),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? scheme.onPrimaryContainer
+                      : scheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: scheme.outline),
-            ],
+            ),
           ),
+        ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(PraniRadii.md),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.85),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            chip(_AuthPageTab.login, 'লগইন'),
+            chip(_AuthPageTab.register, 'অ্যাকাউন্ট তৈরি'),
+          ],
         ),
       ),
     );
   }
 
-  Widget _socialSoonRow({
+  Widget _loginModeSwitch(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget chip(_LoginMode mode, String label) {
+      final selected = _loginMode == mode;
+      return Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _busy ? null : () => _onLoginModeChanged(mode),
+            borderRadius: BorderRadius.circular(PraniRadii.md - 2),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(vertical: PraniSpacing.sm),
+              decoration: BoxDecoration(
+                color: selected ? scheme.primaryContainer : Colors.transparent,
+                borderRadius: BorderRadius.circular(PraniRadii.md - 2),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? scheme.onPrimaryContainer
+                      : scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(PraniRadii.md),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.85),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            chip(_LoginMode.otp, 'OTP'),
+            chip(_LoginMode.password, 'পাসওয়ার্ড'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _socialLoginButton({
     required BuildContext context,
     required IconData icon,
     required String label,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      label: '$label — শীঘ্রই আসছে',
-      enabled: false,
-      button: true,
-      child: ExcludeSemantics(
-        child: Material(
-          color: scheme.surfaceContainerHighest.withValues(alpha: 0.72),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(PraniRadii.md),
-            side: BorderSide(color: scheme.outline.withValues(alpha: 0.55)),
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _busy ? null : _onSocialSoonTap,
+        icon: Icon(icon, size: 22, color: scheme.primary),
+        label: Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          padding: const EdgeInsets.symmetric(
+            horizontal: PraniSpacing.md,
+            vertical: PraniSpacing.sm,
           ),
-          child: InkWell(
-            onTap: () {},
-            splashColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: PraniSpacing.md,
-                vertical: PraniSpacing.md,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(PraniRadius.md),
+          ),
+          side: BorderSide(color: scheme.outline.withValues(alpha: 0.75)),
+        ),
+      ),
+    );
+  }
+
+  Widget _socialBlock(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: PraniSpacing.section),
+        Row(
+          children: [
+            Expanded(child: Divider(color: scheme.outlineVariant)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: PraniSpacing.md),
+              child: Text(
+                'অথবা',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(icon, size: 22, color: scheme.onSurfaceVariant),
-                  const SizedBox(width: PraniSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant.withValues(alpha: 0.92),
+            ),
+            Expanded(child: Divider(color: scheme.outlineVariant)),
+          ],
+        ),
+        const SizedBox(height: PraniSpacing.md),
+        const PraniSectionHeader(title: 'সোশ্যাল লগইন', compact: true),
+        const SizedBox(height: PraniSpacing.sm),
+        _socialLoginButton(
+          context: context,
+          icon: Icons.g_mobiledata_rounded,
+          label: 'Google দিয়ে চালিয়ে যান',
+        ),
+        const SizedBox(height: PraniSpacing.sm),
+        _socialLoginButton(
+          context: context,
+          icon: Icons.facebook_rounded,
+          label: 'Facebook দিয়ে চালিয়ে যান',
+        ),
+      ],
+    );
+  }
+
+  Widget _authFooter(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    if (_authPageTab == _AuthPageTab.login) {
+      return Padding(
+        padding: const EdgeInsets.only(top: PraniSpacing.lg),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: PraniSpacing.xs,
+          runSpacing: PraniSpacing.xs,
+          children: [
+            Text(
+              'নতুন ব্যবহারকারী?',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => _onAuthPageTabChanged(_AuthPageTab.register),
+              child: const Text('অ্যাকাউন্ট তৈরি করুন'),
+            ),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: PraniSpacing.lg),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: PraniSpacing.xs,
+        runSpacing: PraniSpacing.xs,
+        children: [
+          Text(
+            'ইতিমধ্যে অ্যাকাউন্ট আছে?',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          TextButton(
+            onPressed: _busy
+                ? null
+                : () => _onAuthPageTabChanged(_AuthPageTab.login),
+            child: const Text('লগইন করুন'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loginTabBody(BuildContext context, ColorScheme scheme) {
+    final sendInitialInteractive =
+        _loginMode == _LoginMode.otp &&
+        _phoneValid &&
+        !_otpSent &&
+        _loginBusy != _LoginBusy.verify;
+    final resendInteractive =
+        _loginMode == _LoginMode.otp && _otpSent && _phoneValid && !_busy;
+    final verifyInteractive =
+        _loginMode == _LoginMode.otp &&
+        _otpSent &&
+        _otpComplete &&
+        _loginBusy != _LoginBusy.send;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _loginModeSwitch(context),
+        const SizedBox(height: PraniSpacing.lg),
+        if (_loginMode == _LoginMode.otp) ...[
+          PraniTextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d+\s-]')),
+            ],
+            decoration: _fieldDecoration(
+              context,
+              label: 'মোবাইল নম্বর',
+              hint: 'মোবাইল নম্বর লিখুন',
+            ),
+            enabled: !_busy,
+            textInputAction: TextInputAction.done,
+          ),
+          if (!_otpSent) ...[
+            const SizedBox(height: PraniSpacing.md),
+            PraniPrimaryButton(
+              label: 'যাচাইকরণ কোড পাঠান',
+              onPressed: sendInitialInteractive ? _sendOtp : null,
+              isLoading: _loginBusy == _LoginBusy.send,
+            ),
+          ],
+          if (_otpSent) ...[
+            const SizedBox(height: PraniSpacing.lg),
+            if (_otpSendHint == OtpSendChannel.smsApi) ...[
+              PraniInfoCard(
+                title: 'কোড পাঠানো হয়েছে',
+                subtitle:
+                    'কিছুক্ষণের মধ্যে SMS এ ৬ সংখ্যার কোড আসবে। ইনবক্স না দেখলে স্প্যাম ফোল্ডার দেখুন।',
+                leadingIcon: const Icon(Icons.sms_outlined),
+                padding: const EdgeInsets.all(PraniSpacing.md),
+              ),
+              const SizedBox(height: PraniSpacing.md),
+            ],
+            if (AppConfig.useDevOtpFallback &&
+                _otpSendHint == OtpSendChannel.devTerminalFallback) ...[
+              PraniInfoCard(
+                title: 'ডেভেলপমেন্ট মোড',
+                subtitle:
+                    'সার্ভার না পেলে টেস্ট প্রবেশ চালু থাকতে পারে। প্রোডাকশন বিল্ডে এটি দেখা যাবে না।',
+                leadingIcon: const Icon(Icons.science_outlined),
+                padding: const EdgeInsets.all(PraniSpacing.md),
+              ),
+              const SizedBox(height: PraniSpacing.md),
+            ],
+            PraniTextField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              decoration: _fieldDecoration(
+                context,
+                label: '৬ সংখ্যার কোড',
+                hint: '৬ সংখ্যা লিখুন',
+              ),
+              enabled: !_busy,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: PraniSpacing.md),
+            PraniPrimaryButton(
+              label: 'নিশ্চিত করে প্রবেশ করুন',
+              onPressed: verifyInteractive ? _verify : null,
+              isLoading: _loginBusy == _LoginBusy.verify,
+            ),
+            const SizedBox(height: PraniSpacing.sm),
+            Center(
+              child: _loginBusy == _LoginBusy.send && _otpSent
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: scheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: PraniSpacing.sm),
+                        Text(
+                          'SMS পাঠানো হচ্ছে…',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: scheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    )
+                  : TextButton.icon(
+                      onPressed: resendInteractive ? _sendOtp : null,
+                      icon: Icon(
+                        Icons.sms_outlined,
+                        size: 18,
+                        color: resendInteractive
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant.withValues(alpha: 0.45),
                       ),
-                    ),
-                  ),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: scheme.primaryContainer.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(PraniRadii.sm),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: PraniSpacing.sm,
-                        vertical: PraniSpacing.xxs,
-                      ),
-                      child: Text(
-                        'শীঘ্রই',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w700,
+                      label: Text(
+                        'কোড আবার পাঠান (SMS)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: resendInteractive
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant.withValues(alpha: 0.45),
                         ),
                       ),
                     ),
-                  ),
-                ],
+            ),
+          ],
+        ] else ...[
+          PraniTextField(
+            controller: _identifierController,
+            keyboardType: TextInputType.text,
+            decoration: _fieldDecoration(
+              context,
+              label: 'মোবাইল / ইমেইল',
+              hint: 'মোবাইল নম্বর অথবা ইমেইল লিখুন',
+            ),
+            enabled: !_busy,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: PraniSpacing.md),
+          PraniTextField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            decoration: _fieldDecoration(
+              context,
+              label: 'পাসওয়ার্ড',
+              hint: 'পাসওয়ার্ড লিখুন',
+              suffixIcon: IconButton(
+                tooltip: _obscurePassword ? 'দেখান' : 'লুকান',
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+              ),
+            ),
+            enabled: !_busy,
+            textInputAction: TextInputAction.done,
+          ),
+          const SizedBox(height: PraniSpacing.md),
+          PraniPrimaryButton(
+            label: 'লগইন',
+            onPressed: _passwordFormReady && !_busy
+                ? _submitPasswordLogin
+                : null,
+          ),
+        ],
+        _socialBlock(context),
+        _authFooter(context),
+      ],
+    );
+  }
+
+  Widget _registerTabBody(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PraniTextField(
+          controller: _regNameController,
+          keyboardType: TextInputType.name,
+          decoration: _fieldDecoration(
+            context,
+            label: 'পূর্ণ নাম',
+            hint: 'আপনার নাম লিখুন',
+          ),
+          enabled: !_busy,
+          textInputAction: TextInputAction.next,
+        ),
+        const SizedBox(height: PraniSpacing.md),
+        PraniTextField(
+          controller: _regPhoneController,
+          keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d+\s-]')),
+          ],
+          decoration: _fieldDecoration(
+            context,
+            label: 'মোবাইল নম্বর',
+            hint: 'মোবাইল নম্বর লিখুন',
+          ),
+          enabled: !_busy,
+          textInputAction: TextInputAction.next,
+        ),
+        const SizedBox(height: PraniSpacing.md),
+        PraniTextField(
+          controller: _regEmailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: _fieldDecoration(
+            context,
+            label: 'ইমেইল',
+            hint: 'ইমেইল লিখুন',
+          ),
+          enabled: !_busy,
+          textInputAction: TextInputAction.next,
+        ),
+        if (_regEmailController.text.trim().isNotEmpty && !_regEmailValid)
+          Padding(
+            padding: const EdgeInsets.only(top: PraniSpacing.xs),
+            child: Text(
+              'সঠিক ইমেইল ফরম্যাট লিখুন',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
           ),
+        const SizedBox(height: PraniSpacing.md),
+        PraniTextField(
+          controller: _regPasswordController,
+          obscureText: _obscureRegPassword,
+          decoration: _fieldDecoration(
+            context,
+            label: 'পাসওয়ার্ড',
+            hint: 'পাসওয়ার্ড দিন',
+            suffixIcon: IconButton(
+              tooltip: _obscureRegPassword ? 'দেখান' : 'লুকান',
+              onPressed: () {
+                setState(() => _obscureRegPassword = !_obscureRegPassword);
+              },
+              icon: Icon(
+                _obscureRegPassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+              ),
+            ),
+          ),
+          enabled: !_busy,
+          textInputAction: TextInputAction.next,
         ),
-      ),
+        if (_regPasswordController.text.isNotEmpty && !_regPasswordValid)
+          Padding(
+            padding: const EdgeInsets.only(top: PraniSpacing.xs),
+            child: Text(
+              'কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড দিন',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+        const SizedBox(height: PraniSpacing.md),
+        PraniTextField(
+          controller: _regConfirmPasswordController,
+          obscureText: _obscureRegConfirmPassword,
+          decoration: _fieldDecoration(
+            context,
+            label: 'পাসওয়ার্ড নিশ্চিত করুন',
+            hint: 'আবার পাসওয়ার্ড দিন',
+            suffixIcon: IconButton(
+              tooltip: _obscureRegConfirmPassword ? 'দেখান' : 'লুকান',
+              onPressed: () {
+                setState(
+                  () =>
+                      _obscureRegConfirmPassword = !_obscureRegConfirmPassword,
+                );
+              },
+              icon: Icon(
+                _obscureRegConfirmPassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+              ),
+            ),
+          ),
+          enabled: !_busy,
+          textInputAction: TextInputAction.done,
+        ),
+        if (_regConfirmPasswordController.text.isNotEmpty && !_regConfirmValid)
+          Padding(
+            padding: const EdgeInsets.only(top: PraniSpacing.xs),
+            child: Text(
+              'পাসওয়ার্ড মিলছে না',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+        const SizedBox(height: PraniSpacing.lg),
+        PraniPrimaryButton(
+          label: 'অ্যাকাউন্ট তৈরি করুন',
+          onPressed: _registerFormValid && !_busy ? _submitRegister : null,
+        ),
+        _socialBlock(context),
+        _authFooter(context),
+      ],
     );
   }
 
@@ -388,263 +915,75 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     final scrollBottomPad =
         (viewInsets > bottomPad ? viewInsets : bottomPad) +
         PraniSpacing.xl +
-        PraniSpacing.sm;
-
-    final sendInitialInteractive =
-        _phoneValid && !_otpSent && _loginBusy != _LoginBusy.verify;
-    final resendInteractive = _otpSent && _phoneValid && !_busy;
-    final verifyInteractive =
-        _otpSent && _otpComplete && _loginBusy != _LoginBusy.send;
+        PraniSpacing.lg;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('প্রবেশ')),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        bottom: false,
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(
+            pad.left,
+            PraniSpacing.sm,
+            pad.right,
+            scrollBottomPad,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _loginHero(context, viewInsets),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  pad.left,
-                  PraniSpacing.section,
-                  pad.right,
-                  scrollBottomPad,
+              if (Navigator.of(context).canPop())
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).backButtonTooltip,
+                    onPressed: _busy
+                        ? null
+                        : () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'গ্রাহক হিসেবে লগইন',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.35,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: PraniSpacing.sm),
-                    Text(
-                      'মোবাইল নম্বর যাচাই করে SMS OTP দিয়ে নিরাপদ প্রবেশ।',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.45,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: PraniSpacing.xxl),
-                    Text(
-                      'মোবাইল নম্বর',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: PraniSpacing.sm),
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d+\s-]')),
-                      ],
-                      decoration: _fieldDecoration(
-                        context,
-                        label: 'মোবাইল নম্বর',
-                        hint: '০১XXXXXXXXX',
-                      ),
-                      enabled: !_busy,
-                      textInputAction: TextInputAction.done,
-                    ),
-                    if (!_otpSent) ...[
-                      const SizedBox(height: PraniSpacing.md),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: sendInitialInteractive ? _sendOtp : null,
-                          child: _primaryButtonChild(
-                            label: 'যাচাইকরণ কোড পাঠান',
-                            showLoading: _loginBusy == _LoginBusy.send,
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (_otpSent) ...[
-                      const SizedBox(height: PraniSpacing.section),
-                      Text(
-                        'যাচাইকরণ কোড',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: PraniSpacing.sm),
-                      TextField(
-                        controller: _otpController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(6),
-                        ],
-                        decoration: _fieldDecoration(
-                          context,
-                          label: '৬ সংখ্যার কোড',
-                          hint: '৬ সংখ্যা লিখুন',
-                        ),
-                        enabled: !_busy,
-                        onSubmitted: (_) {
-                          if (verifyInteractive) _verify();
-                        },
-                      ),
-                      const SizedBox(height: PraniSpacing.md),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: verifyInteractive ? _verify : null,
-                          child: _primaryButtonChild(
-                            label: 'নিশ্চিত করে প্রবেশ করুন',
-                            showLoading: _loginBusy == _LoginBusy.verify,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: PraniSpacing.sm),
-                      Padding(
-                        padding: const EdgeInsets.only(top: PraniSpacing.xs),
-                        child: Center(
-                          child: _loginBusy == _LoginBusy.send && _otpSent
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: scheme.primary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: PraniSpacing.sm),
-                                    Text(
-                                      'SMS পাঠানো হচ্ছে…',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: scheme.primary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
-                                )
-                              : TextButton.icon(
-                                  onPressed: resendInteractive
-                                      ? _sendOtp
-                                      : null,
-                                  icon: Icon(
-                                    Icons.sms_outlined,
-                                    size: 18,
-                                    color: resendInteractive
-                                        ? scheme.primary
-                                        : scheme.onSurfaceVariant.withValues(
-                                            alpha: 0.45,
-                                          ),
-                                  ),
-                                  label: Text(
-                                    'কোড আবার পাঠান (SMS)',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: resendInteractive
-                                          ? scheme.primary
-                                          : scheme.onSurfaceVariant.withValues(
-                                              alpha: 0.45,
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: PraniSpacing.section),
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: scheme.outlineVariant)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: PraniSpacing.md,
-                          ),
-                          child: Text(
-                            'অথবা',
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: scheme.outlineVariant)),
-                      ],
-                    ),
-                    const SizedBox(height: PraniSpacing.md),
-                    Text(
-                      'সোশ্যাল লগইন',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: PraniSpacing.sm),
-                    _socialSoonRow(
-                      context: context,
-                      icon: Icons.g_mobiledata_rounded,
-                      label: 'Google দিয়ে লগইন',
-                    ),
-                    const SizedBox(height: PraniSpacing.sm),
-                    _socialSoonRow(
-                      context: context,
-                      icon: Icons.facebook_rounded,
-                      label: 'Facebook দিয়ে লগইন',
-                    ),
-                    const SizedBox(height: PraniSpacing.section),
-                    Text(
-                      'পেশাদার প্রবেশ',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: PraniSpacing.xxs),
-                    Text(
-                      'নিবন্ধিত সেবাদাতা হিসেবে আলাদা প্রবেশ',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: PraniSpacing.md),
-                    _providerEntryCard(
-                      context: context,
-                      icon: Icons.medical_services_rounded,
-                      title: 'ডাক্তার',
-                      subtitle:
-                          'রেজিস্টার্ড প্রাণিসম্পদ চিকিৎসক হিসেবে প্রবেশ করুন',
-                      onTap: () => context.push(DoctorLoginScreen.routePath),
-                    ),
-                    const SizedBox(height: PraniSpacing.sm),
-                    _providerEntryCard(
-                      context: context,
-                      icon: Icons.precision_manufacturing_rounded,
-                      title: 'AI টেকনিশিয়ান',
-                      subtitle:
-                          'এআই সহায়তায় ফার্মে সেবা ও কাজের তালিকা পরিচালনা',
-                      onTap: () =>
-                          context.push(TechnicianLoginScreen.routePath),
-                    ),
-                    if (AppConfig.isDevelopmentEnv) ...[
-                      const SizedBox(height: PraniSpacing.xxl),
-                      Text(
-                        'API ভিত্তি (ডিবাগ): ${AppConfig.resolvedApiBaseUrl}',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.labelSmall?.copyWith(color: scheme.outline),
-                      ),
-                    ],
-                  ],
+              _loginHero(context, viewInsets),
+              SizedBox(
+                height: viewInsets > 0 ? PraniSpacing.md : PraniSpacing.lg,
+              ),
+              Text(
+                'প্রবেশ',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                  height: 1.15,
                 ),
               ),
+              const SizedBox(height: PraniSpacing.sm),
+              Text(
+                'আপনার অ্যাকাউন্টে নিরাপদে প্রবেশ করুন',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: PraniSpacing.lg),
+              _authPageTabSwitch(context),
+              const SizedBox(height: PraniSpacing.lg),
+              if (_authPageTab == _AuthPageTab.login)
+                _loginTabBody(context, scheme)
+              else
+                _registerTabBody(context),
+              if (kDebugMode) ...[
+                const SizedBox(height: PraniSpacing.xxl),
+                Text(
+                  'API (ডিবাগ): ${AppConfig.resolvedApiBaseUrl}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.outline.withValues(alpha: 0.75),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

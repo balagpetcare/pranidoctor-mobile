@@ -12,6 +12,7 @@ class PraniSectionHeader extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.titleColor,
+    this.compact = false,
   });
 
   final String title;
@@ -20,6 +21,9 @@ class PraniSectionHeader extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final Color? titleColor;
+
+  /// Smaller title / tighter subtitle — multi-step wizards on phones.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -33,19 +37,23 @@ class PraniSectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: c,
-            height: 1.25,
-          ),
+          style: compact
+              ? PraniTextStyles.subheading(
+                  scheme,
+                  textTheme,
+                ).copyWith(fontSize: 16, height: 1.28, color: c)
+              : PraniTextStyles.sectionTitleProminent(
+                  scheme,
+                  textTheme,
+                ).copyWith(color: c),
         ),
         if (subtitle != null && subtitle!.trim().isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: PraniSpacing.xxs),
             child: Text(
               subtitle!,
-              style: PraniTextStyles.caption(scheme, textTheme),
-              maxLines: 2,
+              style: PraniTextStyles.formHelper(scheme, textTheme),
+              maxLines: compact ? 2 : 3,
               overflow: TextOverflow.ellipsis,
             ),
           ),

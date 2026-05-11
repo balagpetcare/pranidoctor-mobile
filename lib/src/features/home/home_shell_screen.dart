@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pranidoctor_mobile/src/features/auth/application/customer_auth_prompt.dart';
 import 'package:pranidoctor_mobile/src/features/home/presentation/doctor_tab_screen.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
+import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
 
 import 'application/home_shell_tab_provider.dart';
 import 'home_screen.dart';
@@ -59,8 +61,20 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
             backgroundColor: scheme.surface,
             indicatorColor: scheme.primaryContainer,
             selectedIndex: index,
-            onDestinationSelected: (i) =>
-                ref.read(homeShellTabIndexProvider.notifier).select(i),
+            onDestinationSelected: (i) {
+              final authed = ref.read(sessionNotifierProvider).isAuthenticated;
+              if (!authed && (i == 2 || i == 3 || i == 4)) {
+                final tab = switch (i) {
+                  2 => 'services',
+                  3 => 'notifications',
+                  4 => 'profile',
+                  _ => null,
+                };
+                showCustomerAuthRequiredSheet(context, loginTab: tab);
+                return;
+              }
+              ref.read(homeShellTabIndexProvider.notifier).select(i);
+            },
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),

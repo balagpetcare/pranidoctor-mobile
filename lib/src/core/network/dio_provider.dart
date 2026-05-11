@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/navigation_keys.dart';
-import '../../features/auth/login_entry_screen.dart';
+import '../../features/home/home_shell_screen.dart';
 import '../../features/session/application/session_notifier.dart';
 import '../config/app_config.dart';
 import '../storage/token_storage.dart';
@@ -32,11 +32,16 @@ final dioProvider = Provider<Dio>((ref) {
         handler.next(options);
       },
       onError: (DioException e, handler) async {
-        if (e.response?.statusCode == 401) {
+        final path = e.requestOptions.path;
+        final isCustomerOtpAuth =
+            path.contains('/api/mobile/auth/otp/') ||
+            path.contains('/api/mobile/auth/send-otp') ||
+            path.contains('/api/mobile/auth/verify-otp');
+        if (e.response?.statusCode == 401 && !isCustomerOtpAuth) {
           await ref.read(sessionNotifierProvider.notifier).signOut();
           final ctx = pdRootNavigatorKey.currentContext;
           if (ctx != null && ctx.mounted) {
-            ctx.go(LoginEntryScreen.routePath);
+            ctx.go(HomeShellScreen.routePath);
           }
         }
         handler.next(e);

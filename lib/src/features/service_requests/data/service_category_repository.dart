@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
-import 'package:pranidoctor_mobile/src/core/network/dio_connectivity.dart';
+import 'package:pranidoctor_mobile/src/core/network/dio_user_message.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
 
 class ServiceCategoryApiException implements Exception {
@@ -85,7 +85,7 @@ class ServiceCategoryRepository {
       );
     }
     return ServiceCategoryApiException(
-      bnUserFacingDioNetworkMessage(e),
+      userFacingDioMessageBn(e),
       code: 'NETWORK',
     );
   }

@@ -1,0 +1,411 @@
+warning: in the working copy of 'macos/Flutter/GeneratedPluginRegistrant.swift', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pubspec.lock', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/lib/src/app/router.dart b/lib/src/app/router.dart[m
+[1mindex 2b96fc3..231ac34 100644[m
+[1m--- a/lib/src/app/router.dart[m
+[1m+++ b/lib/src/app/router.dart[m
+[36m@@ -15,7 +15,8 @@[m [mimport '../features/providers/presentation/doctor_list_screen.dart';[m
+ import '../features/providers/presentation/technician_detail_screen.dart';[m
+ import '../features/providers/presentation/technician_list_screen.dart';[m
+ import '../features/service_requests/presentation/booking_wizard_screen.dart';[m
+[31m-import '../features/service_requests/presentation/service_requests_tab_screen.dart';[m
+[32m+[m[32mimport '../features/service_requests/presentation/service_requests_tab_screen.dart'[m
+[32m+[m[32m    show ServiceRequestDetailScreen;[m
+ import '../features/splash/splash_screen.dart';[m
+ import '../features/knowledge_hub/presentation/knowledge_categories_screen.dart';[m
+ import '../features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';[m
+[36m@@ -26,6 +27,23 @@[m [mimport '../features/profile/presentation/about_screen.dart';[m
+ import '../features/profile/presentation/app_settings_screen.dart';[m
+ import '../features/profile/presentation/area_setting_screen.dart';[m
+ import '../features/profile/presentation/edit_profile_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_application_form_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_application_status_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_dashboard_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_intro_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_request_complete_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_request_detail_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_requests_list_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_service_form_screen.dart';[m
+[32m+[m[32mimport '../features/ai_technician_application/presentation/ai_technician_services_list_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_digital_service_record_view_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_farmer_my_request_detail_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_farmer_request_complaint_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_farmer_request_review_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_my_requests_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_service_request_form_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_technician_finder_screen.dart';[m
+[32m+[m[32mimport '../features/ai_farmer_services/presentation/ai_technician_public_profile_screen.dart';[m
+ import '../features/profile/presentation/help_support_screen.dart';[m
+ import '../features/session/application/session_notifier.dart';[m
+ import '../features/technician_ai/presentation/technician_ai_record_form_screen.dart';[m
+[36m@@ -41,6 +59,19 @@[m [mbool _isPublicCustomerPath(String path) {[m
+       path == LoginEntryScreen.routePath;[m
+ }[m
+ [m
+[32m+[m[32m/// Routes browsable without customer OTP (guest / marketing).[m
+[32m+[m[32mbool _isGuestAccessibleCustomerRoute(String path) {[m
+[32m+[m[32m  if (path == HomeShellScreen.routePath) return true;[m
+[32m+[m[32m  if (path.startsWith('/providers/')) return true;[m
+[32m+[m[32m  if (path.startsWith('/knowledge')) return true;[m
+[32m+[m[32m  // AI technician finder + public profiles only (`/ai-services/request*` stays protected).[m
+[32m+[m[32m  if (path.startsWith('/ai-services/technicians')) return true;[m
+[32m+[m[32m  if (path == HelpSupportScreen.routePath || path == AboutScreen.routePath) {[m
+[32m+[m[32m    return true;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  return false;[m
+[32m+[m[32m}[m
+[32m+[m
+ final goRouterProvider = Provider<GoRouter>((ref) {[m
+   final refresh = ValueNotifier<int>(0);[m
+   ref.listen(sessionNotifierProvider, (_, _) => refresh.value++);[m
+[36m@@ -69,6 +100,7 @@[m [mfinal goRouterProvider = Provider<GoRouter>((ref) {[m
+       if (_isPublicCustomerPath(loc)) return null;[m
+       if (loc.startsWith('/doctor')) return null;[m
+       if (loc.startsWith('/technician')) return null;[m
+[32m+[m[32m      if (_isGuestAccessibleCustomerRoute(loc)) return null;[m
+       if (!auth.isAuthenticated) return LoginEntryScreen.routePath;[m
+       return null;[m
+     },[m
+[36m@@ -189,6 +221,134 @@[m [mfinal goRouterProvider = Provider<GoRouter>((ref) {[m
+         name: EditProfileScreen.routeName,[m
+         builder: (context, state) => const EditProfileScreen(),[m
+       ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianIntroScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianIntroScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiTechnicianIntroScreen(),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianApplicationFormScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianApplicationFormScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiTechnicianApplicationFormScreen(),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianApplicationStatusScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianApplicationStatusScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) =>[m
+[32m+[m[32m            const AiTechnicianApplicationStatusScreen(),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianDashboardScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianDashboardScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiTechnicianDashboardScreen(),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianRequestsListScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianRequestsListScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiTechnicianRequestsListScreen(),[m
+[32m+[m[32m        routes: [[m
+[32m+[m[32m          GoRoute([m
+[32m+[m[32m            path: ':requestId',[m
+[32m+[m[32m            builder: (context, state) {[m
+[32m+[m[32m              final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m              return AiTechnicianRequestDetailScreen(requestId: id);[m
+[32m+[m[32m            },[m
+[32m+[m[32m            routes: [[m
+[32m+[m[32m              GoRoute([m
+[32m+[m[32m                path: 'complete',[m
+[32m+[m[32m                builder: (context, state) {[m
+[32m+[m[32m                  final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m                  return AiTechnicianRequestCompleteScreen(requestId: id);[m
+[32m+[m[32m                },[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              GoRoute([m
+[32m+[m[32m                path: 'record',[m
+[32m+[m[32m                builder: (context, state) {[m
+[32m+[m[32m                  final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m                  return AiDigitalServiceRecordViewScreen(requestId: id);[m
+[32m+[m[32m                },[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ],[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ],[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianServicesListScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianServicesListScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiTechnicianServicesListScreen(),[m
+[32m+[m[32m        routes: [[m
+[32m+[m[32m          GoRoute([m
+[32m+[m[32m            path: 'new',[m
+[32m+[m[32m            name: AiTechnicianServiceFormScreen.routeNameNew,[m
+[32m+[m[32m            builder: (context, state) => const AiTechnicianServiceFormScreen(),[m
+[32m+[m[32m          ),[m
+[32m+[m[32m          GoRoute([m
+[32m+[m[32m            path: ':serviceId/edit',[m
+[32m+[m[32m            name: AiTechnicianServiceFormScreen.routeNameEdit,[m
+[32m+[m[32m            builder: (context, state) {[m
+[32m+[m[32m              final id = state.pathParameters['serviceId']!;[m
+[32m+[m[32m              return AiTechnicianServiceFormScreen(serviceId: id);[m
+[32m+[m[32m            },[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ],[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiTechnicianFinderScreen.routePath,[m
+[32m+[m[32m        name: AiTechnicianFinderScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiTechnicianFinderScreen(),[m
+[32m+[m[32m        routes: [[m
+[32m+[m[32m          GoRoute([m
+[32m+[m[32m            path: ':technicianId',[m
+[32m+[m[32m            name: AiTechnicianPublicProfileScreen.routeName,[m
+[32m+[m[32m            builder: (context, state) {[m
+[32m+[m[32m              final id = state.pathParameters['technicianId']!;[m
+[32m+[m[32m              return AiTechnicianPublicProfileScreen(technicianId: id);[m
+[32m+[m[32m            },[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ],[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiServiceRequestFormScreen.routePath,[m
+[32m+[m[32m        name: AiServiceRequestFormScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiServiceRequestFormScreen(),[m
+[32m+[m[32m      ),[m
+[32m+[m[32m      GoRoute([m
+[32m+[m[32m        path: AiMyServiceRequestsScreen.routePath,[m
+[32m+[m[32m        name: AiMyServiceRequestsScreen.routeName,[m
+[32m+[m[32m        builder: (context, state) => const AiMyServiceRequestsScreen(),[m
+[32m+[m[32m        routes: [[m
+[32m+[m[32m          GoRoute([m
+[32m+[m[32m            path: ':requestId',[m
+[32m+[m[32m            builder: (context, state) {[m
+[32m+[m[32m              final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m              return AiFarmerMyRequestDetailScreen(requestId: id);[m
+[32m+[m[32m            },[m
+[32m+[m[32m            routes: [[m
+[32m+[m[32m              GoRoute([m
+[32m+[m[32m                path: 'record',[m
+[32m+[m[32m                builder: (context, state) {[m
+[32m+[m[32m                  final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m                  return AiDigitalServiceRecordViewScreen(requestId: id);[m
+[32m+[m[32m                },[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              GoRoute([m
+[32m+[m[32m                path: 'review',[m
+[32m+[m[32m                builder: (context, state) {[m
+[32m+[m[32m                  final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m                  return AiFarmerRequestReviewScreen(requestId: id);[m
+[32m+[m[32m                },[m
+[32m+[m[32m              ),[m
+[32m+[m[32m              GoRoute([m
+[32m+[m[32m                path: 'complaint',[m
+[32m+[m[32m                builder: (context, state) {[m
+[32m+[m[32m                  final id = state.pathParameters['requestId']!;[m
+[32m+[m[32m                  return AiFarmerRequestComplaintScreen(requestId: id);[m
+[32m+[m[32m                },[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ],[m
+[32m+[m[32m          ),[m
+[32m+[m[32m        ],[m
+[32m+[m[32m      ),[m
+       GoRoute([m
+         path: AreaSettingScreen.routePath,[m
+         name: AreaSettingScreen.routeName,[m
+[1mdiff --git a/lib/src/core/network/api_client.dart b/lib/src/core/network/api_client.dart[m
+[1mindex cad012b..ac9ecf9 100644[m
+[1m--- a/lib/src/core/network/api_client.dart[m
+[1m+++ b/lib/src/core/network/api_client.dart[m
+[36m@@ -62,4 +62,20 @@[m [mclass ApiClient {[m
+       cancelToken: cancelToken,[m
+     );[m
+   }[m
+[32m+[m
+[32m+[m[32m  Future<Response<T>> delete<T>([m
+[32m+[m[32m    String path, {[m
+[32m+[m[32m    Object? data,[m
+[32m+[m[32m    Map<String, dynamic>? queryParameters,[m
+[32m+[m[32m    Options? options,[m
+[32m+[m[32m    CancelToken? cancelToken,[m
+[32m+[m[32m  }) {[m
+[32m+[m[32m    return _dio.delete<T>([m
+[32m+[m[32m      path,[m
+[32m+[m[32m      data: data,[m
+[32m+[m[32m      queryParameters: queryParameters,[m
+[32m+[m[32m      options: options,[m
+[32m+[m[32m      cancelToken: cancelToken,[m
+[32m+[m[32m    );[m
+[32m+[m[32m  }[m
+ }[m
+[1mdiff --git a/lib/src/design_system/prani_design_system.dart b/lib/src/design_system/prani_design_system.dart[m
+[1mindex a5e50a2..a1af947 100644[m
+[1m--- a/lib/src/design_system/prani_design_system.dart[m
+[1m+++ b/lib/src/design_system/prani_design_system.dart[m
+[36m@@ -24,5 +24,6 @@[m [mexport 'widgets/prani_provider_card.dart';[m
+ export 'widgets/prani_safe_page.dart';[m
+ export 'widgets/prani_scaffold.dart';[m
+ export 'widgets/prani_search_field.dart';[m
+[32m+[m[32mexport 'widgets/prani_searchable_select_field.dart';[m
+ export 'widgets/prani_section_header.dart';[m
+ export 'widgets/prani_service_card.dart';[m
+[1mdiff --git a/lib/src/features/home/home_screen.dart b/lib/src/features/home/home_screen.dart[m
+[1mindex 333c8c0..bfcdc19 100644[m
+[1m--- a/lib/src/features/home/home_screen.dart[m
+[1m+++ b/lib/src/features/home/home_screen.dart[m
+[36m@@ -3,6 +3,7 @@[m [mimport 'package:flutter_riverpod/flutter_riverpod.dart';[m
+ import 'package:go_router/go_router.dart';[m
+ [m
+ import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/design_system/widgets/prani_info_card.dart';[m
+ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_safe_page.dart';[m
+ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_section_header.dart';[m
+ import 'package:pranidoctor_mobile/src/features/home/application/home_feed_providers.dart';[m
+[36m@@ -15,6 +16,8 @@[m [mimport 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_h[m
+ import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_search_card.dart';[m
+ import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_services_grid.dart';[m
+ import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/home_top_bar.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/ai_service_home_entry_card.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/ai_technician_finder_screen.dart';[m
+ import 'package:pranidoctor_mobile/src/features/home/presentation/widgets/nearby_doctors_section.dart';[m
+ import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';[m
+ import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';[m
+[36m@@ -23,13 +26,21 @@[m [mimport 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.d[m
+ import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';[m
+ import 'package:pranidoctor_mobile/src/features/providers/data/provider_list_query.dart';[m
+ import 'package:pranidoctor_mobile/src/features/providers/presentation/doctor_list_screen.dart';[m
+[31m-import 'package:pranidoctor_mobile/src/features/providers/presentation/technician_list_screen.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/auth/application/customer_auth_prompt.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/locations/application/guest_location_preference.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/locations/presentation/guest_location_selection_sheet.dart';[m
+ import 'package:pranidoctor_mobile/src/features/service_requests/presentation/booking_wizard_screen.dart';[m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';[m
+ [m
+ /// Customer home — marketing layout wired to `/api/mobile/*` where available.[m
+[31m-class HomeScreen extends ConsumerWidget {[m
+[32m+[m[32mclass HomeScreen extends ConsumerStatefulWidget {[m
+   const HomeScreen({super.key});[m
+ [m
+[32m+[m[32m  @override[m
+[32m+[m[32m  ConsumerState<HomeScreen> createState() => _HomeScreenState();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mclass _HomeScreenState extends ConsumerState<HomeScreen> {[m
+   static const _subtitle =[m
+       'আজ আপনার পোষা/গৃহপালিত প্রাণীর জন্য আমরা কীভাবে সাহায্য করতে পারি?';[m
+ [m
+[36m@@ -162,8 +173,37 @@[m [mclass HomeScreen extends ConsumerWidget {[m
+     return RoundedRectangleBorder(borderRadius: BorderRadius.circular(20));[m
+   }[m
+ [m
+[32m+[m[32m  bool _offeredLocationPrompt = false;[m
+[32m+[m
+   @override[m
+[31m-  Widget build(BuildContext context, WidgetRef ref) {[m
+[32m+[m[32m  void initState() {[m
+[32m+[m[32m    super.initState();[m
+[32m+[m[32m    WidgetsBinding.instance.addPostFrameCallback((_) => _onHomeEntered());[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  Future<void> _onHomeEntered() async {[m
+[32m+[m[32m    final guest = await ref.read(guestLocationPreferenceProvider.future);[m
+[32m+[m[32m    if (!mounted) return;[m
+[32m+[m[32m    ref[m
+[32m+[m[32m        .read(guestLocationPreferenceProvider.notifier)[m
+[32m+[m[32m        .applySavedLocationToProviderQueries();[m
+[32m+[m[32m    if (!guest.promptCompleted && !_offeredLocationPrompt) {[m
+[32m+[m[32m      _offeredLocationPrompt = true;[m
+[32m+[m[32m      await showGuestLocationSelectionSheet(context, showSkip: true);[m
+[32m+[m[32m      if (!mounted) return;[m
+[32m+[m[32m      final updated = ref[m
+[32m+[m[32m          .read(guestLocationPreferenceProvider)[m
+[32m+[m[32m          .maybeWhen(data: (v) => v, orElse: () => null);[m
+[32m+[m[32m      if (updated != null && !updated.promptCompleted) {[m
+[32m+[m[32m        await ref[m
+[32m+[m[32m            .read(guestLocationPreferenceProvider.notifier)[m
+[32m+[m[32m            .dismissPromptWithoutSaving();[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  @override[m
+[32m+[m[32m  Widget build(BuildContext context) {[m
+     final hPad = HomeLayout.horizontalPadding(context);[m
+     final userAsync = ref.watch(mobileUserProvider);[m
+     final categories = ref[m
+[36m@@ -182,6 +222,12 @@[m [mclass HomeScreen extends ConsumerWidget {[m
+       error: (_, _) => 'হ্যালো! 👋',[m
+     );[m
+ [m
+[32m+[m[32m    final guestLoc = ref.watch(guestLocationPreferenceProvider);[m
+[32m+[m[32m    final showLocationBanner = guestLoc.maybeWhen([m
+[32m+[m[32m      data: (g) => g.promptCompleted && !g.hasSavedSelection,[m
+[32m+[m[32m      orElse: () => false,[m
+[32m+[m[32m    );[m
+[32m+[m
+     Future<void> onPullRefresh() async {[m
+       ref.invalidate(mobileUserProvider);[m
+       ref.invalidate(homeServiceCategoriesProvider);[m
+[36m@@ -198,12 +244,35 @@[m [mclass HomeScreen extends ConsumerWidget {[m
+         crossAxisAlignment: CrossAxisAlignment.stretch,[m
+         children: [[m
+           HomeTopBar([m
+[31m-            onOpenNotifications: () {[m
+[32m+[m[32m            onLocationTap: () =>[m
+[32m+[m[32m                showGuestLocationSelectionSheet(context, showSkip: true),[m
+[32m+[m[32m            onOpenNotifications: () async {[m
+[32m+[m[32m              if (!ref.read(sessionNotifierProvider).isAuthenticated) {[m
+[32m+[m[32m                await showCustomerAuthRequiredSheet(context);[m
+[32m+[m[32m                return;[m
+[32m+[m[32m              }[m
+               ref.read(homeShellTabIndexProvider.notifier).select(3);[m
+             },[m
+[31m-            onQuickBooking: () =>[m
+[31m-                _safePushNamed(context, BookingWizardScreen.routeName),[m
+[32m+[m[32m            onQuickBooking: () async {[m
+[32m+[m[32m              if (!ref.read(sessionNotifierProvider).isAuthenticated) {[m
+[32m+[m[32m                await showCustomerAuthRequiredSheet(context);[m
+[32m+[m[32m                return;[m
+[32m+[m[32m              }[m
+[32m+[m[32m              _safePushNamed(context, BookingWizardScreen.routeName);[m
+[32m+[m[32m            },[m
+           ),[m
+[32m+[m[32m          if (showLocationBanner) ...[[m
+[32m+[m[32m            const SizedBox(height: PraniSpacing.sm),[m
+[32m+[m[32m            PraniInfoCard([m
+[32m+[m[32m              title: 'আপনার এলাকার সঠিক সেবা দেখতে লোকেশন নির্বাচন করুন',[m
+[32m+[m[32m              leadingIcon: const Icon(Icons.info_outline_rounded),[m
+[32m+[m[32m              trailing: TextButton([m
+[32m+[m[32m                onPressed: () =>[m
+[32m+[m[32m                    showGuestLocationSelectionSheet(context, showSkip: true),[m
+[32m+[m[32m                child: const Text('লোকেশন সেট করুন'),[m
+[32m+[m[32m              ),[m
+[32m+[m[32m            ),[m
+[32m+[m[32m          ],[m
+           userAsync.when([m
+             loading: () => SizedBox(height: HomeLayout.gapHeroToSearch),[m
+             data: (_) => SizedBox(height: HomeLayout.gapHeroToSearch),[m
+[36m@@ -211,6 +280,8 @@[m [mclass HomeScreen extends ConsumerWidget {[m
+           ),[m
+           HomeHeroCard(greetingLine: greetingLine, subtitle: _subtitle),[m
+           SizedBox(height: HomeLayout.gapHeroToSearch),[m
+[32m+[m[32m          const AiServiceHomeEntryCard(),[m
+[32m+[m[32m          SizedBox(height: HomeLayout.gapHeroToSearch),[m
+           HomeSearchCard([m
+             onSearchTap: () {[m
+               ref[m
+[36m@@ -284,8 +355,10 @@[m [mclass HomeScreen extends ConsumerWidget {[m
+                     horizontal: PraniSpacing.md,[m
+                     vertical: PraniSpacing.xs,[m
+                   ),[m
+[31m-                  onPressed: () =>[m
+[31m-                      _safePushNamed(context, TechnicianListScreen.routeName),[m
+[32m+[m[32m                  onPressed: () => _safePushNamed([m
+[32m+[m[32m                    context,[m
+[32m+[m[32m                    AiTechnicianFinderScreen.routeName,[m
+[32m+[m[32m                  ),[m
+                 ),[m
+                 const SizedBox(width: PraniSpacing.sm),[m
+                 ActionChip([m
+[1mdiff --git a/lib/src/features/home/home_shell_screen.dart b/lib/src/features/home/home_shell_screen.dart[m
+[1mindex 9029df9..45f6e66 100644[m
+[1m--- a/lib/src/features/home/home_shell_screen.dart[m
+[1m+++ b/lib/src/features/home/home_shell_screen.dart[m
+[36m@@ -1,10 +1,12 @@[m
+ import 'package:flutter/material.dart';[m
+ import 'package:flutter_riverpod/flutter_riverpod.dart';[m
+ [m
+[32m+[m[32mimport 'package:pranidoctor_mobile/src/features/auth/application/customer_auth_prompt.dart';[m
+ import 'package:pranidoctor_mobile/src/features/home/presentation/doctor_tab_screen.dart';[m
+ import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';[m
+ import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_home_screen.dart';[m
+ import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';[m
+[32m+

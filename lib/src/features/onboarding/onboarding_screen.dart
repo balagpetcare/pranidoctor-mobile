@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/screen_padding.dart';
 import '../../core/assets/prani_assets.dart';
 import '../../design_system/prani_tokens.dart';
+import '../../design_system/widgets/prani_buttons.dart';
 import '../auth/login_entry_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -25,23 +26,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const _pages = <_OnboardPage>[
     _OnboardPage(
-      title: 'খামার ও গবাদি প্রাণীর সেবা',
+      title: 'প্রাণী ডাক্তার',
       body:
-          'গরু, ছাগল, ভেড়া, হাঁস, মুরগি ও খামারের প্রাণীর জন্য ডাক্তার ও AI টেকনিশিয়ান সেবা — জেলা ও গ্রাম পর্যায়ের খামারিদের জন্য।',
-      icon: Icons.health_and_safety_outlined,
-      illustrationAsset: PraniAssets.onboardingFarmer,
+          'খামারের প্রাণীর স্বাস্থ্যসেবা এখন হাতের মুঠোয়। ডাক্তার পরামর্শ, ওষুধ ও পণ্য, টিকাদান স্মরণী, স্বাস্থ্য রেকর্ড ও জরুরি সহায়তা—সব একসাথে।',
+      imageAsset: PraniAssets.onboarding01ServiceOverviewBd,
+      semanticLabel: 'প্রাণী ডাক্তার সেবার পরিচিতি',
     ),
     _OnboardPage(
-      title: 'ডাক্তার ও কৃত্রিম প্রজনন',
+      title: 'খামারভিত্তিক সেবা',
       body:
-          'জরুরি ডাক্তার, হোম ভিজিট ও কৃত্রিম প্রজনন (AI টেকনিশিয়ান) — খামারের গবাদি পশুর স্বাস্থ্য ঘিরে।',
-      icon: Icons.groups_outlined,
+          'কৃষক, ডাক্তার ও মাঠপর্যায়ের সেবাকে এক জায়গায় যুক্ত করা হয়েছে, যাতে গরু, ছাগল, ভেড়া, হাঁস-মুরগি ও অন্যান্য খামারের প্রাণীর জন্য দ্রুত সহায়তা পাওয়া যায়।',
+      imageAsset: PraniAssets.onboarding02FarmerVetConsultationBd,
+      semanticLabel: 'খামারে ডাক্তার পরামর্শ',
+    ),
+    _OnboardPage(
+      title: 'AI টেকনিশিয়ান ও ভেট সাপোর্ট',
+      body:
+          'কৃত্রিম প্রজনন, মাঠপর্যায়ের সেবা, স্বাস্থ্য পর্যবেক্ষণ ও প্রযুক্তিনির্ভর সহায়তার মাধ্যমে খামারের প্রাণীর যত্ন হবে আরও সহজ ও কার্যকর।',
+      imageAsset: PraniAssets.onboarding03AiFieldSupportBd,
+      semanticLabel: 'AI টেকনিশিয়ান ও মাঠপর্যায়ের সহায়তা',
     ),
     _OnboardPage(
       title: 'শুরু করুন',
       body:
-          'পশুর প্রোফাইল ও সেবার অনুরোধ এক অ্যাপে রাখুন; লগইন করে ডাক্তার বা টেকনিশিয়ান খুঁজুন।',
-      icon: Icons.agriculture_outlined,
+          'আপনার লোকেশন দিন, প্রয়োজনীয় সেবা নির্বাচন করুন এবং নিরাপদ OTP লগইনের মাধ্যমে সহজেই সেবা গ্রহণ শুরু করুন।',
+      imageAsset: PraniAssets.onboarding04GetStartedBd,
+      semanticLabel: 'শুরু করার ধাপ',
     ),
   ];
 
@@ -58,66 +68,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  double _illustrationHeight(double screenH, double screenW) {
-    final h = screenH * 0.22;
-    return h.clamp(132.0, (screenW * 0.52).clamp(156.0, 214.0));
-  }
-
-  Widget _illustrationSlot(
-    BuildContext context,
-    _OnboardPage p,
-    double slotHeight,
-    ColorScheme scheme,
-  ) {
-    final maxDecode = PraniAssetDecode.onboardingIllustrationMaxPx;
-
-    if (p.illustrationAsset != null) {
-      final cacheW = PraniAssetDecode.cacheExtentPx(
-        context,
-        MediaQuery.sizeOf(context).width - 32,
-        maxDecode,
-      );
-      final cacheH = PraniAssetDecode.cacheExtentPx(
-        context,
-        slotHeight,
-        maxDecode,
-      );
-
-      return ClipRRect(
+  Widget _heroImage(BuildContext context, _OnboardPage p, ColorScheme scheme) {
+    return AspectRatio(
+      aspectRatio: 4 / 3,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(PraniRadii.lg),
-        child: SizedBox(
-          width: double.infinity,
-          height: slotHeight,
-          child: Image.asset(
-            p.illustrationAsset!,
-            fit: BoxFit.contain,
-            gaplessPlayback: true,
-            semanticLabel: 'খামার ও গবাদি প্রাণীর চিত্রায়ণ',
-            cacheWidth: cacheW,
-            cacheHeight: cacheH,
-          ),
-        ),
-      );
-    }
-
-    final iconBox = (slotHeight * 0.72).clamp(112.0, 168.0);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(PraniRadii.lg),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.35),
-        ),
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        height: slotHeight,
-        child: Center(
-          child: Icon(
-            p.icon,
-            size: (iconBox * 0.36).clamp(56.0, 78.0),
-            color: scheme.primary,
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxPx = PraniAssetDecode.onboardingBdHeroMaxPx;
+            final decodeW = PraniAssetDecode.cacheExtentPx(
+              context,
+              constraints.maxWidth,
+              maxPx,
+            );
+            final decodeH = PraniAssetDecode.cacheExtentPx(
+              context,
+              constraints.maxHeight,
+              maxPx,
+            );
+            return ColoredBox(
+              color: scheme.surfaceContainerHighest,
+              child: Image.asset(
+                p.imageAsset,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                gaplessPlayback: true,
+                semanticLabel: p.semanticLabel,
+                cacheWidth: decodeW,
+                cacheHeight: decodeH,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Icon(
+                      Icons.pets,
+                      size: 56,
+                      color: scheme.primary,
+                      semanticLabel: p.semanticLabel,
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ),
     );
@@ -130,15 +121,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final pad = pdScreenPadding(context);
     final mq = MediaQuery.of(context);
     final bottomSafe = mq.padding.bottom;
-    final illH = _illustrationHeight(mq.size.height, mq.size.width);
+    final textScaler = mq.textScaler.clamp(
+      minScaleFactor: 0.85,
+      maxScaleFactor: 1.35,
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('স্বাগতম')),
+      backgroundColor: scheme.surface,
       body: SafeArea(
         bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                pad.left,
+                PraniSpacing.sm,
+                pad.right,
+                PraniSpacing.xs,
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'স্বাগতম',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -146,39 +158,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (context, index) {
                   final p = _pages[index];
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      pad.left,
-                      PraniSpacing.sm,
-                      pad.right,
-                      PraniSpacing.md,
-                    ),
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _illustrationSlot(context, p, illH, scheme),
-                        SizedBox(height: PraniSpacing.section),
-                        Text(
-                          p.title,
-                          textAlign: TextAlign.center,
-                          style: textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.35,
-                            height: 1.25,
-                            color: scheme.onSurface,
+                  final maxContent = (mq.size.width - pad.left - pad.right)
+                      .clamp(0.0, 460.0);
+                  return MediaQuery(
+                    data: mq.copyWith(textScaler: textScaler),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(
+                        pad.left,
+                        PraniSpacing.xs,
+                        pad.right,
+                        PraniSpacing.lg,
+                      ),
+                      physics: const BouncingScrollPhysics(),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: maxContent),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _heroImage(context, p, scheme),
+                              SizedBox(height: PraniSpacing.xl),
+                              Text(
+                                p.title,
+                                textAlign: TextAlign.center,
+                                style: textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.35,
+                                  height: 1.22,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                              SizedBox(height: PraniSpacing.md),
+                              Text(
+                                p.body,
+                                textAlign: TextAlign.center,
+                                style: textTheme.bodyLarge?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: PraniSpacing.md),
-                        Text(
-                          p.body,
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            height: 1.48,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 },
@@ -189,7 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 pad.left,
                 PraniSpacing.sm,
                 pad.right,
-                bottomSafe + PraniSpacing.md,
+                bottomSafe + PraniSpacing.lg,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -213,7 +236,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: PraniSpacing.lg),
+                  SizedBox(height: PraniSpacing.xl),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -247,7 +270,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           alignment: Alignment.centerRight,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minWidth: 148),
-                            child: FilledButton(
+                            child: PraniPrimaryButton(
+                              fullWidth: false,
+                              label: _page < _pages.length - 1
+                                  ? 'পরের ধাপ'
+                                  : 'শুরু করুন',
                               onPressed: _page < _pages.length - 1
                                   ? () {
                                       _pageController.nextPage(
@@ -258,11 +285,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       );
                                     }
                                   : _finish,
-                              child: Text(
-                                _page < _pages.length - 1
-                                    ? 'পরের ধাপ'
-                                    : 'শুরু করুন',
-                              ),
                             ),
                           ),
                         ),
@@ -283,12 +305,12 @@ class _OnboardPage {
   const _OnboardPage({
     required this.title,
     required this.body,
-    required this.icon,
-    this.illustrationAsset,
+    required this.imageAsset,
+    required this.semanticLabel,
   });
 
   final String title;
   final String body;
-  final IconData icon;
-  final String? illustrationAsset;
+  final String imageAsset;
+  final String semanticLabel;
 }

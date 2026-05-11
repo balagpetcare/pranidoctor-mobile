@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -41,6 +42,13 @@ class SessionNotifier extends Notifier<SessionState> {
       role = AppRole.customer;
     }
     state = SessionState(role: role, isAuthenticated: true);
+    assert(() {
+      debugPrint(
+        '[PraniDoctor][auth] hydrateFromStorage: session restored '
+        '(role=${role.name}, token present)',
+      );
+      return true;
+    }());
   }
 
   Future<void> signInCustomer(String accessToken) async {
@@ -48,6 +56,13 @@ class SessionNotifier extends Notifier<SessionState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastRoleKey, AppRole.customer.name);
     state = const SessionState(role: AppRole.customer, isAuthenticated: true);
+    assert(() {
+      debugPrint(
+        '[PraniDoctor][auth] customer sign-in: token persisted, '
+        'session authenticated (customer)',
+      );
+      return true;
+    }());
   }
 
   Future<void> setRole(AppRole role) async {
@@ -59,6 +74,10 @@ class SessionNotifier extends Notifier<SessionState> {
   Future<void> signOut() async {
     await ref.read(tokenStorageProvider).clear();
     state = const SessionState();
+    assert(() {
+      debugPrint('[PraniDoctor][auth] sign-out: token cleared, session reset');
+      return true;
+    }());
   }
 }
 

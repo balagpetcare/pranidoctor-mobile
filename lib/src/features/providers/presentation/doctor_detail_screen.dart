@@ -6,6 +6,9 @@ import 'package:pranidoctor_mobile/src/core/assets/prani_assets.dart';
 import 'package:pranidoctor_mobile/src/features/providers/application/provider_finder_providers.dart';
 import 'package:pranidoctor_mobile/src/features/providers/data/provider_finder_repository.dart';
 
+import 'package:pranidoctor_mobile/src/features/auth/application/customer_auth_prompt.dart';
+import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
+
 class DoctorDetailScreen extends ConsumerWidget {
   const DoctorDetailScreen({super.key, required this.doctorId});
 
@@ -170,7 +173,15 @@ class DoctorDetailScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _placeholderSnack(context, 'কল'),
+                          onPressed: () async {
+                            if (!ref
+                                .read(sessionNotifierProvider)
+                                .isAuthenticated) {
+                              await showCustomerAuthRequiredSheet(context);
+                              return;
+                            }
+                            _placeholderSnack(context, 'কল');
+                          },
                           icon: const Icon(Icons.call_outlined),
                           label: const Text('কল'),
                         ),
@@ -178,7 +189,15 @@ class DoctorDetailScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: FilledButton.tonalIcon(
-                          onPressed: () => _placeholderSnack(context, 'বুকিং'),
+                          onPressed: () async {
+                            if (!ref
+                                .read(sessionNotifierProvider)
+                                .isAuthenticated) {
+                              await showCustomerAuthRequiredSheet(context);
+                              return;
+                            }
+                            _placeholderSnack(context, 'বুকিং');
+                          },
                           icon: const Icon(Icons.event_note_outlined),
                           label: const Text('বুক'),
                         ),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/network/dio_connectivity.dart';
 import '../../../core/network/dio_provider.dart';
+import 'otp_auth_user_messages.dart';
 
 final mobileOtpAuthRepositoryProvider = Provider<MobileOtpAuthRepository>((
   ref,
@@ -105,11 +106,20 @@ class MobileOtpAuthRepository {
   }
 
   String _messageFromDio(DioException e) {
+    final status = e.response?.statusCode;
+    if (status == 400 || status == 422 || status == 401 || status == 403) {
+      return userFacingOtpDioMessageBn(e);
+    }
     final data = e.response?.data;
     if (data is Map && data['error'] is Map) {
       final msg = (data['error'] as Map)['message'];
-      if (msg is String && msg.isNotEmpty) return msg;
+      if (msg is String && msg.isNotEmpty) {
+        if (status == 429 || (status != null && status >= 500)) {
+          return userFacingOtpDioMessageBn(e);
+        }
+        return msg;
+      }
     }
-    return bnUserFacingDioNetworkMessage(e);
+    return userFacingOtpDioMessageBn(e);
   }
 }

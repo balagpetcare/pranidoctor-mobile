@@ -55,6 +55,19 @@ abstract final class PraniAssets {
   /// Vaccination promo banner (`assets/images/home/promo_vaccination.png`).
   static const String homePromoVaccination =
       'assets/images/home/promo_vaccination.png';
+
+  /// Bangladesh-context onboarding / intro slides (`assets/images/onboarding/`).
+  static const String onboarding01ServiceOverviewBd =
+      'assets/images/onboarding/onboarding_01_service_overview_bd.png';
+
+  static const String onboarding02FarmerVetConsultationBd =
+      'assets/images/onboarding/onboarding_02_farmer_vet_consultation_bd.png';
+
+  static const String onboarding03AiFieldSupportBd =
+      'assets/images/onboarding/onboarding_03_ai_field_support_bd.png';
+
+  static const String onboarding04GetStartedBd =
+      'assets/images/onboarding/onboarding_04_get_started_bd.png';
 }
 
 /// Decode pixel budgets for [Image.asset] `cacheWidth` / `cacheHeight` (memory).
@@ -65,6 +78,9 @@ abstract final class PraniAssetDecode {
   static const int logoHeaderPx = 256;
   static const int heroMaxPx = 1200;
   static const int onboardingIllustrationMaxPx = 900;
+
+  /// Full-width onboarding photography decode cap.
+  static const int onboardingBdHeroMaxPx = 1080;
   static const int wordmarkMaxWidthPx = 900;
 
   static int cacheExtentPx(BuildContext context, double logical, int maxPx) {
