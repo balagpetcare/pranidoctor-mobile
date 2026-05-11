@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,17 +14,20 @@ import '../../design_system/widgets/prani_buttons.dart';
 import '../../design_system/widgets/prani_form_fields.dart';
 import '../../design_system/widgets/prani_info_card.dart';
 import '../../design_system/widgets/prani_section_header.dart';
-import 'application/post_customer_login_navigation.dart';
-import '../session/application/session_notifier.dart';
+import 'application/customer_auth_success.dart';
+import 'data/mobile_credential_auth_repository.dart';
 import 'data/mobile_otp_auth_repository.dart';
 
 enum _LoginBusy { none, send, verify }
+
+enum _CredentialSubmit { none, register, password }
 
 enum _LoginMode { otp, password }
 
 enum _AuthPageTab { login, register }
 
-/// Customer auth: SMS OTP, password UI (API pending), registration UI (API pending), social stubs.
+/// Customer auth: SMS OTP, password login, registration, social stubs.
+/// Login vs register is toggled only from footer links (no top segmented tabs).
 class LoginEntryScreen extends ConsumerStatefulWidget {
   const LoginEntryScreen({super.key});
 
@@ -49,6 +54,7 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   _LoginMode _loginMode = _LoginMode.otp;
   bool _otpSent = false;
   _LoginBusy _loginBusy = _LoginBusy.none;
+  _CredentialSubmit _credentialSubmit = _CredentialSubmit.none;
   bool _obscurePassword = true;
   bool _obscureRegPassword = true;
   bool _obscureRegConfirmPassword = true;
@@ -56,7 +62,9 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   /// Last successful send channel (inline helper, not a scary SnackBar).
   OtpSendChannel? _otpSendHint;
 
-  bool get _busy => _loginBusy != _LoginBusy.none;
+  bool get _busy =>
+      _loginBusy != _LoginBusy.none ||
+      _credentialSubmit != _CredentialSubmit.none;
 
   /// Normalized `01XXXXXXXXX` last successfully targeted for OTP (for UI reset on edit).
   String? _otpTargetPhone;
@@ -167,7 +175,10 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   }
 
   Future<void> _sendOtp() async {
-    if (_loginBusy != _LoginBusy.none) return;
+    if (_loginBusy != _LoginBusy.none ||
+        _credentialSubmit != _CredentialSubmit.none) {
+      return;
+    }
     final phone = _normalizedBdMobile(_phoneController.text);
     if (!_bdMobile.hasMatch(phone)) {
       _snack(
@@ -201,7 +212,10 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
   }
 
   Future<void> _verify() async {
-    if (_loginBusy != _LoginBusy.none) return;
+    if (_loginBusy != _LoginBusy.none ||
+        _credentialSubmit != _CredentialSubmit.none) {
+      return;
+    }
     final phone = _normalizedBdMobile(_phoneController.text);
     final code = _otpController.text.trim();
     if (!_bdMobile.hasMatch(phone) || code.length != 6) {
@@ -211,18 +225,17 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       return;
     }
     setState(() => _loginBusy = _LoginBusy.verify);
+    final tab = GoRouterState.of(context).uri.queryParameters['tab'];
+    final nextPath = GoRouterState.of(context).uri.queryParameters['next'];
     try {
       final token = await ref
           .read(mobileOtpAuthRepositoryProvider)
           .verifyOtp(phone, code);
-      await ref.read(sessionNotifierProvider.notifier).signInCustomer(token);
-      if (!mounted) return;
-      final uri = GoRouterState.of(context).uri;
-      navigateAfterCustomerLogin(
-        ref,
-        context,
-        tab: uri.queryParameters['tab'],
-        nextPath: uri.queryParameters['next'],
+      await completeCustomerSessionAfterSignIn(
+        ref: ref,
+        accessToken: token,
+        postLoginTab: tab,
+        postLoginNextPath: nextPath,
       );
     } on OtpAuthException catch (e) {
       if (mounted) _snack(e.message);
@@ -235,25 +248,73 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     }
   }
 
-  /// Customer password login (mobile or email).
-  ///
-  /// TODO: Connect password login API when backend endpoint is finalized.
-  void _submitPasswordLogin() {
+  Future<void> _submitPasswordLogin() async {
     if (!_passwordFormReady || _busy) return;
-    _snack('পাসওয়ার্ড লগইন এখনো চালু হয়নি। শীঘ্রই যুক্ত করা হবে।');
+    setState(() => _credentialSubmit = _CredentialSubmit.password);
+    final tab = GoRouterState.of(context).uri.queryParameters['tab'];
+    final nextPath = GoRouterState.of(context).uri.queryParameters['next'];
+    try {
+      final token = await ref
+          .read(mobileCredentialAuthRepositoryProvider)
+          .loginWithPassword(
+            identifier: _identifierController.text.trim(),
+            password: _passwordController.text,
+          );
+      await completeCustomerSessionAfterSignIn(
+        ref: ref,
+        accessToken: token,
+        postLoginTab: tab,
+        postLoginNextPath: nextPath,
+      );
+    } on CredentialAuthException catch (e) {
+      if (mounted) _snack(e.message);
+    } catch (_) {
+      if (mounted) {
+        _snack('মোবাইল/ইমেইল অথবা পাসওয়ার্ড সঠিক নয়');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _credentialSubmit = _CredentialSubmit.none);
+      }
+    }
   }
 
-  /// New customer registration.
-  ///
-  /// TODO: Connect user registration API when backend endpoint is finalized.
-  /// On success: if backend returns phone to verify, call existing OTP request and switch to Login → OTP.
-  void _submitRegister() {
+  Future<void> _submitRegister() async {
     if (!_registerFormValid || _busy) return;
     if (!_regEmailValid) {
       _snack('ইমেইল ঠিকানাটি সঠিক ফরম্যাটে লিখুন।');
       return;
     }
-    _snack('অ্যাকাউন্ট তৈরির সেবা এখনো চালু হয়নি। শীঘ্রই যুক্ত করা হবে।');
+    setState(() => _credentialSubmit = _CredentialSubmit.register);
+    final tab = GoRouterState.of(context).uri.queryParameters['tab'];
+    final nextPath = GoRouterState.of(context).uri.queryParameters['next'];
+    try {
+      final phone = _normalizedBdMobile(_regPhoneController.text);
+      final emailTrim = _regEmailController.text.trim();
+      final token = await ref
+          .read(mobileCredentialAuthRepositoryProvider)
+          .register(
+            name: _regNameController.text.trim(),
+            mobile: phone,
+            email: emailTrim.isEmpty ? null : emailTrim,
+            password: _regPasswordController.text,
+          );
+      await completeCustomerSessionAfterSignIn(
+        ref: ref,
+        accessToken: token,
+        postLoginTab: tab,
+        postLoginNextPath: nextPath,
+      );
+      if (mounted) _snack('অ্যাকাউন্ট তৈরি হয়েছে');
+    } on CredentialAuthException catch (e) {
+      if (mounted) _snack(e.message);
+    } catch (_) {
+      if (mounted) _snack('অ্যাকাউন্ট তৈরি করা যায়নি');
+    } finally {
+      if (mounted) {
+        setState(() => _credentialSubmit = _CredentialSubmit.none);
+      }
+    }
   }
 
   void _onSocialSoonTap() {
@@ -357,63 +418,6 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     );
   }
 
-  Widget _authPageTabSwitch(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    Widget chip(_AuthPageTab tab, String label) {
-      final selected = _authPageTab == tab;
-      return Expanded(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: _busy ? null : () => _onAuthPageTabChanged(tab),
-            borderRadius: BorderRadius.circular(PraniRadii.md - 2),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(vertical: PraniSpacing.md),
-              decoration: BoxDecoration(
-                color: selected ? scheme.primaryContainer : Colors.transparent,
-                borderRadius: BorderRadius.circular(PraniRadii.md - 2),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: selected
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(PraniRadii.md),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.85),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            chip(_AuthPageTab.login, 'লগইন'),
-            chip(_AuthPageTab.register, 'অ্যাকাউন্ট তৈরি'),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _loginModeSwitch(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -507,7 +511,7 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: PraniSpacing.section),
+        const SizedBox(height: PraniSpacing.lg),
         Row(
           children: [
             Expanded(child: Divider(color: scheme.outlineVariant)),
@@ -611,7 +615,7 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _loginModeSwitch(context),
-        const SizedBox(height: PraniSpacing.lg),
+        const SizedBox(height: PraniSpacing.md),
         if (_loginMode == _LoginMode.otp) ...[
           PraniTextField(
             controller: _phoneController,
@@ -764,8 +768,9 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
           PraniPrimaryButton(
             label: 'লগইন',
             onPressed: _passwordFormReady && !_busy
-                ? _submitPasswordLogin
+                ? () => unawaited(_submitPasswordLogin())
                 : null,
+            isLoading: _credentialSubmit == _CredentialSubmit.password,
           ),
         ],
         _socialBlock(context),
@@ -898,7 +903,10 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
         const SizedBox(height: PraniSpacing.lg),
         PraniPrimaryButton(
           label: 'অ্যাকাউন্ট তৈরি করুন',
-          onPressed: _registerFormValid && !_busy ? _submitRegister : null,
+          onPressed: _registerFormValid && !_busy
+              ? () => unawaited(_submitRegister())
+              : null,
+          isLoading: _credentialSubmit == _CredentialSubmit.register,
         ),
         _socialBlock(context),
         _authFooter(context),
@@ -949,7 +957,9 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
                 height: viewInsets > 0 ? PraniSpacing.md : PraniSpacing.lg,
               ),
               Text(
-                'প্রবেশ',
+                _authPageTab == _AuthPageTab.login
+                    ? 'প্রবেশ'
+                    : 'অ্যাকাউন্ট তৈরি',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
@@ -959,16 +969,16 @@ class _LoginEntryScreenState extends ConsumerState<LoginEntryScreen> {
               ),
               const SizedBox(height: PraniSpacing.sm),
               Text(
-                'আপনার অ্যাকাউন্টে নিরাপদে প্রবেশ করুন',
+                _authPageTab == _AuthPageTab.login
+                    ? 'আপনার অ্যাকাউন্টে নিরাপদে প্রবেশ করুন'
+                    : 'নতুন অ্যাকাউন্ট তৈরি করে সেবা ব্যবহার করুন',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                   height: 1.45,
                 ),
               ),
-              const SizedBox(height: PraniSpacing.lg),
-              _authPageTabSwitch(context),
-              const SizedBox(height: PraniSpacing.lg),
+              const SizedBox(height: PraniSpacing.md),
               if (_authPageTab == _AuthPageTab.login)
                 _loginTabBody(context, scheme)
               else

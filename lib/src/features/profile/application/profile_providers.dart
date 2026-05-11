@@ -40,6 +40,16 @@ final mobileUserProvider = FutureProvider.autoDispose<MobileUser>((ref) async {
     return true;
   }());
 
+  if (!authKey.$1) {
+    assert(() {
+      debugPrint(
+        '[PraniDoctor][auth] mobileUserProvider: skip /me (unauthenticated)',
+      );
+      return true;
+    }());
+    return MobileUser.signedOutPlaceholder();
+  }
+
   try {
     await ref.watch(homeNetworkDeferProvider.future);
     final user = await ref

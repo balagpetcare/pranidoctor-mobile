@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../auth/login_entry_screen.dart';
-import '../../../session/application/session_notifier.dart';
+import '../../../session/application/pd_customer_logout.dart';
 import '../../../knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 
 class DoctorHomeScreen extends ConsumerWidget {
@@ -26,7 +26,7 @@ class DoctorHomeScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () async {
-              await ref.read(sessionNotifierProvider.notifier).signOut();
+              await pdPerformCustomerLogout(ref);
               if (context.mounted) {
                 context.go(LoginEntryScreen.routePath);
               }

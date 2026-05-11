@@ -73,6 +73,8 @@ class SessionNotifier extends Notifier<SessionState> {
 
   Future<void> signOut() async {
     await ref.read(tokenStorageProvider).clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastRoleKey);
     state = const SessionState();
     assert(() {
       debugPrint('[PraniDoctor][auth] sign-out: token cleared, session reset');

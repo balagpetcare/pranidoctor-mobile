@@ -72,8 +72,9 @@ abstract final class PraniAssets {
 
 /// Decode pixel budgets for [Image.asset] `cacheWidth` / `cacheHeight` (memory).
 abstract final class PraniAssetDecode {
-  static const int splashBgMaxWidthPx = 720;
-  static const int splashBgMaxHeightPx = 1280;
+  /// Full-bleed splash decode budget (memory vs sharpness tradeoff).
+  static const int splashBgMaxWidthPx = 1080;
+  static const int splashBgMaxHeightPx = 1920;
   static const int logoSquarePx = 384;
   static const int logoHeaderPx = 256;
   static const int heroMaxPx = 1200;

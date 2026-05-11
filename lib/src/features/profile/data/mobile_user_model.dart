@@ -8,6 +8,9 @@ enum MobileProfileLoadStatus {
 
   /// Timeout, network, or unexpected envelope — guest UX with retry.
   fallbackUnavailable,
+
+  /// No customer session — do not call `/me` or show guest marketing profile card.
+  signedOut,
 }
 
 /// Logged-in mobile user from `GET /api/mobile/me` (customer-first).
@@ -109,6 +112,16 @@ class MobileUser {
       role: 'guest',
       locationConfigured: null,
       loadStatus: status,
+    );
+  }
+
+  /// Placeholder when there is no token — [ProfileHomeScreen] should not render
+  /// the guest header; kept for [mobileUserProvider] when unauthenticated.
+  static MobileUser signedOutPlaceholder() {
+    return const MobileUser(
+      name: '',
+      phone: '',
+      loadStatus: MobileProfileLoadStatus.signedOut,
     );
   }
 

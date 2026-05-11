@@ -6,7 +6,7 @@ import '../../app/screen_padding.dart';
 import '../../core/assets/prani_assets.dart';
 import '../../design_system/prani_tokens.dart';
 import '../../design_system/widgets/prani_buttons.dart';
-import '../auth/login_entry_screen.dart';
+import '../home/home_shell_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -58,8 +58,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(OnboardingScreen._onboardingDoneKey, true);
+
     if (!mounted) return;
-    context.go(LoginEntryScreen.routePath);
+    context.go(HomeShellScreen.routePath);
+  }
+
+  void _goPrevious() {
+    if (_page <= 0) return;
+
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _goNext() {
+    if (_page < _pages.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+
+    _finish();
   }
 
   @override
@@ -68,234 +90,247 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Widget _heroImage(BuildContext context, _OnboardPage p, ColorScheme scheme) {
-    return AspectRatio(
-      aspectRatio: 4 / 3,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(PraniRadii.lg),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final maxPx = PraniAssetDecode.onboardingBdHeroMaxPx;
-            final decodeW = PraniAssetDecode.cacheExtentPx(
-              context,
-              constraints.maxWidth,
-              maxPx,
-            );
-            final decodeH = PraniAssetDecode.cacheExtentPx(
-              context,
-              constraints.maxHeight,
-              maxPx,
-            );
-            return ColoredBox(
-              color: scheme.surfaceContainerHighest,
-              child: Image.asset(
-                p.imageAsset,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                gaplessPlayback: true,
-                semanticLabel: p.semanticLabel,
-                cacheWidth: decodeW,
-                cacheHeight: decodeH,
-                errorBuilder: (context, error, stackTrace) {
-                  return Center(
-                    child: Icon(
-                      Icons.pets,
-                      size: 56,
-                      color: scheme.primary,
-                      semanticLabel: p.semanticLabel,
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final pad = pdScreenPadding(context);
-    final mq = MediaQuery.of(context);
-    final bottomSafe = mq.padding.bottom;
-    final textScaler = mq.textScaler.clamp(
-      minScaleFactor: 0.85,
-      maxScaleFactor: 1.35,
-    );
 
     return Scaffold(
-      backgroundColor: scheme.surface,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                pad.left,
-                PraniSpacing.sm,
-                pad.right,
-                PraniSpacing.xs,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'স্বাগতম',
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurfaceVariant,
+      backgroundColor: const Color(0xFF020D0B),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: _pages.length,
+            onPageChanged: (i) {
+              if (!mounted) return;
+              setState(() => _page = i);
+            },
+            itemBuilder: (context, index) {
+              final page = _pages[index];
+
+              return _OnboardingImagePage(
+                imageAsset: page.imageAsset,
+                semanticLabel: page.semanticLabel,
+              );
+            },
+          ),
+
+          // Image readability overlay.
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.05),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.22),
+                      const Color(0xFF020D0B).withValues(alpha: 0.88),
+                      const Color(0xFF020D0B).withValues(alpha: 0.98),
+                    ],
+                    stops: const [0.0, 0.35, 0.58, 0.78, 1.0],
                   ),
                 ),
               ),
             ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _pages.length,
-                onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (context, index) {
-                  final p = _pages[index];
-                  final maxContent = (mq.size.width - pad.left - pad.right)
-                      .clamp(0.0, 460.0);
-                  return MediaQuery(
-                    data: mq.copyWith(textScaler: textScaler),
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        pad.left,
-                        PraniSpacing.xs,
-                        pad.right,
-                        PraniSpacing.lg,
+          ),
+
+          Positioned(
+            left: pad.left,
+            right: pad.right,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  top: PraniSpacing.md,
+                  bottom: PraniSpacing.lg,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: _OnboardingTextContent(
+                        key: ValueKey<int>(_page),
+                        title: _pages[_page].title,
+                        body: _pages[_page].body,
+                        textTheme: textTheme,
                       ),
-                      physics: const BouncingScrollPhysics(),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: maxContent),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _heroImage(context, p, scheme),
-                              SizedBox(height: PraniSpacing.xl),
-                              Text(
-                                p.title,
-                                textAlign: TextAlign.center,
-                                style: textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.35,
-                                  height: 1.22,
-                                  color: scheme.onSurface,
-                                ),
-                              ),
-                              SizedBox(height: PraniSpacing.md),
-                              Text(
-                                p.body,
-                                textAlign: TextAlign.center,
-                                style: textTheme.bodyLarge?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
+                    ),
+
+                    SizedBox(height: PraniSpacing.xl),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        _pages.length,
+                        (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOut,
+                          margin: const EdgeInsets.symmetric(horizontal: 5),
+                          height: 8,
+                          width: i == _page ? 22 : 8,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: i == _page
+                                ? scheme.primary
+                                : PraniColors.white.withValues(alpha: 0.45),
                           ),
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                pad.left,
-                PraniSpacing.sm,
-                pad.right,
-                bottomSafe + PraniSpacing.lg,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      _pages.length,
-                      (i) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        curve: Curves.easeOut,
-                        margin: const EdgeInsets.symmetric(horizontal: 5),
-                        height: 8,
-                        width: i == _page ? 22 : 8,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: i == _page
-                              ? scheme.primary
-                              : scheme.outlineVariant.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: PraniSpacing.xl),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 100,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: _page > 0
-                              ? TextButton(
-                                  onPressed: () {
-                                    _pageController.previousPage(
-                                      duration: const Duration(
-                                        milliseconds: 280,
+
+                    SizedBox(height: PraniSpacing.xl),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _page > 0
+                                ? TextButton(
+                                    onPressed: _goPrevious,
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: PraniColors.white
+                                          .withValues(alpha: 0.92),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: PraniSpacing.sm,
+                                        vertical: PraniSpacing.sm,
                                       ),
-                                      curve: Curves.easeOutCubic,
-                                    );
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: PraniSpacing.sm,
-                                      vertical: PraniSpacing.sm,
                                     ),
-                                  ),
-                                  child: const Text('পিছনে'),
-                                )
-                              : const SizedBox(height: 48),
+                                    child: const Text('পিছনে'),
+                                  )
+                                : const SizedBox(height: 48),
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 148),
-                            child: PraniPrimaryButton(
-                              fullWidth: false,
-                              label: _page < _pages.length - 1
-                                  ? 'পরের ধাপ'
-                                  : 'শুরু করুন',
-                              onPressed: _page < _pages.length - 1
-                                  ? () {
-                                      _pageController.nextPage(
-                                        duration: const Duration(
-                                          milliseconds: 280,
-                                        ),
-                                        curve: Curves.easeOutCubic,
-                                      );
-                                    }
-                                  : _finish,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minWidth: 148),
+                              child: PraniPrimaryButton(
+                                fullWidth: false,
+                                label: _page < _pages.length - 1
+                                    ? 'পরের ধাপ'
+                                    : 'শুরু করুন',
+                                onPressed: _goNext,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingImagePage extends StatelessWidget {
+  const _OnboardingImagePage({
+    required this.imageAsset,
+    required this.semanticLabel,
+  });
+
+  final String imageAsset;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: semanticLabel,
+      image: true,
+      child: SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: 9,
+            height: 16,
+            child: Image.asset(
+              imageAsset,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _OnboardingTextContent extends StatelessWidget {
+  const _OnboardingTextContent({
+    super.key,
+    required this.title,
+    required this.body,
+    required this.textTheme,
+  });
+
+  final String title;
+  final String body;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.headlineSmall?.copyWith(
+              color: PraniColors.white,
+              fontWeight: FontWeight.w800,
+              height: 1.18,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 14,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: PraniSpacing.sm),
+          Text(
+            body,
+            textAlign: TextAlign.center,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium?.copyWith(
+              color: PraniColors.white.withValues(alpha: 0.92),
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

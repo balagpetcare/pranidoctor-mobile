@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../auth/login_entry_screen.dart';
-import '../../session/application/session_notifier.dart';
+import '../../session/application/pd_customer_logout.dart';
 import '../../knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import 'technician_jobs_screen.dart';
 import 'technician_requests_screen.dart';
@@ -101,7 +101,7 @@ class TechnicianDashboardScreen extends ConsumerWidget {
           const SizedBox(height: 28),
           OutlinedButton.icon(
             onPressed: () async {
-              await ref.read(sessionNotifierProvider.notifier).signOut();
+              await pdPerformCustomerLogout(ref);
               if (context.mounted) {
                 context.go(LoginEntryScreen.routePath);
               }

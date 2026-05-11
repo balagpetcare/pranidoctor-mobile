@@ -76,6 +76,7 @@ class _AiTechnicianApplicationEntryScreenState
             'AiTechnician ENTRY route=/profile/ai-technician/entry → intro (new user)',
           );
         }
+        if (!context.mounted) return;
         context.pushReplacement(AiTechnicianIntroScreen.routePath);
         return;
       }
@@ -114,6 +115,7 @@ class _AiTechnicianApplicationEntryScreenState
             '(DRAFT / editable)',
           );
         }
+        if (!context.mounted) return;
         context.pushReplacement(
           AiTechnicianApplicationFormScreen.routePath,
           extra: initialFromPrefs,
@@ -127,6 +129,7 @@ class _AiTechnicianApplicationEntryScreenState
         if (kDebugMode) {
           debugPrint('AiTechnician ENTRY → dashboard status=$st');
         }
+        if (!context.mounted) return;
         context.pushReplacement(AiTechnicianDashboardScreen.routePath);
         return;
       }
@@ -143,6 +146,7 @@ class _AiTechnicianApplicationEntryScreenState
             'AiTechnician ENTRY → status (submitted pipeline) status=$st',
           );
         }
+        if (!context.mounted) return;
         context.pushReplacement(AiTechnicianApplicationStatusScreen.routePath);
         return;
       }
@@ -151,6 +155,7 @@ class _AiTechnicianApplicationEntryScreenState
       if (kDebugMode) {
         debugPrint('AiTechnician ENTRY → status (default) status=$st');
       }
+      if (!context.mounted) return;
       context.pushReplacement(AiTechnicianApplicationStatusScreen.routePath);
     } catch (e, st) {
       if (kDebugMode) {

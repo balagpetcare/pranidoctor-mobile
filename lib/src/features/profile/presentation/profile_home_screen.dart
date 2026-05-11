@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,10 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_page_insets.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_buttons.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_premium_card.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_profile_section_header.dart';
-import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_providers.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_dashboard_screen.dart';
+import 'package:pranidoctor_mobile/src/features/auth/application/customer_shell_login_navigation.dart';
 import 'package:pranidoctor_mobile/src/features/home/application/home_shell_tab_provider.dart';
 import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
@@ -28,6 +32,67 @@ import 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_application_entry_screen.dart';
 import 'package:pranidoctor_mobile/src/features/animals/presentation/animal_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
+
+/// Logged-out profile tab: no guest header — primary path to OTP login.
+class _ProfileLoginRequiredGate extends StatelessWidget {
+  const _ProfileLoginRequiredGate();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final hPad = PraniPageInsets.horizontalPadding(context);
+    return Scaffold(
+      backgroundColor: scheme.surfaceContainerLowest,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.lock_person_outlined,
+                    size: 56,
+                    color: scheme.primary,
+                  ),
+                  const SizedBox(height: PraniSpacing.xl),
+                  Text(
+                    'প্রোফাইল দেখতে লগইন করুন',
+                    textAlign: TextAlign.center,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: PraniSpacing.md),
+                  Text(
+                    'আপনার অ্যাকাউন্ট ও সেবার তথ্য দেখতে মোবাইল নম্বর দিয়ে নিরাপদ OTP লগইন করুন।',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: PraniSpacing.xxl),
+                  PraniPrimaryButton(
+                    label: 'লগইন করুন',
+                    onPressed: () {
+                      pdPushCustomerLoginIntent(context, shellTab: 'profile');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// Customer profile hub (bottom tab body): header, menu, support, logout.
 class ProfileHomeScreen extends ConsumerWidget {
@@ -52,8 +117,29 @@ class ProfileHomeScreen extends ConsumerWidget {
     }
   }
 
+  static Future<void> _safeRouterPushNamed(
+    GoRouter router,
+    String routeName,
+  ) async {
+    try {
+      await router.pushNamed(routeName);
+    } catch (e, stack) {
+      assert(() {
+        debugPrint('ProfileHomeScreen: router.pushNamed failed: $e\n$stack');
+        return true;
+      }());
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authed = ref.watch(
+      sessionNotifierProvider.select((s) => s.isAuthenticated),
+    );
+    if (!authed) {
+      return const _ProfileLoginRequiredGate();
+    }
+
     final asyncUser = ref.watch(mobileUserProvider);
     final scheme = Theme.of(context).colorScheme;
 
@@ -99,11 +185,16 @@ class ProfileHomeScreen extends ConsumerWidget {
               onRefresh: onRefresh,
             );
           },
-          data: (user) => _ProfileScrollBody(
-            user: user,
-            forceInfoBanner: false,
-            onRefresh: onRefresh,
-          ),
+          data: (user) {
+            if (user.loadStatus == MobileProfileLoadStatus.signedOut) {
+              return const _ProfileLoginRequiredGate();
+            }
+            return _ProfileScrollBody(
+              user: user,
+              forceInfoBanner: false,
+              onRefresh: onRefresh,
+            );
+          },
         ),
       ),
     );
@@ -127,6 +218,101 @@ class _ProfileScrollBody extends ConsumerStatefulWidget {
 
 class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
   bool _retryBusy = false;
+  bool _aiTechnicianNavBusy = false;
+
+  Future<void> _onAiTechnicianTileTap() async {
+    if (_aiTechnicianNavBusy) return;
+    if (!mounted) return;
+
+    final router = GoRouter.of(context);
+    final loc = GoRouterState.of(context).uri.path;
+    if (loc == AiTechnicianDashboardScreen.routePath ||
+        loc == AiTechnicianApplicationEntryScreen.routePath) {
+      if (kDebugMode) {
+        debugPrint('ProfileHomeScreen AI Technician: skip (already on $loc)');
+      }
+      return;
+    }
+
+    setState(() => _aiTechnicianNavBusy = true);
+    try {
+      if (!ref.read(sessionNotifierProvider).isAuthenticated) {
+        if (kDebugMode) {
+          debugPrint(
+            'ProfileHomeScreen AI Technician: unauthenticated → login',
+          );
+        }
+        if (!context.mounted) return;
+        pdPushCustomerLoginIntent(
+          context,
+          shellTab: 'profile',
+          nextPath: AiTechnicianApplicationEntryScreen.routePath,
+        );
+        return;
+      }
+
+      if (kDebugMode) {
+        debugPrint('ProfileHomeScreen AI Technician: fetching technician me');
+      }
+      ref.invalidate(aiTechnicianMeProvider);
+      final me = await ref.read(aiTechnicianMeProvider.future);
+      if (!context.mounted) return;
+
+      final p = me.profile;
+      if (kDebugMode) {
+        debugPrint(
+          'ProfileHomeScreen AI Technician: '
+          'hasProfile=${p != null} editable=${p?.isEditable} status=${p?.status}',
+        );
+      }
+
+      if (p == null || p.isEditable) {
+        if (kDebugMode) {
+          debugPrint(
+            'ProfileHomeScreen AI Technician: target='
+            '${AiTechnicianApplicationEntryScreen.routeName} (resolver)',
+          );
+        }
+        await ProfileHomeScreen._safeRouterPushNamed(
+          router,
+          AiTechnicianApplicationEntryScreen.routeName,
+        );
+        return;
+      }
+
+      final st = p.status;
+      if (st == 'APPROVED' || st == 'PUBLISHED') {
+        if (kDebugMode) {
+          debugPrint(
+            'ProfileHomeScreen AI Technician: target='
+            '${AiTechnicianDashboardScreen.routeName}',
+          );
+        }
+        await ProfileHomeScreen._safeRouterPushNamed(
+          router,
+          AiTechnicianDashboardScreen.routeName,
+        );
+        return;
+      }
+
+      if (kDebugMode) {
+        debugPrint(
+          'ProfileHomeScreen AI Technician: target='
+          '${AiTechnicianApplicationEntryScreen.routeName} (pipeline)',
+        );
+      }
+      await ProfileHomeScreen._safeRouterPushNamed(
+        router,
+        AiTechnicianApplicationEntryScreen.routeName,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _aiTechnicianNavBusy = false);
+      } else {
+        _aiTechnicianNavBusy = false;
+      }
+    }
+  }
 
   bool get _showInfoBanner =>
       widget.forceInfoBanner ||
@@ -170,7 +356,6 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
       context,
       comfortGap: 28,
     );
-    final auth = ref.watch(sessionNotifierProvider);
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -255,10 +440,11 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                               icon: Icons.biotech_outlined,
                               title: 'এআই টেকনিশিয়ান',
                               subtitle: 'আবেদন, অবস্থা ও ড্যাশবোর্ড',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                AiTechnicianApplicationEntryScreen.routePath,
-                              ),
+                              onTap: _aiTechnicianNavBusy
+                                  ? null
+                                  : () {
+                                      _onAiTechnicianTileTap();
+                                    },
                             ),
                             ProfileSettingsListTile(
                               icon: Icons.list_alt_outlined,
@@ -376,21 +562,13 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                               ),
                             ),
                             ProfileSettingsListTile(
-                              icon: auth.isAuthenticated
-                                  ? Icons.logout_rounded
-                                  : Icons.login_rounded,
-                              title: auth.isAuthenticated
-                                  ? 'লগআউট'
-                                  : 'লগইন করুন',
+                              icon: Icons.logout_rounded,
+                              title: 'লগআউট',
                               onTap: () async {
-                                if (auth.isAuthenticated) {
-                                  await showPdLogoutConfirmAndExecute(
-                                    context,
-                                    ref,
-                                  );
-                                } else if (context.mounted) {
-                                  context.go(LoginEntryScreen.routePath);
-                                }
+                                await showPdLogoutConfirmAndExecute(
+                                  context,
+                                  ref,
+                                );
                               },
                             ),
                           ]),

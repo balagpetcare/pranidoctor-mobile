@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
-import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
+import 'package:pranidoctor_mobile/src/features/home/home_shell_screen.dart';
+import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
+import 'package:pranidoctor_mobile/src/features/profile/application/profile_providers.dart';
+import 'package:pranidoctor_mobile/src/features/session/application/pd_customer_logout.dart';
 
-/// Shows Bengali confirmation; on confirm clears session and navigates to login.
+/// Shows Bengali confirmation; on confirm clears session, caches, and goes Home.
 Future<void> showPdLogoutConfirmAndExecute(
   BuildContext context,
   WidgetRef ref,
@@ -34,8 +36,11 @@ Future<void> showPdLogoutConfirmAndExecute(
     ),
   );
   if (confirmed != true || !context.mounted) return;
-  await ref.read(sessionNotifierProvider.notifier).signOut();
+  await pdPerformCustomerLogout(ref);
+  ref.invalidate(mobileUserProvider);
+  ref.invalidate(unreadNotificationsTotalProvider);
+  ref.invalidate(notificationsListProvider);
   if (context.mounted) {
-    context.go(LoginEntryScreen.routePath);
+    context.go(HomeShellScreen.routePath);
   }
 }

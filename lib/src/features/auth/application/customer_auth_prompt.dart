@@ -10,6 +10,10 @@ import 'package:pranidoctor_mobile/src/features/session/application/session_noti
 
 /// Shows a Bengali prompt and navigates to the existing customer OTP screen.
 ///
+/// **Do not use** for main bottom-nav Profile / সেবা / নোটিফিকেশন taps — those must
+/// call [pdPushCustomerLoginIntent] in `customer_shell_login_navigation.dart`
+/// so the user goes straight to [LoginEntryScreen] without this sheet.
+///
 /// [loginTab]: after successful login, selects home shell tab — `profile`,
 /// `notifications`, or `services`.
 Future<void> showCustomerAuthRequiredSheet(

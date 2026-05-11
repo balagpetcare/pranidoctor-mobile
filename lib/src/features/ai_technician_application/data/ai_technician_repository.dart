@@ -44,9 +44,9 @@ class AiTechnicianRepository {
     return inner;
   }
 
-  Future<AiTechnicianMeResult> fetchMe() async {
+  Future<AiTechnicianMeResult> fetchMe({CancelToken? cancelToken}) async {
     try {
-      final res = await _client.get<dynamic>(_me);
+      final res = await _client.get<dynamic>(_me, cancelToken: cancelToken);
       final inner = _unwrap(res);
       final rawProfile = inner['profile'];
       final message = inner['message'] is String
@@ -213,9 +213,14 @@ class AiTechnicianRepository {
     }
   }
 
-  Future<AiTechnicianDashboardData> fetchDashboard() async {
+  Future<AiTechnicianDashboardData> fetchDashboard({
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final res = await _client.get<dynamic>(_dashboard);
+      final res = await _client.get<dynamic>(
+        _dashboard,
+        cancelToken: cancelToken,
+      );
       final inner = _unwrap(res);
       return AiTechnicianDashboardData.fromJson(inner);
     } on AiTechnicianApiException {
@@ -310,6 +315,7 @@ class AiTechnicianRepository {
     required String tab,
     int limit = 30,
     int offset = 0,
+    CancelToken? cancelToken,
   }) async {
     try {
       final res = await _client.get<dynamic>(
@@ -319,6 +325,7 @@ class AiTechnicianRepository {
           'limit': limit,
           'offset': offset,
         },
+        cancelToken: cancelToken,
       );
       final inner = _unwrap(res);
       final rawList = inner['items'];
@@ -462,6 +469,9 @@ class AiTechnicianRepository {
   }
 
   AiTechnicianApiException _mapDio(DioException e) {
+    if (e.type == DioExceptionType.cancel) {
+      return AiTechnicianApiException('অনুরোধ বাতিল হয়েছে', code: 'CANCELLED');
+    }
     if (e.response?.data is Map<String, dynamic>) {
       final data = e.response!.data as Map<String, dynamic>;
       if (data['ok'] == false && data['error'] is Map) {

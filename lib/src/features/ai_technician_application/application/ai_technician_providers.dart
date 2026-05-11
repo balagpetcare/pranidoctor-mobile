@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
@@ -12,14 +14,63 @@ final aiTechnicianRepositoryProvider = Provider<AiTechnicianRepository>((ref) {
 
 /// Latest `GET /api/mobile/ai-technician/me` for the logged-in customer.
 final aiTechnicianMeProvider = FutureProvider.autoDispose<AiTechnicianMeResult>(
-  (ref) {
-    return ref.read(aiTechnicianRepositoryProvider).fetchMe();
+  (ref) async {
+    final cancel = CancelToken();
+    ref.onDispose(() {
+      if (!cancel.isCancelled) {
+        cancel.cancel('Provider disposed');
+      }
+    });
+    if (kDebugMode) {
+      debugPrint('aiTechnicianMeProvider: loading');
+    }
+    try {
+      final me = await ref
+          .read(aiTechnicianRepositoryProvider)
+          .fetchMe(cancelToken: cancel);
+      if (kDebugMode) {
+        debugPrint(
+          'aiTechnicianMeProvider: success profile=${me.profile != null}',
+        );
+      }
+      return me;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('aiTechnicianMeProvider: error $e\n$st');
+      }
+      rethrow;
+    }
   },
 );
 
 final aiTechnicianDashboardProvider =
-    FutureProvider.autoDispose<AiTechnicianDashboardData>((ref) {
-      return ref.read(aiTechnicianRepositoryProvider).fetchDashboard();
+    FutureProvider.autoDispose<AiTechnicianDashboardData>((ref) async {
+      final cancel = CancelToken();
+      ref.onDispose(() {
+        if (!cancel.isCancelled) {
+          cancel.cancel('Provider disposed');
+        }
+      });
+      if (kDebugMode) {
+        debugPrint('aiTechnicianDashboardProvider: loading');
+      }
+      try {
+        final data = await ref
+            .read(aiTechnicianRepositoryProvider)
+            .fetchDashboard(cancelToken: cancel);
+        if (kDebugMode) {
+          debugPrint(
+            'aiTechnicianDashboardProvider: success '
+            'profile=${data.profile != null}',
+          );
+        }
+        return data;
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('aiTechnicianDashboardProvider: error $e\n$st');
+        }
+        rethrow;
+      }
     });
 
 /// Per-tab pipeline counts from existing paginated list API (see TODO on model).
@@ -29,6 +80,15 @@ final aiTechnicianRequestPipelineCountsProvider =
     FutureProvider.autoDispose<Map<String, AiTechnicianRequestPipelineCount>>((
       ref,
     ) async {
+      final cancel = CancelToken();
+      ref.onDispose(() {
+        if (!cancel.isCancelled) {
+          cancel.cancel('Provider disposed');
+        }
+      });
+      if (kDebugMode) {
+        debugPrint('aiTechnicianRequestPipelineCountsProvider: loading');
+      }
       final repo = ref.read(aiTechnicianRepositoryProvider);
       const tabs = <String>[
         'new',
@@ -45,6 +105,7 @@ final aiTechnicianRequestPipelineCountsProvider =
             tab: tab,
             limit: 200,
             offset: 0,
+            cancelToken: cancel,
           );
           return MapEntry(
             tab,
@@ -59,7 +120,15 @@ final aiTechnicianRequestPipelineCountsProvider =
       }
 
       final entries = await Future.wait(tabs.map(load));
-      return Map<String, AiTechnicianRequestPipelineCount>.fromEntries(entries);
+      final out = Map<String, AiTechnicianRequestPipelineCount>.fromEntries(
+        entries,
+      );
+      if (kDebugMode) {
+        debugPrint(
+          'aiTechnicianRequestPipelineCountsProvider: success tabs=${out.length}',
+        );
+      }
+      return out;
     });
 
 final aiTechnicianServicesListProvider =

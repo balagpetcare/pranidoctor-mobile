@@ -39,6 +39,7 @@ class _AiTechnicianDashboardScreenState
     ref.invalidate(aiTechnicianMeProvider);
     ref.invalidate(aiTechnicianRequestPipelineCountsProvider);
     await ref.read(aiTechnicianDashboardProvider.future);
+    if (!mounted) return;
   }
 
   Future<void> _onEmergencyToggle(bool value) async {
@@ -47,6 +48,7 @@ class _AiTechnicianDashboardScreenState
       await ref
           .read(aiTechnicianRepositoryProvider)
           .patchSettings(acceptsEmergency: value);
+      if (!mounted) return;
       ref.invalidate(aiTechnicianDashboardProvider);
       ref.invalidate(aiTechnicianMeProvider);
       if (mounted) {
