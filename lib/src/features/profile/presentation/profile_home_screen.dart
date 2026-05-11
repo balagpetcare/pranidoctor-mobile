@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,93 +5,24 @@ import 'package:go_router/go_router.dart';
 import 'package:pranidoctor_mobile/src/app/screen_padding.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_page_insets.dart';
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
-import 'package:pranidoctor_mobile/src/design_system/widgets/prani_buttons.dart';
-import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
-import 'package:pranidoctor_mobile/src/design_system/widgets/prani_premium_card.dart';
-import 'package:pranidoctor_mobile/src/design_system/widgets/prani_profile_section_header.dart';
-import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_providers.dart';
-import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_dashboard_screen.dart';
-import 'package:pranidoctor_mobile/src/features/auth/application/customer_shell_login_navigation.dart';
-import 'package:pranidoctor_mobile/src/features/home/application/home_shell_tab_provider.dart';
-import 'package:pranidoctor_mobile/src/features/knowledge_hub/presentation/knowledge_hub_home_screen.dart';
-import 'package:pranidoctor_mobile/src/features/notifications/application/notifications_providers.dart';
-import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/application/profile_providers.dart';
-import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/about_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/app_settings_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/edit_profile_location_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/edit_profile_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/help_support_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/logout_confirm_dialog.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_header_card.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_settings_list_tile.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/support_contact_card.dart';
 import 'package:pranidoctor_mobile/src/features/ai_farmer_services/presentation/ai_my_requests_screen.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_application_entry_screen.dart';
-import 'package:pranidoctor_mobile/src/features/animals/presentation/animal_list_screen.dart';
+import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/application/profile_dashboard_providers.dart';
+import 'package:pranidoctor_mobile/src/features/profile/application/profile_providers.dart';
+import 'package:pranidoctor_mobile/src/features/profile/data/mobile_user_model.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/app_settings_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/area_setting_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/edit_profile_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/help_support_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/account_menu_section.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/account_menu_tile.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/logout_tile.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_login_required_gate.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/profile_header_card.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/widgets/professional_dashboard_compact.dart';
 import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
-
-/// Logged-out profile tab: no guest header — primary path to OTP login.
-class _ProfileLoginRequiredGate extends StatelessWidget {
-  const _ProfileLoginRequiredGate();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final hPad = PraniPageInsets.horizontalPadding(context);
-    return Scaffold(
-      backgroundColor: scheme.surfaceContainerLowest,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: hPad),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(
-                    Icons.lock_person_outlined,
-                    size: 56,
-                    color: scheme.primary,
-                  ),
-                  const SizedBox(height: PraniSpacing.xl),
-                  Text(
-                    'প্রোফাইল দেখতে লগইন করুন',
-                    textAlign: TextAlign.center,
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      height: 1.25,
-                    ),
-                  ),
-                  const SizedBox(height: PraniSpacing.md),
-                  Text(
-                    'আপনার অ্যাকাউন্ট ও সেবার তথ্য দেখতে মোবাইল নম্বর দিয়ে নিরাপদ OTP লগইন করুন।',
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.45,
-                    ),
-                  ),
-                  const SizedBox(height: PraniSpacing.xxl),
-                  PraniPrimaryButton(
-                    label: 'লগইন করুন',
-                    onPressed: () {
-                      pdPushCustomerLoginIntent(context, shellTab: 'profile');
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
 
 /// Customer profile hub (bottom tab body): header, menu, support, logout.
 class ProfileHomeScreen extends ConsumerWidget {
@@ -117,27 +47,13 @@ class ProfileHomeScreen extends ConsumerWidget {
     }
   }
 
-  static Future<void> _safeRouterPushNamed(
-    GoRouter router,
-    String routeName,
-  ) async {
-    try {
-      await router.pushNamed(routeName);
-    } catch (e, stack) {
-      assert(() {
-        debugPrint('ProfileHomeScreen: router.pushNamed failed: $e\n$stack');
-        return true;
-      }());
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authed = ref.watch(
       sessionNotifierProvider.select((s) => s.isAuthenticated),
     );
     if (!authed) {
-      return const _ProfileLoginRequiredGate();
+      return const ProfileLoginRequiredGate();
     }
 
     final asyncUser = ref.watch(mobileUserProvider);
@@ -145,6 +61,7 @@ class ProfileHomeScreen extends ConsumerWidget {
 
     Future<void> onRefresh() async {
       ref.invalidate(mobileUserProvider);
+      ref.invalidate(profileDashboardContextProvider);
       try {
         await ref.read(mobileUserProvider.future);
       } catch (_) {
@@ -187,7 +104,7 @@ class ProfileHomeScreen extends ConsumerWidget {
           },
           data: (user) {
             if (user.loadStatus == MobileProfileLoadStatus.signedOut) {
-              return const _ProfileLoginRequiredGate();
+              return const ProfileLoginRequiredGate();
             }
             return _ProfileScrollBody(
               user: user,
@@ -218,101 +135,6 @@ class _ProfileScrollBody extends ConsumerStatefulWidget {
 
 class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
   bool _retryBusy = false;
-  bool _aiTechnicianNavBusy = false;
-
-  Future<void> _onAiTechnicianTileTap() async {
-    if (_aiTechnicianNavBusy) return;
-    if (!mounted) return;
-
-    final router = GoRouter.of(context);
-    final loc = GoRouterState.of(context).uri.path;
-    if (loc == AiTechnicianDashboardScreen.routePath ||
-        loc == AiTechnicianApplicationEntryScreen.routePath) {
-      if (kDebugMode) {
-        debugPrint('ProfileHomeScreen AI Technician: skip (already on $loc)');
-      }
-      return;
-    }
-
-    setState(() => _aiTechnicianNavBusy = true);
-    try {
-      if (!ref.read(sessionNotifierProvider).isAuthenticated) {
-        if (kDebugMode) {
-          debugPrint(
-            'ProfileHomeScreen AI Technician: unauthenticated → login',
-          );
-        }
-        if (!context.mounted) return;
-        pdPushCustomerLoginIntent(
-          context,
-          shellTab: 'profile',
-          nextPath: AiTechnicianApplicationEntryScreen.routePath,
-        );
-        return;
-      }
-
-      if (kDebugMode) {
-        debugPrint('ProfileHomeScreen AI Technician: fetching technician me');
-      }
-      ref.invalidate(aiTechnicianMeProvider);
-      final me = await ref.read(aiTechnicianMeProvider.future);
-      if (!context.mounted) return;
-
-      final p = me.profile;
-      if (kDebugMode) {
-        debugPrint(
-          'ProfileHomeScreen AI Technician: '
-          'hasProfile=${p != null} editable=${p?.isEditable} status=${p?.status}',
-        );
-      }
-
-      if (p == null || p.isEditable) {
-        if (kDebugMode) {
-          debugPrint(
-            'ProfileHomeScreen AI Technician: target='
-            '${AiTechnicianApplicationEntryScreen.routeName} (resolver)',
-          );
-        }
-        await ProfileHomeScreen._safeRouterPushNamed(
-          router,
-          AiTechnicianApplicationEntryScreen.routeName,
-        );
-        return;
-      }
-
-      final st = p.status;
-      if (st == 'APPROVED' || st == 'PUBLISHED') {
-        if (kDebugMode) {
-          debugPrint(
-            'ProfileHomeScreen AI Technician: target='
-            '${AiTechnicianDashboardScreen.routeName}',
-          );
-        }
-        await ProfileHomeScreen._safeRouterPushNamed(
-          router,
-          AiTechnicianDashboardScreen.routeName,
-        );
-        return;
-      }
-
-      if (kDebugMode) {
-        debugPrint(
-          'ProfileHomeScreen AI Technician: target='
-          '${AiTechnicianApplicationEntryScreen.routeName} (pipeline)',
-        );
-      }
-      await ProfileHomeScreen._safeRouterPushNamed(
-        router,
-        AiTechnicianApplicationEntryScreen.routeName,
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _aiTechnicianNavBusy = false);
-      } else {
-        _aiTechnicianNavBusy = false;
-      }
-    }
-  }
 
   bool get _showInfoBanner =>
       widget.forceInfoBanner ||
@@ -332,30 +154,23 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
     }
   }
 
-  static List<Widget> _withDividers(BuildContext context, List<Widget> tiles) {
-    final line = Theme.of(
-      context,
-    ).colorScheme.outlineVariant.withValues(alpha: 0.42);
-    final out = <Widget>[];
-    for (var i = 0; i < tiles.length; i++) {
-      out.add(tiles[i]);
-      if (i < tiles.length - 1) {
-        out.add(Divider(height: 1, thickness: 1, color: line));
-      }
-    }
-    return out;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final hPad = PraniPageInsets.horizontalPadding(context);
     final maxW = pdReadableMaxWidth(context);
     final bottomPad = PraniPageInsets.bottomNavContentPadding(
       context,
       comfortGap: 28,
     );
+    final name = widget.user.name.trim();
+    final locationPreview = !widget.user.isLocationConfigured
+        ? 'লোকেশন সেটআপ করুন'
+        : MobileUser.areaLooksLikeRealUserLocation(widget.user.area)
+            ? widget.user.area!.trim()
+            : (widget.user.villageName?.trim().isNotEmpty == true
+                ? widget.user.villageName!.trim()
+                : 'ঠিকানা সংরক্ষিত');
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
@@ -390,189 +205,80 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
                           }
                         },
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: hPad),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxW),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                      const SizedBox(height: PraniSpacing.md),
+                      const ProfessionalDashboardCompact(),
                       const SizedBox(height: PraniSpacing.lg),
-                      PraniProfileSectionHeader(title: 'অ্যাকাউন্ট'),
-                      PraniPremiumCard(
-                        child: Column(
-                          children: _withDividers(context, [
-                            ProfileSettingsListTile(
-                              icon: Icons.person_outlined,
-                              title: 'আমার প্রোফাইল',
-                              onTap: () async {
-                                await ProfileHomeScreen._safePush(
-                                  context,
-                                  EditProfileScreen.routePath,
-                                );
-                                if (context.mounted) {
-                                  ref.invalidate(mobileUserProvider);
-                                }
-                              },
+                      AccountMenuSection(
+                        title: 'অ্যাকাউন্ট ও সেটিংস',
+                        helperText: 'প্রোফাইল, ঠিকানা ও অ্যাপ নিয়ন্ত্রণ',
+                        tiles: [
+                          AccountMenuTile(
+                            icon: Icons.person_outline,
+                            title: 'আমার প্রোফাইল',
+                            subtitle: name.isEmpty
+                                ? 'প্রোফাইল তথ্য যোগ করুন'
+                                : 'ব্যক্তিগত তথ্য ও যোগাযোগ',
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              EditProfileScreen.routePath,
                             ),
-                            ProfileSettingsListTile(
-                              icon: Icons.place_outlined,
-                              title: 'ঠিকানা / এলাকা',
-                              onTap: () async {
-                                await ProfileHomeScreen._safePush(
-                                  context,
-                                  EditProfileLocationScreen.routePath,
-                                );
-                                if (context.mounted) {
-                                  ref.invalidate(mobileUserProvider);
-                                }
-                              },
+                          ),
+                          AccountMenuTile(
+                            icon: Icons.place_outlined,
+                            title: 'ঠিকানা / এলাকা',
+                            subtitle: locationPreview,
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              AreaSettingScreen.routePath,
                             ),
-                            ProfileSettingsListTile(
-                              icon: Icons.biotech_outlined,
-                              title: 'এআই টেকনিশিয়ান',
-                              subtitle: 'আবেদন, অবস্থা ও ড্যাশবোর্ড',
-                              onTap: _aiTechnicianNavBusy
-                                  ? null
-                                  : () {
-                                      _onAiTechnicianTileTap();
-                                    },
+                          ),
+                          AccountMenuTile(
+                            icon: Icons.support_agent_outlined,
+                            title: 'এআই টেকনিশিয়ান',
+                            subtitle: 'আবেদন ও স্ট্যাটাস দেখুন',
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              AiTechnicianApplicationEntryScreen.routePath,
                             ),
-                            ProfileSettingsListTile(
-                              icon: Icons.list_alt_outlined,
-                              title: 'আমার এআই অনুরোধ',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                AiMyServiceRequestsScreen.routePath,
-                              ),
+                          ),
+                          AccountMenuTile(
+                            icon: Icons.history_rounded,
+                            title: 'আমার অনুরোধসমূহ',
+                            subtitle: 'সেবা অনুরোধ ও ইতিহাস',
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              AiMyServiceRequestsScreen.routePath,
                             ),
-                            ProfileSettingsListTile(
-                              icon: Icons.pets_outlined,
-                              title: 'আমার প্রাণী',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                AnimalListScreen.routePath,
-                              ),
+                          ),
+                          AccountMenuTile(
+                            icon: Icons.notifications_outlined,
+                            title: 'বিজ্ঞপ্তি',
+                            subtitle: 'আপডেট ও নোটিফিকেশন',
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              NotificationsListScreen.routePath,
                             ),
-                            ProfileSettingsListTile(
-                              icon: Icons.grid_view_outlined,
-                              title: 'আমার অনুরোধ',
-                              onTap: () {
-                                ref
-                                    .read(homeShellTabIndexProvider.notifier)
-                                    .select(2);
-                              },
+                          ),
+                          AccountMenuTile(
+                            icon: Icons.settings_outlined,
+                            title: 'সেটিংস',
+                            subtitle: 'অ্যাপ পছন্দ ও প্রাইভেসি',
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              AppSettingsScreen.routePath,
                             ),
-                          ]),
-                        ),
-                      ),
-                      const SizedBox(height: PraniSpacing.lg),
-                      PraniProfileSectionHeader(title: 'সেবা'),
-                      PraniPremiumCard(
-                        child: Column(
-                          children: _withDividers(context, [
-                            ProfileSettingsListTile(
-                              icon: Icons.history_rounded,
-                              title: 'বুকিং ইতিহাস',
-                              onTap: () {
-                                ref
-                                    .read(homeShellTabIndexProvider.notifier)
-                                    .select(2);
-                              },
+                          ),
+                          AccountMenuTile(
+                            icon: Icons.help_outline,
+                            title: 'সহায়তা ও সাপোর্ট',
+                            subtitle: 'যোগাযোগ ও নির্দেশনা',
+                            onTap: () => ProfileHomeScreen._safePush(
+                              context,
+                              HelpSupportScreen.routePath,
                             ),
-                            ProfileSettingsListTile(
-                              icon: Icons.payments_outlined,
-                              title: 'পেমেন্ট / বিলিং',
-                              onTap: () {
-                                ref
-                                    .read(homeShellTabIndexProvider.notifier)
-                                    .select(2);
-                              },
-                            ),
-                            ProfileSettingsListTile(
-                              icon: Icons.medical_information_outlined,
-                              title: 'প্রেসক্রিপশন / চিকিৎসা সারাংশ',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                KnowledgeHubHomeScreen.routePath,
-                              ),
-                            ),
-                          ]),
-                        ),
-                      ),
-                      const SizedBox(height: PraniSpacing.lg),
-                      PraniProfileSectionHeader(title: 'অ্যাপ'),
-                      PraniPremiumCard(
-                        child: Column(
-                          children: _withDividers(context, [
-                            ProfileSettingsListTile(
-                              icon: Icons.notifications_outlined,
-                              title: 'নোটিফিকেশন',
-                              trailing: ref
-                                  .watch(unreadNotificationsTotalProvider)
-                                  .when(
-                                    data: (c) => c > 0
-                                        ? Badge(
-                                            label: Text(c > 99 ? '99+' : '$c'),
-                                            child: const Icon(
-                                              Icons.chevron_right,
-                                            ),
-                                          )
-                                        : const Icon(Icons.chevron_right),
-                                    loading: () =>
-                                        const Icon(Icons.chevron_right),
-                                    error: (e, _) =>
-                                        const Icon(Icons.chevron_right),
-                                  ),
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                NotificationsListScreen.routePath,
-                              ),
-                            ),
-                            ProfileSettingsListTile(
-                              icon: Icons.settings_outlined,
-                              title: 'অ্যাপ সেটিংস',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                AppSettingsScreen.routePath,
-                              ),
-                            ),
-                            ProfileSettingsListTile(
-                              icon: Icons.support_agent_outlined,
-                              title: 'হেল্প / সাপোর্ট',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                HelpSupportScreen.routePath,
-                              ),
-                            ),
-                            ProfileSettingsListTile(
-                              icon: Icons.info_outline,
-                              title: 'প্রাণী ডাক্তার সম্পর্কে',
-                              onTap: () => ProfileHomeScreen._safePush(
-                                context,
-                                AboutScreen.routePath,
-                              ),
-                            ),
-                            ProfileSettingsListTile(
-                              icon: Icons.logout_rounded,
-                              title: 'লগআউট',
-                              onTap: () async {
-                                await showPdLogoutConfirmAndExecute(
-                                  context,
-                                  ref,
-                                );
-                              },
-                            ),
-                          ]),
-                        ),
+                          ),
+                          const LogoutTile(),
+                        ],
                       ),
                     ],
                   ),
@@ -581,33 +287,8 @@ class _ProfileScrollBodyState extends ConsumerState<_ProfileScrollBody> {
             ),
           ),
           SliverPadding(
-            padding: EdgeInsets.fromLTRB(hPad, PraniSpacing.lg, hPad, 8),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxW),
-                  child: const SupportContactCard(),
-                ),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(hPad, 8, hPad, bottomPad),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxW),
-                  child: Text(
-                    'প্রাণী ডাক্তার অ্যাপ ব্যবহারের জন্য ধন্যবাদ।',
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            padding: EdgeInsets.fromLTRB(hPad, 0, hPad, bottomPad),
+            sliver: const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
         ],
       ),

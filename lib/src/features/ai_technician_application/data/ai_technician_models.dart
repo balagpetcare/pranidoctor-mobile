@@ -2,6 +2,8 @@
 
 import 'package:flutter/foundation.dart' show debugPrint;
 
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/semen_template_models.dart';
+
 class AiTechnicianMeResult {
   const AiTechnicianMeResult({this.profile, this.serverMessage});
 
@@ -447,6 +449,11 @@ class AiTechnicianDashboardData {
     this.adminNote,
     this.correctionNote,
     this.recentReviews = const [],
+    this.monthlyNewRequestsCount,
+    this.monthlyCompletedCount,
+    this.monthlyEarningsBdt,
+    this.nearbyFarmersCount,
+    this.repeatClientsCount,
   });
 
   final AiTechnicianProfile? profile;
@@ -464,6 +471,13 @@ class AiTechnicianDashboardData {
   final String? adminNote;
   final String? correctionNote;
   final List<AiTechnicianReviewSnippet> recentReviews;
+
+  /// Optional — when backend adds `GET …/dashboard` fields, wire without schema churn.
+  final int? monthlyNewRequestsCount;
+  final int? monthlyCompletedCount;
+  final String? monthlyEarningsBdt;
+  final int? nearbyFarmersCount;
+  final int? repeatClientsCount;
 
   factory AiTechnicianDashboardData.fromJson(Map<String, dynamic> j) {
     final rawProfile = j['profile'];
@@ -495,6 +509,11 @@ class AiTechnicianDashboardData {
                 AiTechnicianReviewSnippet.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
+      monthlyNewRequestsCount: (j['monthlyNewRequestsCount'] as num?)?.toInt(),
+      monthlyCompletedCount: (j['monthlyCompletedCount'] as num?)?.toInt(),
+      monthlyEarningsBdt: j['monthlyEarningsBdt'] as String?,
+      nearbyFarmersCount: (j['nearbyFarmersCount'] as num?)?.toInt(),
+      repeatClientsCount: (j['repeatClientsCount'] as num?)?.toInt(),
     );
   }
 }
@@ -516,6 +535,13 @@ class AiTechnicianServiceRow {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.semenServiceTemplateId,
+    this.offerPrice,
+    this.discountPercent,
+    this.isAvailable = true,
+    this.technicianServiceNote,
+    this.stockSummary,
+    this.semenTemplateLocked,
   });
 
   final String id;
@@ -532,10 +558,30 @@ class AiTechnicianServiceRow {
   final String status;
   final String createdAt;
   final String updatedAt;
+  final String? semenServiceTemplateId;
+  final String? offerPrice;
+  final String? discountPercent;
+  final bool isAvailable;
+  final String? technicianServiceNote;
+  final AiTechnicianStockSummary? stockSummary;
+  final Map<String, dynamic>? semenTemplateLocked;
 
-  bool get isEditable => status == 'DRAFT' || status == 'PENDING_REVIEW';
+  bool get isTemplateBacked {
+    final id = semenServiceTemplateId?.trim();
+    return id != null && id.isNotEmpty;
+  }
+
+  /// Manual listings: only draft / pending. Template-backed: any status except rejected.
+  bool get isEditable {
+    if (isTemplateBacked) {
+      return status != 'REJECTED';
+    }
+    return status == 'DRAFT' || status == 'PENDING_REVIEW';
+  }
 
   factory AiTechnicianServiceRow.fromJson(Map<String, dynamic> j) {
+    final lockedRaw = j['semenTemplateLocked'];
+    final stockRaw = j['stockSummary'];
     return AiTechnicianServiceRow(
       id: j['id'] as String,
       aiTechnicianId: j['aiTechnicianId'] as String?,
@@ -551,6 +597,16 @@ class AiTechnicianServiceRow {
       status: j['status'] as String? ?? 'DRAFT',
       createdAt: j['createdAt'] as String? ?? '',
       updatedAt: j['updatedAt'] as String? ?? '',
+      semenServiceTemplateId: j['semenServiceTemplateId'] as String?,
+      offerPrice: j['offerPrice']?.toString(),
+      discountPercent: j['discountPercent']?.toString(),
+      isAvailable: j['isAvailable'] as bool? ?? true,
+      technicianServiceNote: j['technicianServiceNote'] as String?,
+      stockSummary: stockRaw is Map<String, dynamic>
+          ? AiTechnicianStockSummary.fromJson(stockRaw)
+          : null,
+      semenTemplateLocked:
+          lockedRaw is Map<String, dynamic> ? lockedRaw : null,
     );
   }
 
@@ -574,7 +630,34 @@ class AiTechnicianServiceRow {
   }
 
   Map<String, dynamic> toPatchBody() {
+    if (isTemplateBacked) {
+      return toTemplateBackedPatchBody();
+    }
     return toCreateBody();
+  }
+
+  /// PATCH body for template-backed services (locked catalog fields excluded).
+  Map<String, dynamic> toTemplateBackedPatchBody() {
+    return <String, dynamic>{
+      'basePrice': basePrice.trim(),
+      'visitFee': (visitFee?.trim().isEmpty ?? true) ? null : visitFee!.trim(),
+      'emergencyFee':
+          (emergencyFee?.trim().isEmpty ?? true) ? null : emergencyFee!.trim(),
+      'offerPrice':
+          (offerPrice?.trim().isEmpty ?? true) ? null : offerPrice!.trim(),
+      'discountPercent': (discountPercent?.trim().isEmpty ?? true)
+          ? null
+          : discountPercent!.trim(),
+      'isAvailable': isAvailable,
+      'technicianServiceNote':
+          (technicianServiceNote?.trim().isEmpty ?? true)
+              ? null
+              : technicianServiceNote!.trim(),
+      'repeatServicePolicy': (repeatServicePolicy?.trim().isEmpty ?? true)
+          ? null
+          : repeatServicePolicy!.trim(),
+      'followUpIncluded': followUpIncluded,
+    };
   }
 }
 

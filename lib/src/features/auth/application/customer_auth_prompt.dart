@@ -7,6 +7,7 @@ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_bottom_sheet.
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_buttons.dart';
 import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
 import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
+import 'package:pranidoctor_mobile/src/app/workspace/workspace_gate_status.dart';
 
 /// Shows a Bengali prompt and navigates to the existing customer OTP screen.
 ///
@@ -52,5 +53,7 @@ Future<void> showCustomerAuthRequiredSheet(
 
 bool isCustomerAuthenticated(WidgetRef ref) {
   final s = ref.read(sessionNotifierProvider);
-  return s.isAuthenticated && s.role == AppRole.customer;
+  return s.isAuthenticated &&
+      s.role == AppRole.customer &&
+      s.workspaceGateStatus != WorkspaceGateStatus.pending;
 }

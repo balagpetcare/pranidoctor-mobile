@@ -6,22 +6,39 @@ import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/a
 ) {
   if (error is AiTechnicianApiException) {
     final code = error.code;
-    String title;
     switch (code) {
       case 'UNAUTHORIZED':
+        return (
+          title: 'প্রবেশ প্রয়োজন',
+          message:
+              'লগইন প্রয়োজন বা সেশন শেষ হয়েছে। আবার লগইন করুন।',
+        );
       case 'FORBIDDEN':
       case 'NOT_ALLOWED':
-        title = 'প্রবেশ প্রয়োজন';
+        return (
+          title: 'অনুমতি নেই',
+          message: 'এই ড্যাশবোর্ড দেখার অনুমতি নেই।',
+        );
       case 'TIMEOUT':
       case 'NETWORK':
-        title = 'সংযোগ সমস্যা';
+        return (
+          title: 'সংযোগ সমস্যা',
+          message: error.message,
+        );
+      case 'CANCELLED':
+        return (
+          title: 'ড্যাশবোর্ড লোড হচ্ছে',
+          message: error.message,
+        );
       case 'NOT_FOUND':
       case 'NO_PROFILE':
-        title = 'তথ্য পাওয়া যায়নি';
+        return (
+          title: 'তথ্য পাওয়া যায়নি',
+          message: error.message,
+        );
       default:
-        title = 'লোড করা যায়নি';
+        return (title: 'লোড করা যায়নি', message: error.message);
     }
-    return (title: title, message: error.message);
   }
 
   final s = error.toString().toLowerCase();

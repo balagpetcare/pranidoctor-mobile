@@ -24,6 +24,21 @@ String notificationTypeLabelBn(String type) {
       return 'ফলো-আপ মনে করিয়ে';
     case 'admin_system_notice':
       return 'সিস্টেম বিজ্ঞপ্তি';
+    case 'booking_update':
+    case 'service_booking_update':
+      return 'বুকিং আপডেট';
+    case 'verification_update':
+    case 'profile_verification_update':
+      return 'যাচাইকরণ আপডেট';
+    case 'earnings_alert':
+    case 'wallet_credit':
+      return 'আয় সতর্কতা';
+    case 'appointment_reminder':
+    case 'appointment_upcoming':
+      return 'অ্যাপয়েন্ট মনে করিয়ে';
+    case 'emergency_request':
+    case 'emergency_dispatch':
+      return 'জরুরি অনুরোধ';
     default:
       final t = type.trim();
       if (t.isEmpty) return 'বিজ্ঞপ্তি';
@@ -50,6 +65,21 @@ IconData notificationTypeIcon(String type) {
       return Icons.alarm_outlined;
     case 'admin_system_notice':
       return Icons.info_outline_rounded;
+    case 'booking_update':
+    case 'service_booking_update':
+      return Icons.event_note_outlined;
+    case 'verification_update':
+    case 'profile_verification_update':
+      return Icons.verified_user_outlined;
+    case 'earnings_alert':
+    case 'wallet_credit':
+      return Icons.account_balance_wallet_outlined;
+    case 'appointment_reminder':
+    case 'appointment_upcoming':
+      return Icons.event_available_outlined;
+    case 'emergency_request':
+    case 'emergency_dispatch':
+      return Icons.emergency_outlined;
     default:
       return Icons.notifications_outlined;
   }

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/features/auth/application/customer_shell_login_navigation.dart';
+import 'package:pranidoctor_mobile/src/features/notifications/application/notification_hub_providers.dart';
 import 'package:pranidoctor_mobile/src/features/home/presentation/doctor_tab_screen.dart';
 import 'package:pranidoctor_mobile/src/features/notifications/presentation/notifications_list_screen.dart';
-import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_home_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/presentation/profile_gate_screen.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/service_requests_tab_screen.dart';
 
 import 'application/home_shell_tab_provider.dart';
@@ -32,7 +33,7 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
       case 3:
         return const NotificationsListScreen();
       case 4:
-        return const ProfileHomeScreen();
+        return const ProfileGateScreen();
       default:
         return const SizedBox.shrink();
     }
@@ -40,6 +41,7 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(notificationRealtimeInboxSyncProvider);
     final scheme = Theme.of(context).colorScheme;
     final index = ref.watch(homeShellTabIndexProvider);
     return Scaffold(

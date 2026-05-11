@@ -31,16 +31,8 @@ class AppSettingsScreen extends ConsumerWidget {
                 ProfileSettingsListTile(
                   icon: Icons.notifications_outlined,
                   title: 'বিজ্ঞপ্তি',
-                  subtitle: 'সিস্টেম সেটিংসে নিয়ন্ত্রিত',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'বিজ্ঞপ্তি সরাসরি অ্যাপ সেটিংসে পরিবর্তন শীঘ্রই যুক্ত হবে।',
-                        ),
-                      ),
-                    );
-                  },
+                  subtitle: 'ক্যাটাগরি ও লোকাল প্রিভিউ',
+                  onTap: () => context.push('/notifications/preferences'),
                 ),
                 const Divider(height: 1),
                 ProfileSettingsListTile(

@@ -17,7 +17,11 @@ Future<void> completeCustomerSessionAfterSignIn({
   String? postLoginNextPath,
 }) async {
   await ref.read(sessionNotifierProvider.notifier).signInCustomer(accessToken);
-  ref.invalidate(mobileUserProvider);
+  try {
+    ref.invalidate(mobileUserProvider);
+  } catch (_) {
+    /* Caller/widget may be unmounted — ignore invalidate failure. */
+  }
   final ctx = pdRootNavigatorKey.currentContext;
   if (ctx == null || !ctx.mounted) return;
   navigateAfterCustomerLogin(

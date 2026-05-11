@@ -27,6 +27,7 @@ class UploadRepository {
     required String filePath,
     required String fileName,
     void Function(int sent, int total)? onSendProgress,
+    CancelToken? cancelToken,
   }) async {
     try {
       final form = FormData.fromMap(<String, dynamic>{
@@ -41,6 +42,7 @@ class UploadRepository {
           headers: <String, dynamic>{Headers.acceptHeader: 'application/json'},
         ),
         onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
       );
 
       final inner = unwrapOkDataMap(res.data);

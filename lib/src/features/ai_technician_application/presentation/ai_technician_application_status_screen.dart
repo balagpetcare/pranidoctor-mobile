@@ -16,12 +16,17 @@ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_status_card.d
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_providers.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_application_form_screen.dart';
-import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_dashboard_screen.dart';
+import 'package:pranidoctor_mobile/src/features/workspace/application/workspace_surface_provider.dart';
+import 'package:pranidoctor_mobile/src/features/workspace/presentation/professional_workspace_shell_screen.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_intro_screen.dart';
+import 'package:pranidoctor_mobile/src/features/profile/application/profile_dashboard_providers.dart';
 
 /// Read-only pipeline view + correction / admin notes.
 class AiTechnicianApplicationStatusScreen extends ConsumerWidget {
-  const AiTechnicianApplicationStatusScreen({super.key});
+  const AiTechnicianApplicationStatusScreen({super.key, this.embedded = false});
+
+  /// When `true` (Profile tab shell), hide back / pop affordances.
+  final bool embedded;
 
   static const routePath = '/profile/ai-technician/status';
   static const routeName = 'aiTechnicianStatus';
@@ -34,6 +39,7 @@ class AiTechnicianApplicationStatusScreen extends ConsumerWidget {
 
     return PraniScaffold(
       title: 'আবেদনের অবস্থা',
+      showBackButton: !embedded,
       resizeToAvoidBottomInset: true,
       padding: EdgeInsets.fromLTRB(
         hPad,
@@ -43,7 +49,10 @@ class AiTechnicianApplicationStatusScreen extends ConsumerWidget {
       ),
       body: async.when(
         loading: () => const Center(
-          child: PraniLoadingState(message: 'লোড হচ্ছে…', compact: false),
+          child: PraniLoadingState(
+            message: 'আপনার আবেদন যাচাই চলছে…',
+            compact: false,
+          ),
         ),
         error: (e, _) => Center(
           child: ConstrainedBox(
@@ -77,7 +86,11 @@ class AiTechnicianApplicationStatusScreen extends ConsumerWidget {
               ),
             );
           }
-          return _StatusBody(profile: p, maxWidth: maxW);
+          return _StatusBody(
+            profile: p,
+            maxWidth: maxW,
+            embedded: embedded,
+          );
         },
       ),
     );
@@ -85,10 +98,15 @@ class AiTechnicianApplicationStatusScreen extends ConsumerWidget {
 }
 
 class _StatusBody extends ConsumerWidget {
-  const _StatusBody({required this.profile, required this.maxWidth});
+  const _StatusBody({
+    required this.profile,
+    required this.maxWidth,
+    required this.embedded,
+  });
 
   final AiTechnicianProfile profile;
   final double maxWidth;
+  final bool embedded;
 
   int _timelineIndex(String status) {
     switch (status) {
@@ -246,12 +264,20 @@ class _StatusBody extends ConsumerWidget {
                   ),
                 ),
               ),
-              if (st == 'APPROVED' || st == 'PUBLISHED') ...[
+              if (!embedded && (st == 'APPROVED' || st == 'PUBLISHED')) ...[
                 SizedBox(height: PraniFormTokens.sectionGap),
                 PraniPrimaryButton(
                   label: 'ড্যাশবোর্ড ও সার্ভিস',
-                  onPressed: () =>
-                      context.push(AiTechnicianDashboardScreen.routePath),
+                  onPressed: () async {
+                    await ref
+                        .read(workspaceSurfaceProvider.notifier)
+                        .setSurface(WorkspaceSurface.professional);
+                    if (context.mounted) {
+                      context.push(
+                        ProfessionalWorkspaceShellScreen.technicianPath,
+                      );
+                    }
+                  },
                 ),
               ],
               if (profile.isEditable) ...[
@@ -269,16 +295,23 @@ class _StatusBody extends ConsumerWidget {
                 label: 'রিফ্রেশ',
                 fullWidth: true,
                 minimumHeight: 48,
-                onPressed: () => ref.invalidate(aiTechnicianMeProvider),
+                onPressed: () {
+                  ref.invalidate(aiTechnicianMeProvider);
+                  if (embedded) {
+                    ref.invalidate(profileDashboardContextProvider);
+                  }
+                },
               ),
-              const SizedBox(height: PraniSpacing.sm),
-              PraniSecondaryButton(
-                label: 'ফিরে যান',
-                fullWidth: true,
-                minimumHeight: 48,
-                style: PraniSecondaryStyle.text,
-                onPressed: () => context.pop(),
-              ),
+              if (!embedded) ...[
+                const SizedBox(height: PraniSpacing.sm),
+                PraniSecondaryButton(
+                  label: 'ফিরে যান',
+                  fullWidth: true,
+                  minimumHeight: 48,
+                  style: PraniSecondaryStyle.text,
+                  onPressed: () => context.pop(),
+                ),
+              ],
             ],
           ),
         ),

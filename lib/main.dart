@@ -9,7 +9,7 @@ import 'package:pranidoctor_mobile/src/core/config/app_config.dart';
 
 void main() {
   runZonedGuarded(
-    () {
+    () async {
       WidgetsFlutterBinding.ensureInitialized();
 
       if (kDebugMode || AppConfig.isDevelopmentEnv) {
@@ -36,29 +36,9 @@ void main() {
     (Object error, StackTrace stack) {
       debugPrint('Uncaught zone error: $error');
       debugPrintStack(stackTrace: stack);
-      runApp(
-        MaterialApp(
-          debugShowCheckedModeBanner: false,
-          locale: const Locale('bn', 'BD'),
-          supportedLocales: const [Locale('bn', 'BD'), Locale('en', 'US')],
-          home: Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    kDebugMode
-                        ? 'চালু করতে সমস্যা হয়েছে। অ্যাপটি আবার খুলুন।\n\n$error'
-                        : 'চালু করতে সমস্যা হয়েছে। অ্যাপটি আবার খুলুন।',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, height: 1.35),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
+      // Do not call [runApp] here: bindings were initialized in the guarded
+      // body; a second [runApp] from this handler triggers Flutter's
+      // "Zone mismatch" (ensureInitialized vs runApp zones).
     },
   );
 }

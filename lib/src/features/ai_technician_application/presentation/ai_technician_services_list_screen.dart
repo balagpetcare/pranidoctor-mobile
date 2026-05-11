@@ -10,9 +10,13 @@ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_premium_card.
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_scaffold.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_providers.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_semen_template_catalog_screen.dart';
 
 class AiTechnicianServicesListScreen extends ConsumerWidget {
-  const AiTechnicianServicesListScreen({super.key});
+  const AiTechnicianServicesListScreen({super.key, this.embedded = false});
+
+  /// Inside [ProfessionalWorkspaceShellScreen] — hide duplicate app bar.
+  final bool embedded;
 
   static const routePath = '/profile/ai-technician/services';
   static const routeName = 'aiTechnicianServices';
@@ -25,7 +29,8 @@ class AiTechnicianServicesListScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return PraniScaffold(
-      title: 'কৃত্রিম প্রজনন সেবা',
+      title: embedded ? null : 'কৃত্রিম প্রজনন সেবা',
+      showBackButton: !embedded,
       resizeToAvoidBottomInset: true,
       padding: EdgeInsets.fromLTRB(
         hPad,
@@ -63,12 +68,20 @@ class AiTechnicianServicesListScreen extends ConsumerWidget {
                       '${AiTechnicianServicesListScreen.routePath}/new',
                     ),
                   ),
+                  const SizedBox(height: PraniSpacing.sm),
+                  PraniSecondaryButton(
+                    label: 'টেমপ্লেট থেকে যোগ করুন',
+                    fullWidth: true,
+                    onPressed: () => context.push(
+                      AiSemenTemplateCatalogScreen.routePath,
+                    ),
+                  ),
                 ],
               );
             }
             return ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: list.length + 1,
+              itemCount: list.length + 2,
               separatorBuilder: (_, index) =>
                   const SizedBox(height: PraniSpacing.sm),
               itemBuilder: (context, i) {
@@ -80,7 +93,16 @@ class AiTechnicianServicesListScreen extends ConsumerWidget {
                     ),
                   );
                 }
-                final s = list[i - 1];
+                if (i == 1) {
+                  return PraniSecondaryButton(
+                    label: 'টেমপ্লেট থেকে যোগ করুন',
+                    fullWidth: true,
+                    onPressed: () => context.push(
+                      AiSemenTemplateCatalogScreen.routePath,
+                    ),
+                  );
+                }
+                final s = list[i - 2];
                 return PraniPremiumCard(
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,

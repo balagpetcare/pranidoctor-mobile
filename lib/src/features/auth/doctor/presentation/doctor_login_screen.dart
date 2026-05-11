@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../session/application/session_notifier.dart';
-import '../../../home/doctor/presentation/doctor_home_screen.dart';
+import '../../../workspace/presentation/professional_workspace_shell_screen.dart';
 
 class DoctorLoginScreen extends ConsumerWidget {
   const DoctorLoginScreen({super.key});
@@ -58,7 +58,7 @@ class DoctorLoginScreen extends ConsumerWidget {
                     .read(sessionNotifierProvider.notifier)
                     .setRole(AppRole.doctor);
                 if (context.mounted) {
-                  context.go(DoctorHomeScreen.routePath);
+                  context.go(ProfessionalWorkspaceShellScreen.doctorPath);
                 }
               },
               child: const Text('চালিয়ে যান (খোলস)'),

@@ -51,14 +51,24 @@ final dioProvider = Provider<Dio>((ref) {
             path.contains('/api/mobile/auth/register') ||
             path.contains('/api/mobile/auth/login');
         final code = e.response?.statusCode;
-        final unauthorized =
-            (code == 401 || code == 403) && !isPublicMobileCustomerAuth;
+        // Only invalid/expired credentials clear the session — 403 is used for
+        // role-scoped or business-rule denials that must not wipe login.
+        final unauthorized = code == 401 && !isPublicMobileCustomerAuth;
         if (unauthorized) {
           final wasAuthed = container
               .read(sessionNotifierProvider)
               .isAuthenticated;
           if (wasAuthed) {
-            await pdPerformCustomerLogout(container);
+            try {
+              await pdPerformCustomerLogout(container);
+            } catch (e, st) {
+              assert(() {
+                debugPrint(
+                  '[PraniDoctor][dio] pdPerformCustomerLogout failed: $e\n$st',
+                );
+                return true;
+              }());
+            }
             final ctx = pdRootNavigatorKey.currentContext;
             if (ctx != null && ctx.mounted) {
               final loc = GoRouterState.of(ctx).uri.path;

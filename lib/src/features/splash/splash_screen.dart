@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../app/routing/app_route_policy.dart';
 import '../../core/assets/prani_assets.dart';
 import '../../design_system/prani_tokens.dart';
+import '../../features/profile/application/profile_dashboard_providers.dart';
+import '../../features/session/application/session_notifier.dart';
+import '../../features/workspace/application/workspace_surface_provider.dart';
+import '../../features/session/presentation/workspace_gate_screen.dart';
+import '../../app/workspace/workspace_gate_status.dart';
 import '../home/home_shell_screen.dart';
 import '../onboarding/onboarding_screen.dart';
-import '../session/application/session_notifier.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -51,6 +58,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       await Future.wait<void>([
         minDelay,
         ref.read(sessionNotifierProvider.notifier).hydrateFromStorage(),
+        ref.read(workspaceSurfaceProvider.notifier).hydrateFromPrefs(),
       ]);
     } catch (e, st) {
       debugPrint('hydrateFromStorage failed: $e');
@@ -68,6 +76,45 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       if (!done) {
         context.go(OnboardingScreen.routePath);
       } else {
+        final session = ref.read(sessionNotifierProvider);
+
+        if (session.isAuthenticated &&
+            session.workspaceGateStatus == WorkspaceGateStatus.pending) {
+          context.go(WorkspaceGateScreen.routePath);
+          return;
+        }
+
+        if (session.isAuthenticated) {
+          final surface = ref.read(workspaceSurfaceProvider);
+          final role = session.role;
+          final prefersGeneralHome = surface == WorkspaceSurface.general &&
+              (role == AppRole.aiTechnician || role == AppRole.doctor);
+          if (prefersGeneralHome) {
+            context.go(HomeShellScreen.routePath);
+          } else {
+            context.go(defaultLocationForSession(session));
+          }
+          unawaited(
+            ref.read(sessionNotifierProvider.notifier).refreshWorkspaceRoleFromApi(
+                  ref.read(profileDashboardRepositoryProvider).fetchDashboardContext(),
+                ),
+          );
+          return;
+        }
+
+        if (session.professionalShellActive && session.role != null) {
+          final surface = ref.read(workspaceSurfaceProvider);
+          final role = session.role;
+          final prefersGeneralHome = surface == WorkspaceSurface.general &&
+              (role == AppRole.aiTechnician || role == AppRole.doctor);
+          if (prefersGeneralHome) {
+            context.go(HomeShellScreen.routePath);
+          } else {
+            context.go(defaultLocationForSession(session));
+          }
+          return;
+        }
+
         context.go(HomeShellScreen.routePath);
       }
     } catch (e, st) {

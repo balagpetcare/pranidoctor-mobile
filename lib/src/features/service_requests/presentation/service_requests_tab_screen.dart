@@ -13,6 +13,15 @@ import 'package:pranidoctor_mobile/src/features/billing/presentation/widgets/cus
 import 'package:pranidoctor_mobile/src/features/service_requests/application/service_requests_providers.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_model.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/data/service_request_repository.dart';
+import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/application/livestock_booking_providers.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/domain/service_request_booking_mapper.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/presentation/widgets/livestock_booking_status_banner.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/presentation/widgets/livestock_booking_timeline.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/presentation/widgets/service_request_attachments_section.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/presentation/widgets/service_request_notes_section.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/presentation/booking_history_screen.dart';
+import 'package:pranidoctor_mobile/src/features/livestock_booking/presentation/widgets/livestock_service_request_card.dart';
 import 'package:pranidoctor_mobile/src/features/service_requests/presentation/booking_wizard_screen.dart';
 
 class ServiceRequestsTabScreen extends ConsumerWidget {
@@ -53,7 +62,16 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
         10.0 + MediaQuery.viewPaddingOf(context).bottom.clamp(0.0, 24.0);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('অনুরোধ')),
+      appBar: AppBar(
+        title: const Text('অনুরোধ'),
+        actions: [
+          IconButton(
+            tooltip: 'বুকিং ইতিহাস',
+            icon: const Icon(Icons.history_rounded),
+            onPressed: () => context.push(BookingHistoryScreen.routePath),
+          ),
+        ],
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: bottomFabPad),
@@ -192,9 +210,10 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 final r = items[i];
-                return _ServiceRequestListCard(
-                  serviceLabel: r.serviceType.labelBn,
-                  statusAndDate:
+                return LivestockServiceRequestCard(
+                  title: r.serviceType.labelBn,
+                  phaseLabelBn: livestockBookingPhaseFor(r).labelBn,
+                  submittedLine:
                       '${r.status.labelBn} · ${_formatSubmitted(r.submittedAt)}',
                   onTap: () => context.push(
                     ServiceRequestDetailScreen.routePathFor(r.id),
@@ -211,72 +230,6 @@ class ServiceRequestsTabScreen extends ConsumerWidget {
   static String _formatSubmitted(DateTime t) {
     final d = t.toLocal();
     return '${d.day}/${d.month}/${d.year}';
-  }
-}
-
-class _ServiceRequestListCard extends StatelessWidget {
-  const _ServiceRequestListCard({
-    required this.serviceLabel,
-    required this.statusAndDate,
-    required this.onTap,
-  });
-
-  final String serviceLabel;
-  final String statusAndDate;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      serviceLabel,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.32,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      statusAndDate,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.35,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: scheme.outline,
-                size: 22,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -321,7 +274,13 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
             ),
           ),
         ),
-        data: (r) => ListView(
+        data: (r) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(serviceRequestDetailProvider(requestId));
+            ref.invalidate(livestockServiceRequestLiveProvider(requestId));
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 32),
           children: [
             PraniBrandHero(
@@ -331,7 +290,22 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
               semanticLabel: 'অনুরোধ ট্র্যাকিং ও খামার সেবা',
             ),
             const SizedBox(height: 16),
-            _StatusBanner(status: r.status),
+            LivestockBookingStatusBanner(
+              phase: livestockBookingPhaseFor(r),
+              apiStatusLabelBn: r.status.labelBn,
+            ),
+            const SizedBox(height: 16),
+            LivestockBookingPhaseProgressRow(
+              current: livestockBookingPhaseFor(r),
+            ),
+            const SizedBox(height: PraniSpacing.lg),
+            LivestockBookingTimelineList(
+              rows: buildLivestockBookingTimeline(r),
+            ),
+            const SizedBox(height: PraniSpacing.lg),
+            ServiceRequestNotesSection(notes: r.notes),
+            const SizedBox(height: PraniSpacing.md),
+            ServiceRequestAttachmentsSection(attachments: r.attachments),
             const SizedBox(height: 16),
             CustomerBillingSummaryCard(
               summary: _customerBillingForDisplay(r),
@@ -339,7 +313,6 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             _DetailSection(title: 'সেবার ধরন', body: r.serviceType.labelBn),
-            _DetailSection(title: 'স্ট্যাটাস', body: r.status.labelBn),
             if (r.assignedDoctorDisplayName != null)
               _DetailSection(
                 title: 'নিয়োজিত ডাক্তার',
@@ -414,6 +387,7 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
             ],
           ],
         ),
+        ),
       ),
     );
   }
@@ -486,6 +460,7 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
             .cancel(id, cancelReason: reason.isEmpty ? null : reason);
         if (!context.mounted) return;
         ref.invalidate(serviceRequestDetailProvider(id));
+        ref.invalidate(livestockServiceRequestLiveProvider(id));
         ref.invalidate(serviceRequestsListProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('অনুরোধ বাতিল করা হয়েছে')),
@@ -499,45 +474,6 @@ class ServiceRequestDetailScreen extends ConsumerWidget {
     } finally {
       reasonCtrl.dispose();
     }
-  }
-}
-
-class _StatusBanner extends StatelessWidget {
-  const _StatusBanner({required this.status});
-
-  final ServiceRequestStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bg = switch (status) {
-      ServiceRequestStatus.PENDING => scheme.secondaryContainer,
-      ServiceRequestStatus.ASSIGNED ||
-      ServiceRequestStatus.ACCEPTED ||
-      ServiceRequestStatus.IN_PROGRESS => scheme.tertiaryContainer,
-      ServiceRequestStatus.CANCELLED ||
-      ServiceRequestStatus.REJECTED => scheme.errorContainer,
-      ServiceRequestStatus.COMPLETED => scheme.primaryContainer,
-    };
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Icon(Icons.flag_outlined, color: scheme.onSecondaryContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                status.labelBn,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

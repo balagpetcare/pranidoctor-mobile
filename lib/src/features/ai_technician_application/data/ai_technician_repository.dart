@@ -6,6 +6,7 @@ import 'package:pranidoctor_mobile/src/features/ai_farmer_services/data/ai_digit
 import 'package:pranidoctor_mobile/src/features/ai_farmer_services/data/ai_farmer_services_models.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/semen_template_models.dart';
 
 class AiTechnicianRepository {
   AiTechnicianRepository(this._client);
@@ -280,6 +281,139 @@ class AiTechnicianRepository {
         throw AiTechnicianApiException('অপ্রত্যাশিত উত্তর');
       }
       return AiTechnicianServiceRow.fromJson(s);
+    } on AiTechnicianApiException {
+      rethrow;
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  static const _semenTemplates = '/api/mobile/ai-technician/semen-templates';
+  static const _fromTemplate = '/api/mobile/ai-technician/services/from-template';
+
+  Future<({int total, List<SemenTemplateCatalogRow> templates})>
+      listSemenTemplates({
+    String? animalType,
+    String? providerId,
+    int limit = 30,
+    int offset = 0,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final res = await _client.get<dynamic>(
+        _semenTemplates,
+        queryParameters: <String, dynamic>{
+          if (animalType != null && animalType.trim().isNotEmpty)
+            'animalType': animalType.trim(),
+          if (providerId != null && providerId.trim().isNotEmpty)
+            'providerId': providerId.trim(),
+          'limit': limit,
+          'offset': offset,
+        },
+        cancelToken: cancelToken,
+      );
+      final inner = _unwrap(res);
+      final total = (inner['total'] as num?)?.toInt() ?? 0;
+      final raw = inner['templates'];
+      if (raw is! List<dynamic>) {
+        throw AiTechnicianApiException('অপ্রত্যাশিত টেমপ্লেট তালিকা');
+      }
+      final templates = raw
+          .map(
+            (e) => SemenTemplateCatalogRow.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+      return (total: total, templates: templates);
+    } on AiTechnicianApiException {
+      rethrow;
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<SemenTemplateCatalogRow> getSemenTemplate(
+    String id, {
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final res = await _client.get<dynamic>(
+        '$_semenTemplates/$id',
+        cancelToken: cancelToken,
+      );
+      final inner = _unwrap(res);
+      final t = inner['template'];
+      if (t is! Map<String, dynamic>) {
+        throw AiTechnicianApiException('টেমপ্লেট পাওয়া যায়নি');
+      }
+      return SemenTemplateCatalogRow.fromJson(t);
+    } on AiTechnicianApiException {
+      rethrow;
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<AiTechnicianServiceRow> createServiceFromTemplate(
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final res = await _client.post<dynamic>(_fromTemplate, data: body);
+      final inner = _unwrap(res);
+      final s = inner['service'];
+      if (s is! Map<String, dynamic>) {
+        throw AiTechnicianApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return AiTechnicianServiceRow.fromJson(s);
+    } on AiTechnicianApiException {
+      rethrow;
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<List<SemenInventoryLotRow>> listSemenInventoryLots(
+    String serviceId, {
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final res = await _client.get<dynamic>(
+        '$_services/$serviceId/semen-inventory',
+        cancelToken: cancelToken,
+      );
+      final inner = _unwrap(res);
+      final raw = inner['lots'];
+      if (raw is! List<dynamic>) {
+        throw AiTechnicianApiException('অপ্রত্যাশিত স্টক তালিকা');
+      }
+      return raw
+          .map(
+            (e) => SemenInventoryLotRow.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+    } on AiTechnicianApiException {
+      rethrow;
+    } on DioException catch (e) {
+      throw _mapDio(e);
+    }
+  }
+
+  Future<SemenInventoryLotRow> createSemenInventoryLot({
+    required String serviceId,
+    required Map<String, dynamic> body,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final res = await _client.post<dynamic>(
+        '$_services/$serviceId/semen-inventory',
+        data: body,
+        cancelToken: cancelToken,
+      );
+      final inner = _unwrap(res);
+      final lot = inner['lot'];
+      if (lot is! Map<String, dynamic>) {
+        throw AiTechnicianApiException('অপ্রত্যাশিত উত্তর');
+      }
+      return SemenInventoryLotRow.fromJson(lot);
     } on AiTechnicianApiException {
       rethrow;
     } on DioException catch (e) {

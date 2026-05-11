@@ -27,6 +27,8 @@ abstract final class MobileUploadPurpose {
       'AI_TECHNICIAN_TRAINING_CERTIFICATE';
   static const aiTechnicianAiCertificate = 'AI_TECHNICIAN_AI_CERTIFICATE';
   static const aiTechnicianOther = 'AI_TECHNICIAN_OTHER';
+  static const customerProfilePhoto = 'CUSTOMER_PROFILE_PHOTO';
+  static const customerCoverImage = 'CUSTOMER_COVER_IMAGE';
 }
 
 /// Maps Prisma `AiTechnicianDocumentType` string to upload `purpose`.

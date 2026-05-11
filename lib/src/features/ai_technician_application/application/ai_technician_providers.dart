@@ -1,10 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pranidoctor_mobile/src/core/network/api_client.dart';
 import 'package:pranidoctor_mobile/src/features/ai_farmer_services/data/ai_farmer_services_models.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_request_pipeline_counts.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_repository.dart';
 
@@ -13,21 +13,17 @@ final aiTechnicianRepositoryProvider = Provider<AiTechnicianRepository>((ref) {
 });
 
 /// Latest `GET /api/mobile/ai-technician/me` for the logged-in customer.
+///
+/// No [CancelToken]: cancelling on autoDispose caused spurious
+/// [AiTechnicianApiException] `(CANCELLED)` during navigation and duplicate
+/// invalidations (Profile prefetch + entry resolver).
 final aiTechnicianMeProvider = FutureProvider.autoDispose<AiTechnicianMeResult>(
   (ref) async {
-    final cancel = CancelToken();
-    ref.onDispose(() {
-      if (!cancel.isCancelled) {
-        cancel.cancel('Provider disposed');
-      }
-    });
     if (kDebugMode) {
       debugPrint('aiTechnicianMeProvider: loading');
     }
     try {
-      final me = await ref
-          .read(aiTechnicianRepositoryProvider)
-          .fetchMe(cancelToken: cancel);
+      final me = await ref.read(aiTechnicianRepositoryProvider).fetchMe();
       if (kDebugMode) {
         debugPrint(
           'aiTechnicianMeProvider: success profile=${me.profile != null}',
@@ -36,7 +32,11 @@ final aiTechnicianMeProvider = FutureProvider.autoDispose<AiTechnicianMeResult>(
       return me;
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('aiTechnicianMeProvider: error $e\n$st');
+        if (isCancelledAiTechnicianError(e)) {
+          debugPrint('aiTechnicianMeProvider: cancelled (non-fatal) $e');
+        } else {
+          debugPrint('aiTechnicianMeProvider: error $e\n$st');
+        }
       }
       rethrow;
     }
@@ -45,19 +45,15 @@ final aiTechnicianMeProvider = FutureProvider.autoDispose<AiTechnicianMeResult>(
 
 final aiTechnicianDashboardProvider =
     FutureProvider.autoDispose<AiTechnicianDashboardData>((ref) async {
-      final cancel = CancelToken();
-      ref.onDispose(() {
-        if (!cancel.isCancelled) {
-          cancel.cancel('Provider disposed');
-        }
-      });
+      Future<AiTechnicianDashboardData> fetchOnce() async {
+        return ref.read(aiTechnicianRepositoryProvider).fetchDashboard();
+      }
+
       if (kDebugMode) {
         debugPrint('aiTechnicianDashboardProvider: loading');
       }
       try {
-        final data = await ref
-            .read(aiTechnicianRepositoryProvider)
-            .fetchDashboard(cancelToken: cancel);
+        final data = await fetchOnce();
         if (kDebugMode) {
           debugPrint(
             'aiTechnicianDashboardProvider: success '
@@ -66,6 +62,37 @@ final aiTechnicianDashboardProvider =
         }
         return data;
       } catch (e, st) {
+        if (isCancelledAiTechnicianError(e)) {
+          if (kDebugMode) {
+            debugPrint(
+              'aiTechnicianDashboardProvider: cancelled — retry once after settle',
+            );
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+          try {
+            final retry = await fetchOnce();
+            if (kDebugMode) {
+              debugPrint(
+                'aiTechnicianDashboardProvider: retry ok '
+                'profile=${retry.profile != null}',
+              );
+            }
+            return retry;
+          } catch (e2, st2) {
+            if (kDebugMode) {
+              if (isCancelledAiTechnicianError(e2)) {
+                debugPrint(
+                  'aiTechnicianDashboardProvider: cancelled again (non-fatal) $e2',
+                );
+              } else {
+                debugPrint(
+                  'aiTechnicianDashboardProvider: retry error $e2\n$st2',
+                );
+              }
+            }
+            rethrow;
+          }
+        }
         if (kDebugMode) {
           debugPrint('aiTechnicianDashboardProvider: error $e\n$st');
         }
@@ -80,12 +107,6 @@ final aiTechnicianRequestPipelineCountsProvider =
     FutureProvider.autoDispose<Map<String, AiTechnicianRequestPipelineCount>>((
       ref,
     ) async {
-      final cancel = CancelToken();
-      ref.onDispose(() {
-        if (!cancel.isCancelled) {
-          cancel.cancel('Provider disposed');
-        }
-      });
       if (kDebugMode) {
         debugPrint('aiTechnicianRequestPipelineCountsProvider: loading');
       }
@@ -105,7 +126,6 @@ final aiTechnicianRequestPipelineCountsProvider =
             tab: tab,
             limit: 200,
             offset: 0,
-            cancelToken: cancel,
           );
           return MapEntry(
             tab,

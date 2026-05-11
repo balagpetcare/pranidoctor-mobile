@@ -11,10 +11,11 @@ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_info_card.dar
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_loading_state.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_providers.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_api_exception.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_application_form_screen.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_application_status_screen.dart';
-import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_dashboard_screen.dart';
-import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_intro_screen.dart';
+import 'package:pranidoctor_mobile/src/features/workspace/application/workspace_surface_provider.dart';
+import 'package:pranidoctor_mobile/src/features/workspace/presentation/professional_workspace_shell_screen.dart';
 import 'package:pranidoctor_mobile/src/features/auth/login_entry_screen.dart';
 import 'package:pranidoctor_mobile/src/features/session/application/session_notifier.dart';
 
@@ -40,10 +41,16 @@ class _AiTechnicianApplicationEntryScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _resolve());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (kDebugMode) {
+        debugPrint('AiTechnician ENTRY: start route=${AiTechnicianApplicationEntryScreen.routePath}');
+      }
+      _resolve();
+    });
   }
 
-  Future<void> _resolve() async {
+  /// [forceRefresh]: invalidate cached `/me` before loading (user retry).
+  Future<void> _resolve({bool forceRefresh = false, int recoverAttempt = 0}) async {
     if (!mounted) return;
     setState(() {
       _busy = true;
@@ -57,121 +64,168 @@ class _AiTechnicianApplicationEntryScreenState
         _busy = false;
         _needsLogin = true;
       });
+      if (kDebugMode) {
+        debugPrint('AiTechnician ENTRY: decision=needs_login');
+      }
       return;
     }
 
     try {
-      ref.invalidate(aiTechnicianMeProvider);
+      if (forceRefresh) {
+        ref.invalidate(aiTechnicianMeProvider);
+      }
       final me = await ref.read(aiTechnicianMeProvider.future);
       if (!mounted) return;
 
       if (kDebugMode) {
-        debugPrint(
-          'AiTechnician ENTRY API success: profile=${me.profile != null}',
-        );
-      }
-      if (me.profile == null) {
-        if (kDebugMode) {
-          debugPrint(
-            'AiTechnician ENTRY route=/profile/ai-technician/entry → intro (new user)',
-          );
-        }
-        if (!context.mounted) return;
-        context.pushReplacement(AiTechnicianIntroScreen.routePath);
-        return;
+        final label = me.profile == null
+            ? 'not_found'
+            : '${me.profile!.status} editable=${me.profile!.isEditable}';
+        debugPrint('AiTechnician ENTRY: me=$label');
       }
 
-      final p = me.profile!;
-      if (kDebugMode) {
-        debugPrint(
-          'AiTechnician ENTRY route=/profile/ai-technician/entry '
-          'status=${p.status} isEditable=${p.isEditable}',
-        );
-      }
-
-      if (p.isEditable) {
-        final prefs = await SharedPreferences.getInstance();
-        final uid = p.userId;
-        int? initialFromPrefs;
-        if (prefs.getString(
-              AiTechnicianApplicationFormScreen.kWizardUserPrefsKey,
-            ) ==
-            uid) {
-          final s = AiTechnicianApplicationFormScreen.readWizardStepForResume(
-            prefs,
-            uid,
-          );
-          if (s != null) {
-            initialFromPrefs = s.clamp(
-              0,
-              AiTechnicianApplicationFormScreen.totalSteps - 1,
-            );
-          }
-        }
-        if (!mounted) return;
-        if (kDebugMode) {
-          debugPrint(
-            'AiTechnician ENTRY → form initialStep=$initialFromPrefs '
-            '(DRAFT / editable)',
-          );
-        }
-        if (!context.mounted) return;
-        context.pushReplacement(
-          AiTechnicianApplicationFormScreen.routePath,
-          extra: initialFromPrefs,
-        );
-        return;
-      }
-
-      final st = p.status;
-      if (st == 'APPROVED' || st == 'PUBLISHED') {
-        if (!mounted) return;
-        if (kDebugMode) {
-          debugPrint('AiTechnician ENTRY → dashboard status=$st');
-        }
-        if (!context.mounted) return;
-        context.pushReplacement(AiTechnicianDashboardScreen.routePath);
-        return;
-      }
-
-      const submittedLike = {
-        'SUBMITTED',
-        'UNDER_REVIEW',
-        'PENDING_VERIFICATION',
-      };
-      if (submittedLike.contains(st)) {
-        if (!mounted) return;
-        if (kDebugMode) {
-          debugPrint(
-            'AiTechnician ENTRY → status (submitted pipeline) status=$st',
-          );
-        }
-        if (!context.mounted) return;
-        context.pushReplacement(AiTechnicianApplicationStatusScreen.routePath);
-        return;
-      }
-
-      if (!mounted) return;
-      if (kDebugMode) {
-        debugPrint('AiTechnician ENTRY → status (default) status=$st');
-      }
-      if (!context.mounted) return;
-      context.pushReplacement(AiTechnicianApplicationStatusScreen.routePath);
+      await _routeFromMe(me);
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('AiTechnician ENTRY API error: $e\n$st');
+        debugPrint('AiTechnician ENTRY: error=$e attempt=$recoverAttempt\n$st');
       }
+
+      if (isCancelledAiTechnicianError(e) && recoverAttempt < 2) {
+        if (kDebugMode) {
+          debugPrint(
+            'AiTechnician ENTRY: status=cancelled → retry '
+            'attempt=${recoverAttempt + 1}',
+          );
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        if (!mounted) return;
+        return _resolve(forceRefresh: true, recoverAttempt: recoverAttempt + 1);
+      }
+
+      if (isCancelledAiTechnicianError(e)) {
+        if (kDebugMode) {
+          debugPrint(
+            'AiTechnician ENTRY: cancelled after retries — staying idle',
+          );
+        }
+        if (!mounted) return;
+        setState(() {
+          _busy = false;
+          _error = null;
+        });
+        return;
+      }
+
       if (!mounted) return;
       setState(() {
         _busy = false;
         _error = e;
       });
+      if (kDebugMode) {
+        debugPrint('AiTechnician ENTRY: decision=error_ui');
+      }
     }
+  }
+
+  Future<void> _routeFromMe(AiTechnicianMeResult me) async {
+    if (me.profile == null) {
+      if (kDebugMode) {
+        debugPrint(
+          'AiTechnician ENTRY: decision=not_found → ${AiTechnicianApplicationFormScreen.routePath}',
+        );
+      }
+      if (!mounted) return;
+      if (!context.mounted) return;
+      context.pushReplacement(
+        AiTechnicianApplicationFormScreen.routePath,
+        extra: 0,
+      );
+      return;
+    }
+
+    final p = me.profile!;
+    if (p.isEditable) {
+      final prefs = await SharedPreferences.getInstance();
+      final uid = p.userId;
+      int? initialFromPrefs;
+      if (prefs.getString(
+            AiTechnicianApplicationFormScreen.kWizardUserPrefsKey,
+          ) ==
+          uid) {
+        final s = AiTechnicianApplicationFormScreen.readWizardStepForResume(
+          prefs,
+          uid,
+        );
+        if (s != null) {
+          initialFromPrefs = s.clamp(
+            0,
+            AiTechnicianApplicationFormScreen.totalSteps - 1,
+          );
+        }
+      }
+      if (!mounted) return;
+      if (kDebugMode) {
+        debugPrint(
+          'AiTechnician ENTRY: decision=draft_form step=$initialFromPrefs',
+        );
+      }
+      if (!context.mounted) return;
+      context.pushReplacement(
+        AiTechnicianApplicationFormScreen.routePath,
+        extra: initialFromPrefs,
+      );
+      return;
+    }
+
+    final st = p.status;
+    if (st == 'APPROVED' || st == 'PUBLISHED') {
+      if (!mounted) return;
+      if (kDebugMode) {
+        debugPrint(
+          'AiTechnician ENTRY: decision=approved → ${ProfessionalWorkspaceShellScreen.technicianPath}',
+        );
+      }
+      await ref
+          .read(workspaceSurfaceProvider.notifier)
+          .setSurface(WorkspaceSurface.professional);
+      if (!mounted) return;
+      context.pushReplacement(ProfessionalWorkspaceShellScreen.technicianPath);
+      return;
+    }
+
+    const submittedLike = {
+      'SUBMITTED',
+      'UNDER_REVIEW',
+      'PENDING_VERIFICATION',
+    };
+    if (submittedLike.contains(st)) {
+      if (!mounted) return;
+      if (kDebugMode) {
+        debugPrint(
+          'AiTechnician ENTRY: decision=pending_pipeline → ${AiTechnicianApplicationStatusScreen.routePath}',
+        );
+      }
+      if (!context.mounted) return;
+      context.pushReplacement(AiTechnicianApplicationStatusScreen.routePath);
+      return;
+    }
+
+    if (!mounted) return;
+    if (kDebugMode) {
+      debugPrint(
+        'AiTechnician ENTRY: decision=status_default → ${AiTechnicianApplicationStatusScreen.routePath} ($st)',
+      );
+    }
+    if (!context.mounted) return;
+    context.pushReplacement(AiTechnicianApplicationStatusScreen.routePath);
   }
 
   String _errorMessage(Object e) {
     if (e is AiTechnicianApiException) {
       final c = e.code;
+      if (c == 'CANCELLED') {
+        return 'অনুরোধ সম্পূর্ণ হয়নি। আবার চেষ্টা করুন।';
+      }
       if (c == 'FORBIDDEN') {
         return 'গ্রাহক প্রোফাইল প্রয়োজন বা অনুমতি নেই। প্রোফাইল ট্যাবে যান।';
       }
@@ -183,7 +237,6 @@ class _AiTechnicianApplicationEntryScreenState
       }
       return e.message;
     }
-    // For non-API exceptions (provider errors, state issues, etc.)
     if (kDebugMode) {
       return 'আবেদন লোড করতে সমস্যা: ${e.toString()}';
     }
@@ -253,7 +306,7 @@ class _AiTechnicianApplicationEntryScreenState
                             title: 'খোলা যায়নি',
                             message: _errorMessage(_error ?? 'অজানা ত্রুটি'),
                             retryLabel: 'আবার চেষ্টা',
-                            onRetry: _resolve,
+                            onRetry: () => _resolve(forceRefresh: true),
                             boxed: true,
                           ),
                         ),

@@ -15,6 +15,7 @@ import 'package:pranidoctor_mobile/src/design_system/widgets/prani_scaffold.dart
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_providers.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_api_exception.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_technician_services_list_screen.dart';
 
 class AiTechnicianServiceFormScreen extends ConsumerStatefulWidget {
   const AiTechnicianServiceFormScreen({super.key, this.serviceId});
@@ -40,8 +41,12 @@ class _AiTechnicianServiceFormScreenState
   late final TextEditingController _visitFee;
   late final TextEditingController _emergencyFee;
   late final TextEditingController _repeatPolicy;
+  late final TextEditingController _offerPrice;
+  late final TextEditingController _discountPercent;
+  late final TextEditingController _technicianNote;
   String _animalType = AiTechnicianAnimalTypes.values.first;
   bool _followUp = false;
+  bool _isAvailable = true;
   bool _loading = true;
   String? _loadError;
   bool _saving = false;
@@ -59,6 +64,9 @@ class _AiTechnicianServiceFormScreenState
     _visitFee = TextEditingController();
     _emergencyFee = TextEditingController();
     _repeatPolicy = TextEditingController();
+    _offerPrice = TextEditingController();
+    _discountPercent = TextEditingController();
+    _technicianNote = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
@@ -71,6 +79,9 @@ class _AiTechnicianServiceFormScreenState
     _visitFee.dispose();
     _emergencyFee.dispose();
     _repeatPolicy.dispose();
+    _offerPrice.dispose();
+    _discountPercent.dispose();
+    _technicianNote.dispose();
     super.dispose();
   }
 
@@ -113,6 +124,10 @@ class _AiTechnicianServiceFormScreenState
       _repeatPolicy.text = row.repeatServicePolicy ?? '';
       _animalType = row.animalType;
       _followUp = row.followUpIncluded;
+      _isAvailable = row.isAvailable;
+      _offerPrice.text = row.offerPrice ?? '';
+      _discountPercent.text = row.discountPercent ?? '';
+      _technicianNote.text = row.technicianServiceNote ?? '';
       setState(() => _loading = false);
     } catch (e) {
       if (!mounted) return;
@@ -147,6 +162,15 @@ class _AiTechnicianServiceFormScreenState
       status: _existing?.status ?? 'DRAFT',
       createdAt: _existing?.createdAt ?? '',
       updatedAt: _existing?.updatedAt ?? '',
+      semenServiceTemplateId: _existing?.semenServiceTemplateId,
+      offerPrice: _offerPrice.text.trim().isEmpty ? null : _offerPrice.text.trim(),
+      discountPercent:
+          _discountPercent.text.trim().isEmpty ? null : _discountPercent.text.trim(),
+      isAvailable: _isAvailable,
+      technicianServiceNote:
+          _technicianNote.text.trim().isEmpty ? null : _technicianNote.text.trim(),
+      stockSummary: _existing?.stockSummary,
+      semenTemplateLocked: _existing?.semenTemplateLocked,
     );
   }
 
@@ -155,7 +179,7 @@ class _AiTechnicianServiceFormScreenState
     setState(() => _saving = true);
     try {
       final draft = _draftFromForm();
-      final body = draft.toCreateBody();
+      final body = _isEdit ? draft.toPatchBody() : draft.toCreateBody();
       if (_isEdit) {
         await ref
             .read(aiTechnicianRepositoryProvider)
@@ -230,6 +254,8 @@ class _AiTechnicianServiceFormScreenState
     final textTheme = Theme.of(context).textTheme;
     final kb = MediaQuery.viewInsetsOf(context).bottom;
     final editable = _existing == null || _existing!.isEditable;
+    final templateLocked = _existing?.isTemplateBacked ?? false;
+    final editableCatalog = editable && !templateLocked;
 
     return PraniScaffold(
       title: _isEdit ? 'সার্ভিস সম্পাদনা' : 'নতুন সার্ভিস',
@@ -279,6 +305,42 @@ class _AiTechnicianServiceFormScreenState
                         ),
                       ),
                     ),
+                  if (_isEdit && _existing != null && templateLocked)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: PraniSpacing.md),
+                      child: PraniFormCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'টেমপ্লেট সার্ভিস',
+                              style: textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: PraniSpacing.sm),
+                            Text(
+                              _existing!.semenTemplateLocked?['internalName']
+                                      ?.toString() ??
+                                  _existing!.title,
+                            ),
+                            if (_existing!.stockSummary != null) ...[
+                              const SizedBox(height: PraniSpacing.sm),
+                              Text(
+                                'স্টক: উপলব্ধ ${_existing!.stockSummary!.totalAvailable} '
+                                '(${_existing!.stockSummary!.lotsCount} লট)',
+                              ),
+                            ],
+                            const SizedBox(height: PraniSpacing.sm),
+                            PraniSecondaryButton(
+                              label: 'স্টক লট পরিচালনা',
+                              fullWidth: true,
+                              onPressed: () => context.push(
+                                '${AiTechnicianServicesListScreen.routePath}/${_existing!.id}/semen-inventory',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   if (_isEdit && _existing != null && !editable)
                     Padding(
                       padding: const EdgeInsets.only(bottom: PraniSpacing.md),
@@ -293,7 +355,7 @@ class _AiTechnicianServiceFormScreenState
                       children: [
                         PraniTextField(
                           controller: _title,
-                          enabled: editable && !_saving,
+                          enabled: editableCatalog && !_saving,
                           decoration: const InputDecoration(
                             labelText: 'সার্ভিসের শিরোনাম',
                             hintText: 'কৃত্রিম প্রজনন সেবা',
@@ -308,7 +370,7 @@ class _AiTechnicianServiceFormScreenState
                         SizedBox(height: PraniFormTokens.fieldGap),
                         PraniDropdownField<String>(
                           value: _animalType,
-                          enabled: editable && !_saving,
+                          enabled: editableCatalog && !_saving,
                           decoration: const InputDecoration(
                             labelText: 'প্রাণীর ধরন',
                           ),
@@ -322,7 +384,7 @@ class _AiTechnicianServiceFormScreenState
                                 ),
                               )
                               .toList(),
-                          onChanged: (!editable || _saving)
+                          onChanged: (!editableCatalog || _saving)
                               ? null
                               : (v) {
                                   if (v != null) {
@@ -333,7 +395,7 @@ class _AiTechnicianServiceFormScreenState
                         SizedBox(height: PraniFormTokens.fieldGap),
                         PraniTextField(
                           controller: _breed,
-                          enabled: editable && !_saving,
+                          enabled: editableCatalog && !_saving,
                           decoration: const InputDecoration(
                             labelText: 'জাত / সিমেন টাইপ (ঐচ্ছিক)',
                           ),
@@ -341,7 +403,7 @@ class _AiTechnicianServiceFormScreenState
                         SizedBox(height: PraniFormTokens.fieldGap),
                         PraniTextArea(
                           controller: _description,
-                          enabled: editable && !_saving,
+                          enabled: editableCatalog && !_saving,
                           minLines: 3,
                           maxLines: 6,
                           decoration: const InputDecoration(
@@ -397,6 +459,56 @@ class _AiTechnicianServiceFormScreenState
                             labelText: 'জরুরি সেবা ফি (৳, ঐচ্ছিক)',
                           ),
                         ),
+                        if (templateLocked) ...[
+                          SizedBox(height: PraniFormTokens.fieldGap),
+                          PraniTextField(
+                            controller: _offerPrice,
+                            enabled: editable && !_saving,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'অফার মূল্য (৳, ঐচ্ছিক)',
+                            ),
+                          ),
+                          SizedBox(height: PraniFormTokens.fieldGap),
+                          PraniTextField(
+                            controller: _discountPercent,
+                            enabled: editable && !_saving,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'ছাড় % (ঐচ্ছিক)',
+                            ),
+                          ),
+                          SizedBox(height: PraniFormTokens.fieldGap),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('গ্রাহকের কাছে উপলব্ধ'),
+                            value: _isAvailable,
+                            onChanged: (!editable || _saving)
+                                ? null
+                                : (v) => setState(() => _isAvailable = v),
+                          ),
+                          SizedBox(height: PraniFormTokens.fieldGap),
+                          PraniTextArea(
+                            controller: _technicianNote,
+                            enabled: editable && !_saving,
+                            minLines: 2,
+                            maxLines: 4,
+                            decoration: const InputDecoration(
+                              labelText: 'ব্যক্তিগত নোট (ঐচ্ছিক)',
+                              alignLabelWithHint: true,
+                            ),
+                          ),
+                        ],
                         SizedBox(height: PraniFormTokens.fieldGap),
                         PraniTextArea(
                           controller: _repeatPolicy,

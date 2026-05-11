@@ -105,6 +105,62 @@ class ServiceRequestAnimalRef {
   }
 }
 
+class ServiceRequestNote {
+  const ServiceRequestNote({
+    required this.id,
+    required this.body,
+    this.authorLabel,
+    this.createdAt,
+  });
+
+  final String id;
+  final String body;
+  final String? authorLabel;
+  final DateTime? createdAt;
+
+  factory ServiceRequestNote.fromJson(Map<String, dynamic> json) {
+    return ServiceRequestNote(
+      id: json['id'] as String? ?? '',
+      body: (json['body'] ?? json['text'] ?? json['message'] ?? '')
+          .toString()
+          .trim(),
+      authorLabel: json['authorLabel'] as String? ??
+          json['authorRole'] as String?,
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.tryParse(json['createdAt'] as String),
+    );
+  }
+}
+
+class ServiceRequestAttachment {
+  const ServiceRequestAttachment({
+    required this.id,
+    this.label,
+    this.url,
+    this.mimeType,
+    this.createdAt,
+  });
+
+  final String id;
+  final String? label;
+  final String? url;
+  final String? mimeType;
+  final DateTime? createdAt;
+
+  factory ServiceRequestAttachment.fromJson(Map<String, dynamic> json) {
+    return ServiceRequestAttachment(
+      id: json['id'] as String? ?? '',
+      label: json['label'] as String? ?? json['name'] as String?,
+      url: json['url'] as String? ?? json['downloadUrl'] as String?,
+      mimeType: json['mimeType'] as String? ?? json['contentType'] as String?,
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.tryParse(json['createdAt'] as String),
+    );
+  }
+}
+
 class ServiceRequest {
   const ServiceRequest({
     required this.id,
@@ -139,6 +195,8 @@ class ServiceRequest {
     this.assignedDoctor,
     this.assignedTechnician,
     this.billing,
+    this.notes = const [],
+    this.attachments = const [],
   });
 
   final String id;
@@ -177,6 +235,12 @@ class ServiceRequest {
 
   /// Optional billing snapshot when API includes `billing` / `payment` map.
   final BillingPaymentSummary? billing;
+
+  /// Optional timeline notes when API returns `notes` array.
+  final List<ServiceRequestNote> notes;
+
+  /// Optional file refs when API returns `attachments` array.
+  final List<ServiceRequestAttachment> attachments;
 
   /// Display name from mobile API `assignedDoctor` / `assignedTechnician` objects (`displayName`).
   String? get assignedDoctorDisplayName =>
@@ -246,7 +310,33 @@ class ServiceRequest {
       assignedDoctor: asMap(json['assignedDoctor']),
       assignedTechnician: asMap(json['assignedTechnician']),
       billing: BillingPaymentSummary.fromRootJson(json),
+      notes: _parseNotesList(json['notes']),
+      attachments: _parseAttachmentsList(json['attachments']),
     );
+  }
+
+  static List<ServiceRequestNote> _parseNotesList(dynamic raw) {
+    if (raw is! List) return const [];
+    final out = <ServiceRequestNote>[];
+    for (final e in raw) {
+      if (e is Map<String, dynamic>) {
+        final n = ServiceRequestNote.fromJson(e);
+        if (n.id.isNotEmpty || n.body.isNotEmpty) out.add(n);
+      }
+    }
+    return out;
+  }
+
+  static List<ServiceRequestAttachment> _parseAttachmentsList(dynamic raw) {
+    if (raw is! List) return const [];
+    final out = <ServiceRequestAttachment>[];
+    for (final e in raw) {
+      if (e is Map<String, dynamic>) {
+        final a = ServiceRequestAttachment.fromJson(e);
+        if (a.id.isNotEmpty || (a.url ?? '').trim().isNotEmpty) out.add(a);
+      }
+    }
+    return out;
   }
 
   bool get canCustomerCancel {

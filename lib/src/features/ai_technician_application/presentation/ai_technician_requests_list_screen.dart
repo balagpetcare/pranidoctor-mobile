@@ -13,7 +13,10 @@ import 'package:pranidoctor_mobile/src/features/ai_technician_application/applic
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
 
 class AiTechnicianRequestsListScreen extends ConsumerStatefulWidget {
-  const AiTechnicianRequestsListScreen({super.key});
+  const AiTechnicianRequestsListScreen({super.key, this.embedded = false});
+
+  /// Inside [ProfessionalWorkspaceShellScreen] — hide duplicate app bar.
+  final bool embedded;
 
   static const routePath = '/profile/ai-technician/requests';
   static const routeName = 'aiTechnicianRequests';
@@ -42,7 +45,8 @@ class _AiTechnicianRequestsListScreenState
     final textTheme = Theme.of(context).textTheme;
 
     return PraniScaffold(
-      title: 'কাজের অনুরোধ',
+      title: widget.embedded ? null : 'কাজের অনুরোধ',
+      showBackButton: !widget.embedded,
       padding: EdgeInsets.fromLTRB(
         hPad,
         PraniSpacing.md,
