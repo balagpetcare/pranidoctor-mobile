@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:pranidoctor_mobile/src/design_system/prani_tokens.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_buttons.dart';
 import 'package:pranidoctor_mobile/src/design_system/widgets/prani_section_header.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/application/ai_technician_dashboard_ui_helpers.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/data/ai_technician_models.dart';
+import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/ai_service_instances_list_screen.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/dashboard/technician_enterprise_quick_actions.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/dashboard/technician_kpi_and_overview.dart';
 import 'package:pranidoctor_mobile/src/features/ai_technician_application/presentation/dashboard/technician_profile_summary_header.dart';
@@ -142,6 +144,15 @@ class EnterpriseTechnicianDashboardContent extends ConsumerWidget {
           onCheckEarnings: onCheckEarnings,
           onUpdateAvailability: onUpdateAvailability,
         ),
+        if (approvedLike) ...[
+          const SizedBox(height: PraniSpacing.md),
+          PraniSecondaryButton(
+            label: 'এন্টারপ্রাইজ সেবা জমা (পর্যালোচনা)',
+            icon: Icons.fact_check_outlined,
+            fullWidth: true,
+            onPressed: () => context.push(AiServiceInstancesListScreen.routePath),
+          ),
+        ],
         const SizedBox(height: PraniSpacing.md),
         PraniSecondaryButton(
           label: 'এন্টারপ্রাইজ বিশ্লেষণ ও অফলাইন',

@@ -60,8 +60,11 @@ import '../features/ai_technician_application/presentation/ai_semen_from_templat
 import '../features/ai_technician_application/presentation/ai_semen_inventory_screen.dart';
 import '../features/ai_technician_application/presentation/ai_semen_template_catalog_screen.dart';
 import '../features/ai_technician_application/presentation/ai_semen_template_detail_screen.dart';
+import '../features/ai_technician_application/presentation/execution_mode/ai_technician_execution_mode_screen.dart';
 import '../features/ai_technician_application/presentation/ai_technician_service_form_screen.dart';
 import '../features/ai_technician_application/presentation/ai_technician_services_list_screen.dart';
+import '../features/ai_technician_application/presentation/ai_service_instances_list_screen.dart';
+import '../features/ai_technician_application/presentation/ai_service_instance_detail_screen.dart';
 import '../features/ai_farmer_services/presentation/ai_digital_service_record_view_screen.dart';
 import '../features/ai_farmer_services/presentation/ai_farmer_my_request_detail_screen.dart';
 import '../features/ai_farmer_services/presentation/ai_farmer_request_complaint_screen.dart';
@@ -481,6 +484,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AiTechnicianDashboardScreen(),
       ),
       GoRoute(
+        path: AiServiceInstancesListScreen.routePath,
+        name: AiServiceInstancesListScreen.routeName,
+        builder: (context, state) => const AiServiceInstancesListScreen(),
+        routes: [
+          GoRoute(
+            path: ':instanceId',
+            builder: (context, state) {
+              final id = state.pathParameters['instanceId']!;
+              return AiServiceInstanceDetailScreen(instanceId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
         path: AiTechnicianRequestsListScreen.routePath,
         name: AiTechnicianRequestsListScreen.routeName,
         builder: (context, state) => const AiTechnicianRequestsListScreen(),
@@ -559,6 +576,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AiTechnicianExecutionModeScreen.routePath,
+        builder: (context, state) => const AiTechnicianExecutionModeScreen(),
       ),
       GoRoute(
         path: AiTechnicianFinderScreen.routePath,
